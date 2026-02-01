@@ -42,6 +42,7 @@ Running a self-hosted AI assistant incurs costs from model API calls and can con
 | **Balance both** | Auto router with default settings | [Cost + token optimization](./cost-token-optimization.md#auto-router-openrouterauto) |
 | **Reduce tokens** | Context pruning, efficient prompts | [Cost + token optimization](./cost-token-optimization.md#token-usage-strategies) |
 | **Track spending** | OpenRouter dashboard, budget alerts | [Cost + token optimization](./cost-token-optimization.md#monitoring-costs) |
+| **Zero cost** | Free model routing | [Cost + token optimization](./cost-token-optimization.md#free-router-openrouterfree) |
 
 ---
 

@@ -112,6 +112,49 @@ The Auto Router automatically selects the best model for each prompt, powered by
 
 ---
 
+## Free Router (`openrouter/free`)
+
+The `openrouter/free` model provides access to free AI models through OpenRouter, ideal for testing, development, or budget-constrained applications.
+
+### Configuration
+
+```bash
+openclaw config set provider.model openrouter/free
+```
+
+Or via API:
+
+```json
+{
+  "model": "openrouter/free",
+  "messages": [{"role": "user", "content": "..."}]
+}
+```
+
+### How It Works
+
+Similar to the Auto Router, `openrouter/free` analyzes your prompt and routes to an appropriate free model from available options. The response includes the `model` field showing which specific free model was used.
+
+### Limitations
+
+Free models have certain constraints compared to paid models:
+
+| Limitation | Description |
+|------------|-------------|
+| **Rate limits** | Lower requests per minute/hour |
+| **Queue priority** | Longer wait times during high usage |
+| **Capabilities** | May have reduced capabilities vs premium models |
+| **Availability** | Free models may not always be available |
+
+### Best Use Cases
+
+- **Development and testing** - Prototype without cost concerns
+- **Educational projects** - Learn AI integration without budget
+- **Low-volume applications** - Minimal usage that doesn't justify paid models
+- **Fallback scenarios** - Backup when paid model budgets are exhausted
+
+---
+
 ## Model Variants for Cost/Speed Trade-offs
 
 OpenRouter offers model variants that modify routing behavior:
@@ -312,6 +355,7 @@ Choose models based on task complexity:
 | Code generation | Claude Sonnet or GPT-4o | $3-15/M |
 | Complex reasoning | Claude Opus or o1 | $15-60/M |
 | Bulk processing | Haiku, Gemini Flash | $0.10-0.50/M |
+| Testing/dev | `openrouter/free` | $0 |
 
 ### Per-Task Model Override
 
