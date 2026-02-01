@@ -12,6 +12,7 @@
 - [Deployment: Standalone Mac mini](./03-deploy/standalone-mac-mini.md)
 - [Deployment: Isolated VPS](./03-deploy/isolated-vps.md)
 - [Deployment: Cloudflare Moltworker](./03-deploy/cloudflare-moltworker.md)
+- [Deployment: Docker Model Runner](./03-deploy/docker-model-runner.md)
 - [Commands + troubleshooting](./99-reference/commands-and-troubleshooting.md)
 - **Optimizations:**
   - [Overview](./06-optimizations/README.md)
@@ -61,7 +62,7 @@ Official docs starting point:
 
 ---
 
-## The three deployment scenarios this guide focuses on
+## The four deployment scenarios this guide focuses on
 
 1) **Standalone Mac mini (local-first, high privacy)**
 - The Gateway runs on a Mac mini you own.
@@ -79,6 +80,12 @@ Official docs starting point:
 - No hardware to manage; automatic scaling and isolation.
 - Uses R2 for persistence, AI Gateway for model routing, Browser Rendering for web automation.
 - Proof-of-concept; requires Cloudflare Workers paid plan ($5/month minimum).
+
+4) **Docker Model Runner (local AI, zero API cost)**
+- Run LLMs locally via Docker Desktop's Model Runner.
+- Zero API costs after initial model download.
+- Complete privacy — no data leaves your machine.
+- Requires Docker Desktop 4.40+ and compatible hardware (Apple Silicon, NVIDIA GPU, or AMD GPU).
 
 ---
 
@@ -101,6 +108,7 @@ Official docs starting point:
 - [Isolated VPS (remote + locked down)](./03-deploy/isolated-vps.md)
   - [DigitalOcean 1-Click Deploy](./03-deploy/isolated-vps.md#11-digitalocean-1-click-deploy) *(recommended)*
 - [Cloudflare Moltworker (serverless)](./03-deploy/cloudflare-moltworker.md)
+- [Docker Model Runner (local AI, zero cost)](./03-deploy/docker-model-runner.md)
 
 ### 5) Reference
 - [Commands + troubleshooting quick reference](./99-reference/commands-and-troubleshooting.md)
@@ -195,12 +203,14 @@ This FAQ is intentionally long and practical; it’s the “things you’ll actu
 - **Mac mini (recommended for most privacy-first users):** always-on, easy local access, no cloud exposure by default.
 - **VPS (recommended for always-on + remote access):** great uptime, but higher security responsibility. [DigitalOcean 1-Click](./03-deploy/isolated-vps.md#11-digitalocean-1-click-deploy) handles hardening automatically.
 - **Cloudflare Moltworker (low-maintenance serverless):** no hardware to manage, pay-as-you-go, but proof-of-concept status.
+- **Docker Model Runner (maximum privacy + zero cost):** run local LLMs via Docker Desktop for complete privacy and no API fees. Requires Apple Silicon, NVIDIA, or AMD GPU.
 - **Laptop (okay for learning/dev):** simplest to start, but sleeps often and you may be tempted to expose it.
 
 See runbooks:
 - [Mac mini](./03-deploy/standalone-mac-mini.md)
 - [VPS](./03-deploy/isolated-vps.md)
 - [Cloudflare Moltworker](./03-deploy/cloudflare-moltworker.md)
+- [Docker Model Runner](./03-deploy/docker-model-runner.md)
 
 #### Q: Is OpenClaw "an AI model" like ChatGPT?
 No. OpenClaw is a **self-hosted assistant platform** that *talks to* models (Anthropic/OpenAI/etc.) and *wraps them* with routing, sessions, tools, and chat integrations.

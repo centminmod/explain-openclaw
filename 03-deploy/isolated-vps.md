@@ -19,6 +19,7 @@
   - [Isolated VPS](./isolated-vps.md)
     - [DigitalOcean 1-Click Deploy](#11-digitalocean-1-click-deploy)
   - [Cloudflare Moltworker](./cloudflare-moltworker.md)
+  - [Docker Model Runner](./docker-model-runner.md)
 - Optimizations
   - [Cost + token optimization](../06-optimizations/cost-token-optimization.md)
 - Reference

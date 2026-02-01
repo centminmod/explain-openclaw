@@ -20,6 +20,7 @@
   - [Standalone Mac mini](./standalone-mac-mini.md)
   - [Isolated VPS](./isolated-vps.md)
   - [Cloudflare Moltworker](./cloudflare-moltworker.md)
+  - [Docker Model Runner](./docker-model-runner.md)
 - Optimizations
   - [Cost + token optimization](../06-optimizations/cost-token-optimization.md)
 - Reference
