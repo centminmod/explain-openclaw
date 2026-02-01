@@ -446,6 +446,14 @@ Additional security hardening:
 
 All three legitimate defense-in-depth gaps remain open as of PR #9 (gateway env blocklist, pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (PR #11)
+
+Twenty-one upstream commits (merged via PR #11 from `openclaw/main`) introduced one security-relevant fix:
+
+- **Secure Chrome extension relay CDP** (`a1e89afcc`): Adds token-based authentication via the `x-openclaw-relay-token` header and loopback address validation to the Chrome DevTools Protocol relay (`src/browser/extension-relay.ts:79,104-134,177-178`). This prevents unauthorized CDP access from non-localhost sources, hardening the browser automation infrastructure against network-based attacks.
+
+This is new security hardening unrelated to the existing audit claims. All three legitimate defense-in-depth gaps remain open as of PR #11 (gateway env blocklist, pipe-delimited token format, outPath validation).
+
 ---
 
 ## Recommended Hardening Measures

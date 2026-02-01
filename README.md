@@ -1,5 +1,6 @@
 # Explain OpenClaw (formerly Moltbot/Clawdbot) - Integrated Beginner + Technical Guide
 
+
 ## Table of contents
 
 - [What is OpenClaw? (plain English)](./01-plain-english/what-is-clawdbot.md)
@@ -562,6 +563,14 @@ Additional security hardening:
 - **`baf9505bf`** — Formal models conformance check (CI): Adds informational TLA+ conformance verification to CI.
 
 **All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (PR #11 — 21 commits)
+
+One security-relevant commit:
+
+- **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:79,104-134,177-178`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
+
+This is new security hardening unrelated to existing audit claims. **All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
 
 For full detailed analysis: [Opus 4.5 Security Audit Analysis](./explain-clawdbot-opus-4.5/11-security-audit-analysis.md#second-security-audit-medium-article-january-2026)
 

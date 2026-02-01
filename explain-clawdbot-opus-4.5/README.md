@@ -216,6 +216,14 @@ Additional hardening:
 
 **All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (PR #11 — 21 commits)
+
+One security-relevant commit:
+
+- **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:79,104-134,177-178`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
+
+This is new security hardening unrelated to existing audit claims. **All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
