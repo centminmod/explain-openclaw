@@ -37,6 +37,8 @@ This is the ideal setup when:
 Related official docs:
 - https://docs.docker.com/desktop/features/model-runner/
 - https://docs.openclaw.ai/gateway/local-models
+- [Docker Blog: Private Personal AI with Clawdbot + DMR](https://www.docker.com/blog/clawdbot-docker-model-runner-private-personal-ai/)
+- [Docker Blog: OpenCode + Model Runner for Private AI Coding](https://www.docker.com/blog/opencode-docker-model-runner-private-ai-coding/)
 
 ---
 
@@ -210,6 +212,8 @@ clawdbot security audit --fix
 ## Recommended models for OpenClaw
 
 ### Docker-recommended models (2025)
+
+Based on [Docker's official blog post on private AI with Clawdbot + DMR](https://www.docker.com/blog/clawdbot-docker-model-runner-private-personal-ai/):
 
 | Model | Best For | Pull Command |
 |-------|----------|--------------|
