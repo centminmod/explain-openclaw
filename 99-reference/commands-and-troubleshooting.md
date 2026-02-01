@@ -16,6 +16,8 @@
   - [Standalone Mac mini](../03-deploy/standalone-mac-mini.md)
   - [Isolated VPS](../03-deploy/isolated-vps.md)
   - [Cloudflare Moltworker](../03-deploy/cloudflare-moltworker.md)
+- Optimizations
+  - [Cost + token optimization](../06-optimizations/cost-token-optimization.md)
 - Reference
   - [Commands + troubleshooting](./commands-and-troubleshooting.md)
 

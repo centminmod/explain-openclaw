@@ -13,6 +13,9 @@
 - [Deployment: Isolated VPS](./03-deploy/isolated-vps.md)
 - [Deployment: Cloudflare Moltworker](./03-deploy/cloudflare-moltworker.md)
 - [Commands + troubleshooting](./99-reference/commands-and-troubleshooting.md)
+- **Optimizations:**
+  - [Overview](./06-optimizations/README.md)
+  - [Cost + token optimization](./06-optimizations/cost-token-optimization.md)
 - [Security audit analysis (Issue #1796)](#security-audit-analysis-issue-1796) *(inline below)*
 - [Second security audit (Medium article)](#second-security-audit-medium-article) *(inline below)*
 - [Ecosystem security threats (supply chain and social engineering)](#ecosystem-security-threats) *(inline below)*
