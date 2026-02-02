@@ -31,7 +31,7 @@ This is a copy/paste oriented page. For deeper explanations, use the official do
 
 ```bash
 curl -fsSL https://openclaw.ai/install.sh | bash
-clawdbot onboard --install-daemon
+openclaw onboard --install-daemon
 ```
 
 Docs: https://docs.openclaw.ai/install and https://docs.openclaw.ai/start/wizard
@@ -43,18 +43,18 @@ Docs: https://docs.openclaw.ai/install and https://docs.openclaw.ai/start/wizard
 Foreground:
 
 ```bash
-clawdbot gateway
+openclaw gateway
 # alias:
-clawdbot gateway run
+openclaw gateway run
 ```
 
 Service lifecycle:
 
 ```bash
-clawdbot gateway status
-clawdbot gateway restart
-clawdbot gateway stop
-clawdbot gateway start
+openclaw gateway status
+openclaw gateway restart
+openclaw gateway stop
+openclaw gateway start
 ```
 
 Docs: https://docs.openclaw.ai/gateway and https://docs.openclaw.ai/cli/gateway
@@ -64,9 +64,9 @@ Docs: https://docs.openclaw.ai/gateway and https://docs.openclaw.ai/cli/gateway
 ## Health and status
 
 ```bash
-clawdbot status
-clawdbot status --all
-clawdbot health
+openclaw status
+openclaw status --all
+openclaw health
 ```
 
 ---
@@ -74,9 +74,9 @@ clawdbot health
 ## Security audit
 
 ```bash
-clawdbot security audit
-clawdbot security audit --deep
-clawdbot security audit --fix
+openclaw security audit
+openclaw security audit --deep
+openclaw security audit --fix
 ```
 
 Docs: https://docs.openclaw.ai/gateway/security
@@ -86,8 +86,8 @@ Docs: https://docs.openclaw.ai/gateway/security
 ## Pairing (DM approvals)
 
 ```bash
-clawdbot pairing list telegram
-clawdbot pairing approve telegram <CODE>
+openclaw pairing list telegram
+openclaw pairing approve telegram <CODE>
 ```
 
 Docs: https://docs.openclaw.ai/start/pairing
@@ -107,14 +107,14 @@ Docs: https://docs.openclaw.ai/gateway/remote
 ## Common problems
 
 ### Control UI says unauthorized
-- Run `clawdbot dashboard` and open the printed tokenized URL.
+- Run `openclaw dashboard` and open the printed tokenized URL.
 - Ensure you are connecting to the correct Gateway instance/profile.
 
 Docs: https://docs.openclaw.ai/help/faq
 
 ### Port already in use (18789)
-- Stop the supervised service (`clawdbot gateway stop`) or choose another port.
-- Foreground reclaim: `clawdbot gateway --force`.
+- Stop the supervised service (`openclaw gateway stop`) or choose another port.
+- Foreground reclaim: `openclaw gateway --force`.
 
 Docs: https://docs.openclaw.ai/help/faq
 

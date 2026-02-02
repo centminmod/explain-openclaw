@@ -1,6 +1,6 @@
 # Deployment runbook: Standalone Mac mini (local-first, high privacy)
 
-> **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot). The CLI command remains `clawdbot`.
+> **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot).
 
 ## Table of contents (Explain OpenClaw)
 
@@ -44,7 +44,7 @@ Related official docs:
 - DM policy: `pairing` or `allowlist`
 - Only enable the channels you actually need
 - Avoid exposing browser control remotely
-- Run `clawdbot security audit --deep` after setup and after any config change
+- Run `openclaw security audit --deep` after setup and after any config change
 
 ---
 
@@ -74,7 +74,7 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 Or:
 
 ```bash
-npm install -g clawdbot@latest
+npm install -g openclaw@latest
 ```
 
 Verify Node.js version (22.12.0+ recommended for security patches):
@@ -86,24 +86,24 @@ node --version  # Should be v22.12.0 or later
 ### 3) Onboard and install the background service
 
 ```bash
-clawdbot onboard --install-daemon
+openclaw onboard --install-daemon
 ```
 
-This typically sets up a per-user service (launchd) and writes config under `~/.clawdbot/`.
+This typically sets up a per-user service (launchd) and writes config under `~/.openclaw/`.
 
 ### 4) Verify basics
 
 ```bash
-clawdbot gateway status
-clawdbot status
-clawdbot health
-clawdbot security audit --deep
+openclaw gateway status
+openclaw status
+openclaw health
+openclaw security audit --deep
 ```
 
 If the audit suggests fixes:
 
 ```bash
-clawdbot security audit --fix
+openclaw security audit --fix
 ```
 
 ### 5) Open the dashboard (Control UI)
@@ -114,7 +114,7 @@ Local (same machine):
 If auth is enabled and you don’t have the token in the browser yet:
 
 ```bash
-clawdbot dashboard
+openclaw dashboard
 ```
 
 ---
@@ -128,7 +128,7 @@ OpenClaw supports many channels; two common ones:
 - Login flow typically uses QR code:
 
 ```bash
-clawdbot channels login
+openclaw channels login
 ```
 
 Docs: https://docs.openclaw.ai/channels/whatsapp
@@ -138,8 +138,8 @@ Docs: https://docs.openclaw.ai/channels/whatsapp
 - DM pairing is commonly enabled by default; approve yourself:
 
 ```bash
-clawdbot pairing list telegram
-clawdbot pairing approve telegram <CODE>
+openclaw pairing list telegram
+openclaw pairing approve telegram <CODE>
 ```
 
 Docs: https://docs.openclaw.ai/channels/telegram
@@ -194,7 +194,7 @@ export GATEWAY_AUTH_TOKEN="$(openssl rand -hex 32)"
 ```
 
 ### Credential Protection
-- [ ] Treat `~/.clawdbot/` as secret material (mode 0700)
+- [ ] Treat `~/.openclaw/` as secret material (mode 0700)
 - [ ] Avoid installing random global npm packages
 
 Protect shell history from credential leakage:
@@ -209,7 +209,7 @@ export HISTFILESIZE=0
 Enable Docker sandbox for code execution tools:
 
 ```bash
-# In clawdbot.json
+# In openclaw.json
 # "agents.defaults.sandbox": "docker"
 # "agents.defaults.sandboxNetwork": "none"
 ```
@@ -223,7 +223,7 @@ This isolates any successful prompt injection to the container environment.
 If you back up anything, back up only what you understand, and encrypt it.
 
 Consider backing up:
-- your `clawdbot.json` config
+- your `openclaw.json` config
 - only the credentials you are comfortable restoring
 
 Avoid backing up:

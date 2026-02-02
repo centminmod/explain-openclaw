@@ -159,13 +159,13 @@ Docs:
 ## Where state lives (operator view)
 
 The most important directory is your state dir:
-- default: `~/.clawdbot/`
-- per-profile: `~/.clawdbot-<profile>/`
+- default: `~/.openclaw/`
+- per-profile: `~/.openclaw-<profile>/`
 
-Common paths (see official “credential storage map”):
-- config: `~/.clawdbot/clawdbot.json`
-- model auth profiles: `~/.clawdbot/agents/<agentId>/agent/auth-profiles.json`
-- transcripts: `~/.clawdbot/agents/<agentId>/sessions/*.jsonl`
+Common paths (see official "credential storage map"):
+- config: `~/.openclaw/openclaw.json`
+- model auth profiles: `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+- transcripts: `~/.openclaw/agents/<agentId>/sessions/*.jsonl`
 
 Docs: https://docs.openclaw.ai/gateway/security
 
@@ -179,6 +179,6 @@ Most security failures are not exotic. They are:
 - exposed Gateway surface without auth
 - untrusted plugin installation
 
-That’s why `clawdbot security audit` exists and why config validation is strict.
+That's why `openclaw security audit` exists and why config validation is strict.
 
 Docs: https://docs.openclaw.ai/gateway/security

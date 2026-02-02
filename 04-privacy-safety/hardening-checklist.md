@@ -50,8 +50,8 @@ Source of truth:
 Approve pairing requests:
 
 ```bash
-clawdbot pairing list telegram
-clawdbot pairing approve telegram <CODE>
+openclaw pairing list telegram
+openclaw pairing approve telegram <CODE>
 ```
 
 Docs: https://docs.openclaw.ai/start/pairing
@@ -96,17 +96,17 @@ Docs: https://docs.openclaw.ai/gateway/tailscale
 - The wizard generates a token by default.
 
 If you suspect auth is misconfigured:
-- use `clawdbot dashboard` to get a URL that includes the token once
-- run `clawdbot security audit` to detect risky exposure
+- use `openclaw dashboard` to get a URL that includes the token once
+- run `openclaw security audit` to detect risky exposure
 
 ---
 
 ## 5) Run the security audit regularly
 
 ```bash
-clawdbot security audit
-clawdbot security audit --deep
-clawdbot security audit --fix
+openclaw security audit
+openclaw security audit --deep
+openclaw security audit --fix
 ```
 
 `--fix` tightens common footguns (group policy, redaction, file perms).
@@ -141,7 +141,7 @@ Docs:
 
 ## 8) Protect secrets on disk
 
-- Treat `~/.clawdbot` as sensitive.
+- Treat `~/.openclaw` as sensitive.
 - Don’t sync it to iCloud/Dropbox/etc.
 - Ensure permissions are tight (audit can fix).
 

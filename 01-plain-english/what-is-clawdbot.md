@@ -82,7 +82,7 @@ A **session** is a conversation thread with state:
 - metadata (who/where it came from)
 - optional memory indexes
 
-Sessions live on disk under your state directory (usually `~/.clawdbot/`).
+Sessions live on disk under your state directory (usually `~/.openclaw/`).
 
 Docs: https://docs.openclaw.ai/concepts/session
 
@@ -162,7 +162,7 @@ If you want high privacy and low risk:
 1) Keep the Gateway **loopback-only** (localhost only)
 2) Use **pairing** and/or **allowlists** so only you can trigger it
 3) Avoid enabling powerful tools until you are comfortable
-4) Run `clawdbot security audit --deep` and fix findings
+4) Run `openclaw security audit --deep` and fix findings
 
 See:
 - https://docs.openclaw.ai/gateway/security

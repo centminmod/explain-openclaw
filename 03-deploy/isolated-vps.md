@@ -1,6 +1,6 @@
 # Deployment runbook: Isolated VPS (remote + locked down)
 
-> **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot). The CLI command remains `clawdbot`.
+> **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot).
 
 ## Table of contents (Explain OpenClaw)
 
@@ -114,7 +114,7 @@ node --version  # Should be v22.12.0 or later
 Then onboard:
 
 ```bash
-clawdbot onboard --install-daemon
+openclaw onboard --install-daemon
 ```
 
 Set a gateway auth token for production:
@@ -170,16 +170,16 @@ Docs: https://docs.openclaw.ai/gateway/tailscale
 On the VPS:
 
 ```bash
-clawdbot gateway status
-clawdbot status
-clawdbot health
-clawdbot security audit --deep
+openclaw gateway status
+openclaw status
+openclaw health
+openclaw security audit --deep
 ```
 
 If needed:
 
 ```bash
-clawdbot security audit --fix
+openclaw security audit --fix
 ```
 
 ---
@@ -189,8 +189,8 @@ clawdbot security audit --fix
 Common troubleshooting workflow:
 
 ```bash
-clawdbot status --all
-clawdbot logs --follow
+openclaw status --all
+openclaw logs --follow
 ```
 
 If the service appears running but the probe fails:
@@ -207,7 +207,7 @@ Docs: https://docs.openclaw.ai/help/faq
 - Use separate messaging accounts for the bot.
 - Treat browser control endpoints as admin APIs.
 - Rotate tokens and API keys if you suspect exposure.
-- Keep `~/.clawdbot/` permissions tight (`chmod 700 ~/.clawdbot`).
+- Keep `~/.openclaw/` permissions tight (`chmod 700 ~/.openclaw`).
 
 Protect shell history from credential leakage:
 

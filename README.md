@@ -133,28 +133,28 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 Alternative:
 
 ```bash
-npm install -g clawdbot@latest
+npm install -g openclaw@latest
 ```
 
 ### Onboard + install background service
 
 ```bash
-clawdbot onboard --install-daemon
+openclaw onboard --install-daemon
 ```
 
 ### Verify
 
 ```bash
-clawdbot gateway status
-clawdbot status
-clawdbot health
-clawdbot security audit --deep
+openclaw gateway status
+openclaw status
+openclaw health
+openclaw security audit --deep
 ```
 
 If you only do one security thing, do this:
 
 ```bash
-clawdbot security audit --fix
+openclaw security audit --fix
 ```
 
 (Security audit docs: https://docs.openclaw.ai/gateway/security)
@@ -224,7 +224,7 @@ The main always-on process is the **Gateway** (default port **18789**) which mul
 See: https://docs.openclaw.ai/gateway
 
 #### Q: Where is my data stored?
-By default, OpenClaw stores state under `~/.clawdbot/` (or `~/.clawdbot-<profile>/` for profiles). This includes config, credentials, and session transcripts.
+By default, OpenClaw stores state under `~/.openclaw/` (or `~/.openclaw-<profile>/` for profiles). This includes config, credentials, and session transcripts.
 
 See: https://docs.openclaw.ai/gateway/security ("Credential storage map")
 
@@ -240,14 +240,14 @@ This repo's positioning is local-first control. Still, your chosen **model provi
 Use the wizard:
 
 ```bash
-clawdbot onboard --install-daemon
+openclaw onboard --install-daemon
 ```
 
 #### Q: I opened the dashboard and it says “unauthorized” or keeps reconnecting.
 The Gateway likely has auth enabled and the UI is missing the token/password.
 
 Fast fixes:
-- Run `clawdbot dashboard` (it prints a tokenized URL).
+- Run `openclaw dashboard` (it prints a tokenized URL).
 - If remote: bring up an SSH tunnel first:
   ```bash
   ssh -N -L 18789:127.0.0.1:18789 user@gateway-host
@@ -267,9 +267,9 @@ See: https://docs.openclaw.ai/start/pairing
 
 ### Intermediate FAQ
 
-#### Q: What’s the difference between `clawdbot gateway` and `clawdbot gateway restart`?
-- `clawdbot gateway` runs the Gateway in the **foreground** in your terminal.
-- `clawdbot gateway restart` restarts the **background service** (launchd/systemd).
+#### Q: What's the difference between `openclaw gateway` and `openclaw gateway restart`?
+- `openclaw gateway` runs the Gateway in the **foreground** in your terminal.
+- `openclaw gateway restart` restarts the **background service** (launchd/systemd).
 
 See: https://docs.openclaw.ai/help/faq
 
@@ -277,7 +277,7 @@ See: https://docs.openclaw.ai/help/faq
 `gateway.port` controls the single multiplexed port for WebSocket + HTTP. Precedence is:
 
 ```text
---port > CLAWDBOT_GATEWAY_PORT > gateway.port > default 18789
+--port > OPENCLAW_GATEWAY_PORT > gateway.port > default 18789
 ```
 
 See: https://docs.openclaw.ai/help/faq
@@ -297,8 +297,8 @@ See: https://docs.openclaw.ai/gateway/remote and https://docs.openclaw.ai/gatewa
 Yes, but it’s usually unnecessary; one Gateway can run multiple channels and agents.
 
 If you do, you must isolate:
-- config path (`CLAWDBOT_CONFIG_PATH`)
-- state dir (`CLAWDBOT_STATE_DIR`)
+- config path (`OPENCLAW_CONFIG_PATH`)
+- state dir (`OPENCLAW_STATE_DIR`)
 - workspace (`agents.defaults.workspace`)
 - port (`gateway.port`)
 
@@ -308,8 +308,8 @@ See: https://docs.openclaw.ai/gateway/multiple-gateways
 Use:
 
 ```bash
-clawdbot status --all
-clawdbot logs --follow
+openclaw status --all
+openclaw logs --follow
 ```
 
 See: https://docs.openclaw.ai/help/faq (log locations)
@@ -377,7 +377,7 @@ All four AI-generated summaries in this project covered the report. The followin
 | 2 | Missing CSRF in OAuth state | **False** | `extensions/google-gemini-cli-auth/oauth.ts:538-539` performs strict `state !== verifier` check. |
 | 3 | Hardcoded OAuth client secret | **True, standard practice** | [RFC 8252 Sections 8.4-8.5](https://datatracker.ietf.org/doc/html/rfc8252#section-8.4): CLI apps are "public clients." |
 | 4 | Token refresh race condition | **False** | `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:11-20`), lock held throughout refresh+save (`src/agents/auth-profiles/oauth.ts:32-34`). |
-| 5 | Insufficient file permission checks | **True, by design** | `0o600` on every write + `clawdbot security audit`/`fix` tooling. |
+| 5 | Insufficient file permission checks | **True, by design** | `0o600` on every write + `openclaw security audit`/`fix` tooling. |
 | 6 | Path traversal in agent dirs | **False** | Paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,12`) which calls `path.resolve()` (`src/utils.ts:209`), normalizing traversal. IDs from env/config, not user input. |
 | 7 | Webhook signature bypass | **True, properly gated** | `skipVerification` in `extensions/voice-call/src/webhook-security.ts` requires explicit param; dev-only, off by default. |
 | 8 | Insufficient token expiry validation | **False** | `Date.now() < cred.expires` checked on every token use (`src/agents/auth-profiles/oauth.ts:138-179`). |
@@ -413,7 +413,7 @@ The issue was closed after review.
 
 If you are hardening a deployment, the automated scanner report is not a useful starting point. Instead:
 
-1. Run `clawdbot security audit --fix` -- this checks and corrects file permissions, credential hygiene, and configuration risks
+1. Run `openclaw security audit --fix` -- this checks and corrects file permissions, credential hygiene, and configuration risks
 2. Keep the Gateway **loopback-only** (`gateway.bind: "loopback"`) and use SSH tunnels or Tailscale for remote access
 3. Enable **pairing + allowlists** to control who can interact
 4. If using the voice-call extension, verify `skipSignatureVerification` is not enabled in production
@@ -679,6 +679,7 @@ Before installing or following any link, verify you are using official sources:
 - Only install plugins from official OpenClaw sources
 - Regularly check linked devices in WhatsApp (Settings > Linked Devices) and Telegram (Settings > Devices)
 - Use `openclaw security audit --deep` to check for suspicious access
+- Keep session directories (`~/.openclaw/sessions/`) with restrictive permissions
 - Enable Telegram's 2FA password (separate from SMS code)
 - Keep session directories (`~/.openclaw/sessions/`) with restrictive permissions
 

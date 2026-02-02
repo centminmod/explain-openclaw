@@ -88,12 +88,12 @@ Mitigations:
 - be careful with reverse proxies; configure trusted proxies
 
 ### 4) Local disk + secrets
-OpenClaw stores transcripts and credentials on disk under `~/.clawdbot/`.
+OpenClaw stores transcripts and credentials on disk under `~/.openclaw/`.
 If another user/process on the host can read that directory, privacy is gone.
 
 Mitigations:
 - file permissions (audit fixes these)
-- avoid syncing `~/.clawdbot` to cloud drives
+- avoid syncing `~/.openclaw` to cloud drives
 - OS-level hardening (separate user, disk encryption)
 
 ### 5) Supply chain / plugins

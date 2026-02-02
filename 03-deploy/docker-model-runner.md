@@ -1,6 +1,6 @@
 # Deployment runbook: Docker Model Runner (local AI, zero API cost)
 
-> **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot). The CLI command remains `clawdbot`.
+> **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot).
 
 ## Table of contents (Explain OpenClaw)
 
@@ -174,37 +174,37 @@ You should see a response generated locally.
 
 ```bash
 # Set provider to OpenAI-compatible mode
-clawdbot config set provider.name openai
+openclaw config set provider.name openai
 
 # Point to Docker Model Runner's API
-clawdbot config set provider.baseUrl http://model-runner.docker.internal/v1
+openclaw config set provider.baseUrl http://model-runner.docker.internal/v1
 
 # Set the model name (must match what you pulled)
-clawdbot config set provider.model glm-4.7-flash
+openclaw config set provider.model glm-4.7-flash
 
 # API key is not needed but the field must exist
-clawdbot config set provider.apiKey "not-needed"
+openclaw config set provider.apiKey "not-needed"
 ```
 
 ### 7) Verify OpenClaw configuration
 
 ```bash
 # Check status
-clawdbot status
+openclaw status
 
 # Test a message
-clawdbot message send --to self "Hello, are you running locally?"
+openclaw message send --to self "Hello, are you running locally?"
 ```
 
 ### 8) Run the security audit
 
 ```bash
-clawdbot security audit --deep
+openclaw security audit --deep
 ```
 
 If issues are found:
 ```bash
-clawdbot security audit --fix
+openclaw security audit --fix
 ```
 
 ---
@@ -274,24 +274,24 @@ You can configure OpenClaw to use local models for most requests while falling b
 **Option 1: Manual switching**
 ```bash
 # Switch to local
-clawdbot config set provider.baseUrl http://model-runner.docker.internal/v1
-clawdbot config set provider.model glm-4.7-flash
+openclaw config set provider.baseUrl http://model-runner.docker.internal/v1
+openclaw config set provider.model glm-4.7-flash
 
 # Switch to cloud
-clawdbot config set provider.baseUrl https://api.anthropic.com
-clawdbot config set provider.model claude-sonnet-4-20250514
+openclaw config set provider.baseUrl https://api.anthropic.com
+openclaw config set provider.model claude-sonnet-4-20250514
 ```
 
 **Option 2: Use profiles**
 ```bash
 # Create a local profile
-CLAWDBOT_PROFILE=local clawdbot config set provider.baseUrl http://model-runner.docker.internal/v1
+OPENCLAW_PROFILE=local openclaw config set provider.baseUrl http://model-runner.docker.internal/v1
 
 # Create a cloud profile
-CLAWDBOT_PROFILE=cloud clawdbot config set provider.baseUrl https://api.anthropic.com
+OPENCLAW_PROFILE=cloud openclaw config set provider.baseUrl https://api.anthropic.com
 
 # Run with specific profile
-CLAWDBOT_PROFILE=local clawdbot gateway run
+OPENCLAW_PROFILE=local openclaw gateway run
 ```
 
 ---
@@ -356,7 +356,7 @@ Ensure the model name in OpenClaw config matches exactly what you pulled:
 docker model list
 
 # Verify config
-clawdbot config get provider.model
+openclaw config get provider.model
 ```
 
 ### High memory usage
@@ -376,7 +376,7 @@ The special hostname `model-runner.docker.internal` only works from within Docke
 
 ```bash
 # Use localhost with the exposed port instead
-clawdbot config set provider.baseUrl http://localhost:12434/v1
+openclaw config set provider.baseUrl http://localhost:12434/v1
 ```
 
 ---
@@ -391,7 +391,7 @@ clawdbot config set provider.baseUrl http://localhost:12434/v1
 
 ### What you're still responsible for
 
-- **Session transcripts:** Still stored locally in `~/.clawdbot/`
+- **Session transcripts:** Still stored locally in `~/.openclaw/`
 - **Channel tokens:** WhatsApp/Telegram tokens still needed
 - **Network exposure:** Keep Gateway loopback-only
 - **Disk encryption:** Enable FileVault/LUKS for credential protection
@@ -402,15 +402,15 @@ For the most private setup:
 
 ```bash
 # Run Gateway loopback-only
-clawdbot config set gateway.bind loopback
+openclaw config set gateway.bind loopback
 
 # Use local model
-clawdbot config set provider.baseUrl http://model-runner.docker.internal/v1
-clawdbot config set provider.model glm-4.7-flash
+openclaw config set provider.baseUrl http://model-runner.docker.internal/v1
+openclaw config set provider.model glm-4.7-flash
 
 # Enable Docker sandbox for tool execution
-clawdbot config set agents.defaults.sandbox docker
-clawdbot config set agents.defaults.sandboxNetwork none
+openclaw config set agents.defaults.sandbox docker
+openclaw config set agents.defaults.sandboxNetwork none
 ```
 
 Combined with FileVault/LUKS disk encryption, this keeps all AI processing and data on hardware you control.
@@ -442,9 +442,9 @@ Combined with FileVault/LUKS disk encryption, this keeps all AI processing and d
 ### General Security
 
 - [ ] FileVault/LUKS disk encryption enabled
-- [ ] `~/.clawdbot/` permissions are 0700
+- [ ] `~/.openclaw/` permissions are 0700
 - [ ] Shell history protection enabled
-- [ ] `clawdbot security audit --deep` passed
+- [ ] `openclaw security audit --deep` passed
 
 ---
 
