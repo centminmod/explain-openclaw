@@ -369,7 +369,7 @@ All four AI-generated summaries in this project covered the report. The followin
 
 **Key disagreement resolved:** Gemini 3.0 Pro accepted the race condition claim at face value. Code review (`src/agents/auth-profiles/oauth.ts:43-105`, config in `constants.ts:12-21`) confirms locking is correctly implemented. The other three models correctly identified this as a false positive.
 
-**Additional disagreement (Kimi K2.5):** Kimi K2.5 presents all 8 CRITICAL findings as actual vulnerabilities requiring remediation, including recommending keychain integration for token storage and disabling `config.patch` entirely. Code review confirms: (1) token storage with `0o600` permissions is standard CLI practice per RFC 8252, (2) `config.patch` executes inside Docker containers with `no-new-privileges`, (3) DNS pinning (`src/infra/net/ssrf.ts:209-247`) prevents the SSRF chain Kimi K2.5 describes, and (4) RBAC (`src/gateway/server-methods.ts:93-160`) prevents agent self-approval. The remediation advice in Kimi K2.5 is well-intentioned but addresses non-existent vulnerabilities.
+**Additional disagreement (Kimi K2.5):** Kimi K2.5 presents all 8 CRITICAL findings as actual vulnerabilities requiring remediation, including recommending keychain integration for token storage and disabling `config.patch` entirely. Code review confirms: (1) token storage with `0o600` permissions is standard CLI practice per RFC 8252, (2) `config.patch` executes inside Docker containers with `no-new-privileges`, (3) DNS pinning (`src/infra/net/ssrf.ts:270-307`) prevents the SSRF chain Kimi K2.5 describes, and (4) RBAC (`src/gateway/server-methods.ts:93-160`) prevents agent self-approval. The remediation advice in Kimi K2.5 is well-intentioned but addresses non-existent vulnerabilities.
 
 ### Synthesized verdict (all 8 CRITICAL claims)
 
@@ -474,7 +474,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container, not host (`src/agents/sandbox/docker.ts:242-243`). Config changes require gateway auth. |
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks path validation (`src/agents/tools/nodes-tool.ts:341-343`), but writes to paired node device, not gateway. |
 | 3 | Log traversal via `logs.tail` | **False** | Schema has `additionalProperties: false`, accepts only `cursor`/`limit`/`maxBytes` (`src/gateway/protocol/schema/logs-chat.ts:4-11`). File path from config, not request. |
-| 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` pins DNS (`src/infra/net/ssrf.ts:209-247`). Redirect-to-private-IP tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
+| 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` pins DNS (`src/infra/net/ssrf.ts:270-307`). Redirect-to-private-IP tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
 | 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` enforces role checks on every call (`src/gateway/server-methods.ts:93-160`). Agents blocked from approval methods. |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format exists (`src/gateway/device-auth.ts:13-31`) but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` validates executable *names*, not commands (`src/infra/exec-safety.ts:16-44`). Strict allowlist: `/^[A-Za-z0-9._+-]+$/`. |
@@ -621,6 +621,18 @@ Additional commits:
 One security-relevant commit:
 
 - **`d03eca845`** — Harden plugin and hook install paths: Adds path traversal detection to plugin and hook installation. `validateHookId()` + `resolveSafeInstallDir()` (`src/hooks/install.ts:55-97`) and `validatePluginId()` + `resolveSafeInstallDir()` (`src/plugins/install.ts:59-115`) now reject hook/plugin names containing `..`, `/`, `\`, or reserved segments. Prevents directory traversal attacks during extension installation.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 2 sync 10)
+
+Three security-relevant commits:
+
+- **`81c68f582`** — Guard remote media fetches with SSRF checks: New `fetch-guard.ts` centralized SSRF protection for all remote media fetches (`src/infra/net/fetch-guard.ts:1-170`). Media downloads now validate against private IP ranges before fetching.
+
+- **`9bd64c8a1`** — Expand SSRF guard coverage: Extended SSRF protection to media understanding providers (Deepgram, Google, OpenAI audio/video transcription) and skills installation. Shared utilities in `src/media-understanding/providers/shared.ts`.
+
+- **`57d008a33`** — Harden global updates: New `update-global.ts` validates update sources before executing global npm installs (`src/infra/update-global.ts`).
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
