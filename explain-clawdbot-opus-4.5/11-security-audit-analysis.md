@@ -53,7 +53,7 @@ The token refresh implementation uses `proper-lockfile` with:
 - 30-second stale lock timeout
 - Lock held throughout the entire refresh-and-save cycle
 
-See `src/agents/auth-profiles/oauth.ts:32-34` for lock acquisition and `src/agents/auth-profiles/constants.ts:11-20` for the retry/backoff configuration. Errors propagate to callers rather than silently failing. The locking mechanism prevents the race condition the scanner described.
+See `src/agents/auth-profiles/oauth.ts:47-102` for lock acquisition and `src/agents/auth-profiles/constants.ts:12-21` for the retry/backoff configuration. Errors propagate to callers rather than silently failing. The locking mechanism prevents the race condition the scanner described.
 
 ### 5. Insufficient File Permission Checks
 
@@ -95,7 +95,7 @@ This is a standard dev-only escape hatch, not a production bypass.
 
 **Verdict: False.**
 
-Every token use path checks `Date.now() < cred.expires` before returning credentials. The flow in `src/agents/auth-profiles/oauth.ts:138-179`:
+Every token use path checks `Date.now() < cred.expires` before returning credentials. The flow in `src/agents/auth-profiles/oauth.ts:176-197`:
 1. Reads the credential store
 2. Checks if the token is expired
 3. If expired, attempts refresh (with locking, per claim #4)
@@ -484,6 +484,20 @@ Sixty-four upstream commits (merged via PR #12 from `openclaw/main`) introduced 
 - **`7aeabbabd`** — OAuth provider guard refinement
 
 **Updated gap status:** One gap closed (gateway env blocklist). Two gaps remain open (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (PR #13)
+
+Eleven upstream commits (merged via PR #13 from `openclaw/main`) introduced two security-relevant changes:
+
+- **`4e4ed2ea1`** — Slack media security (#6639): Caps media download sizes and validates Slack file URLs to prevent DoS and path traversal attacks in the Slack channel adapter. Defense-in-depth for media handling.
+
+- **`d46b489e2`** — Telegram download timeout (CWE-400): Adds timeout to Telegram file downloads to prevent resource exhaustion from slow/hanging connections. This mitigates denial-of-service attacks via malicious media attachments that never complete downloading.
+
+- **`01449a2f4`** — Telegram download timeouts (#6914): Complementary timeout handling (thanks @hclsys).
+
+These commits add defense-in-depth to channel media handling but do not address existing audit claims or close the remaining gaps.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
 ---
 

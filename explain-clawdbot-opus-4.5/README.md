@@ -88,11 +88,11 @@ All 8 CRITICAL findings were manually verified against the source code:
 | 1 | Plaintext OAuth token storage | **True, by design** | Tokens stored as JSON files with `0o600` permissions, set on every write (`src/infra/json-file.ts:20`). Standard practice for CLI tools (cf. `gh`, `gcloud`). No keychain integration, but filesystem permissions enforced. |
 | 2 | Missing CSRF in OAuth state validation | **False** | The `?? expectedState` is a parsing fallback, not a bypass. Actual CSRF validation performs strict `state !== verifier` comparison before token exchange (`extensions/google-gemini-cli-auth/oauth.ts:538-539`). |
 | 3 | Hardcoded OAuth client secret | **True, standard practice** | Per [RFC 8252 Sections 8.4-8.5](https://datatracker.ietf.org/doc/html/rfc8252#section-8.4), desktop/CLI apps are "public clients" that cannot maintain secret confidentiality. Google's own CLI tools follow the same pattern. Base64 encoding is cosmetic only. |
-| 4 | Token refresh race condition | **False** | Uses `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:11-20`). Lock held throughout the entire refresh-and-save cycle (`src/agents/auth-profiles/oauth.ts:32-34`). Errors propagate to callers. |
+| 4 | Token refresh race condition | **False** | Uses `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:12-21`). Lock held throughout the entire refresh-and-save cycle (`src/agents/auth-profiles/oauth.ts:47-102`). Errors propagate to callers. |
 | 5 | Insufficient file permission checks | **True, by design** | Permissions set to `0o600` on every write (secure default). Audit/fix tooling exists via `clawdbot security audit` and `clawdbot security fix`. No pre-load validation, but files stay correct unless manually changed externally. |
 | 6 | Path traversal in agent directories | **False** | Paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,12`) which calls `path.resolve()` (`src/utils.ts:209`), normalizing traversal. Agent IDs come from environment/config, not user input. |
 | 7 | Webhook signature bypass | **True, properly gated** | `skipVerification` parameter exists in `extensions/voice-call/src/webhook-security.ts` but requires explicit parameter passing. Dev-only flag, not enabled by default, no evidence of production exposure. |
-| 8 | Insufficient token expiry validation | **False** | Every token use path checks `Date.now() < cred.expires` before returning credentials. On refresh failure, re-reads the store and re-checks expiry. No stale token fallback (`src/agents/auth-profiles/oauth.ts:138-179`). |
+| 8 | Insufficient token expiry validation | **False** | Every token use path checks `Date.now() < cred.expires` before returning credentials. On refresh failure, re-reads the store and re-checks expiry. No stale token fallback (`src/agents/auth-profiles/oauth.ts:176-197`). |
 
 **Result: 0 of 8 CRITICAL claims are actual security vulnerabilities.**
 
@@ -237,6 +237,18 @@ Seven security-relevant commits:
 - **`1bdd9e313`** — WhatsApp accountId path traversal prevention (#4610)
 - **`9b6fffd00`** — Message tool sandbox path validation (#6398)
 - **`7aeabbabd`** — OAuth provider guard refinement
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (PR #13)
+
+Two security-relevant commits:
+
+- **`4e4ed2ea1`** — Slack media security (#6639): Caps media download sizes and validates Slack file URLs to prevent DoS and path traversal attacks.
+
+- **`d46b489e2`** — Telegram download timeout (CWE-400): Adds timeout to Telegram file downloads to prevent resource exhaustion from slow/hanging connections.
+
+- **`01449a2f4`** — Telegram download timeouts (#6914) (thanks @hclsys).
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 

@@ -5,6 +5,7 @@
 
 - [What is OpenClaw? (plain English)](./01-plain-english/what-is-clawdbot.md)
 - [Glossary](./01-plain-english/glossary.md)
+- [What is Moltbook?](./07-moltbook/what-is-moltbook.md)
 - [Threat model](./04-privacy-safety/threat-model.md)
 - [Hardening checklist](./04-privacy-safety/hardening-checklist.md)
 - [Architecture (technical)](./02-technical/architecture.md)
@@ -93,6 +94,7 @@ Official docs starting point:
 
 ### 1) Plain English
 - [What is OpenClaw?](./01-plain-english/what-is-clawdbot.md)
+- [What is Moltbook?](./07-moltbook/what-is-moltbook.md)
 - [Glossary](./01-plain-english/glossary.md)
 
 ### 2) Privacy + safety first (highly recommended)
@@ -365,7 +367,7 @@ All four AI-generated summaries in this project covered the report. The followin
 | [Gemini 3.0 Pro](./explain-clawdbot-gemini-3.0-pro/README.md) | Brief index entry only; lists "race conditions" as a key risk | **Inaccurate on race conditions** -- code uses `proper-lockfile` with exponential backoff; no race exists |
 | [Kimi K2.5](./explain-clawdbot-kilocode-kimi-k2.5/security-analysis.md#github-issue-1796-argus-security-audit) | Detailed 8-claim breakdown with code snippets, scanner statistics, remediation advice | **Inaccurate** -- accepts all 8 CRITICAL claims at face value; does not verify against source code; presents "plaintext storage" and "hardcoded secrets" as vulnerabilities rather than standard CLI practice per RFC 8252 |
 
-**Key disagreement resolved:** Gemini 3.0 Pro accepted the race condition claim at face value. Code review (`src/agents/auth-profiles/oauth.ts:32-34`, config in `constants.ts:11-20`) confirms locking is correctly implemented. The other three models correctly identified this as a false positive.
+**Key disagreement resolved:** Gemini 3.0 Pro accepted the race condition claim at face value. Code review (`src/agents/auth-profiles/oauth.ts:47-102`, config in `constants.ts:12-21`) confirms locking is correctly implemented. The other three models correctly identified this as a false positive.
 
 **Additional disagreement (Kimi K2.5):** Kimi K2.5 presents all 8 CRITICAL findings as actual vulnerabilities requiring remediation, including recommending keychain integration for token storage and disabling `config.patch` entirely. Code review confirms: (1) token storage with `0o600` permissions is standard CLI practice per RFC 8252, (2) `config.patch` executes inside Docker containers with `no-new-privileges`, (3) DNS pinning (`src/infra/net/ssrf.ts:209-247`) prevents the SSRF chain Kimi K2.5 describes, and (4) RBAC (`src/gateway/server-methods.ts:93-160`) prevents agent self-approval. The remediation advice in Kimi K2.5 is well-intentioned but addresses non-existent vulnerabilities.
 
@@ -376,11 +378,11 @@ All four AI-generated summaries in this project covered the report. The followin
 | 1 | Plaintext OAuth token storage | **True, by design** | `src/infra/json-file.ts:20` sets `0o600` on every write. Standard for CLI tools (`gh`, `gcloud`). |
 | 2 | Missing CSRF in OAuth state | **False** | `extensions/google-gemini-cli-auth/oauth.ts:538-539` performs strict `state !== verifier` check. |
 | 3 | Hardcoded OAuth client secret | **True, standard practice** | [RFC 8252 Sections 8.4-8.5](https://datatracker.ietf.org/doc/html/rfc8252#section-8.4): CLI apps are "public clients." |
-| 4 | Token refresh race condition | **False** | `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:11-20`), lock held throughout refresh+save (`src/agents/auth-profiles/oauth.ts:32-34`). |
+| 4 | Token refresh race condition | **False** | `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:12-21`), lock held throughout refresh+save (`src/agents/auth-profiles/oauth.ts:47-102`). |
 | 5 | Insufficient file permission checks | **True, by design** | `0o600` on every write + `openclaw security audit`/`fix` tooling. |
 | 6 | Path traversal in agent dirs | **False** | Paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,12`) which calls `path.resolve()` (`src/utils.ts:209`), normalizing traversal. IDs from env/config, not user input. |
 | 7 | Webhook signature bypass | **True, properly gated** | `skipVerification` in `extensions/voice-call/src/webhook-security.ts` requires explicit param; dev-only, off by default. |
-| 8 | Insufficient token expiry validation | **False** | `Date.now() < cred.expires` checked on every token use (`src/agents/auth-profiles/oauth.ts:138-179`). |
+| 8 | Insufficient token expiry validation | **False** | `Date.now() < cred.expires` checked on every token use (`src/agents/auth-profiles/oauth.ts:176-197`). |
 
 **Result: 0 of 8 CRITICAL claims are actual security vulnerabilities.**
 
@@ -598,6 +600,19 @@ Seven security-relevant commits:
 - **`1bdd9e313`** — WhatsApp accountId path traversal prevention (#4610)
 - **`9b6fffd00`** — Message tool sandbox path validation (#6398)
 - **`7aeabbabd`** — OAuth provider guard refinement
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (PR #13)
+
+Two security-relevant commits:
+
+- **`4e4ed2ea1`** — Slack media security (#6639): Caps media download sizes and validates Slack file URLs to prevent DoS and path traversal attacks in the Slack channel adapter.
+
+- **`d46b489e2`** — Telegram download timeout (CWE-400): Adds timeout to Telegram file downloads to prevent resource exhaustion from slow/hanging connections. Defense-in-depth against denial-of-service via malicious media attachments.
+
+Additional commits:
+- **`01449a2f4`** — Telegram download timeouts (#6914): Complementary timeout handling for Telegram downloads (thanks @hclsys).
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
