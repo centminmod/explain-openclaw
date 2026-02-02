@@ -303,13 +303,12 @@ This validates the name of an executable to run, not arguments passed to it. Arg
 
 **Claim (CVSS 8.0):** The environment variable merging allows injecting `LD_PRELOAD` or similar variables to achieve code execution.
 
-**Verdict: Partially true, but overstated.**
+**Verdict: Partially true, but overstated. MITIGATED in PR #12.**
 
-On the gateway host, `params.env` is merged without sanitization (`src/agents/bash-tools.exec.ts:919`):
-```
-const baseEnv = coerceEnv(process.env);
-const mergedEnv = params.env ? { ...baseEnv, ...params.env } : baseEnv;
-```
+Previously, the gateway host merged `params.env` without sanitization. As of PR #12, the gateway now validates env vars:
+- Blocklist at `src/agents/bash-tools.exec.ts:61-78`
+- Validation function at `src/agents/bash-tools.exec.ts:83-107`
+- Enforcement at `src/agents/bash-tools.exec.ts:971-973`
 
 On the node host, there is an explicit blocklist (`src/node-host/runner.ts:156-165`):
 ```
@@ -362,7 +361,7 @@ Both audits correctly identify code patterns that *could* be concerning in isola
 
 While none of the 8 claims are exploitable as described, three defense-in-depth improvements were identified:
 
-1. **Gateway-side env var blocklist (Claim 8):** The node-host has an explicit blocklist for dangerous environment variables (`LD_*`, `DYLD_*`, `NODE_OPTIONS`, etc.), but the gateway-side env merge lacks this. Low real-world risk (requires compromised agent + human approval + localhost), but the blocklist should be symmetric.
+1. ~~**Gateway-side env var blocklist (Claim 8):**~~ **CLOSED in PR #12.** Gateway now has `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107`), with enforcement before env merge.
 
 2. **Pipe-delimited token format (Claim 6):** The token construction uses pipe delimiters without input sanitization. RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 
@@ -453,6 +452,38 @@ Twenty-one upstream commits (merged via PR #11 from `openclaw/main`) introduced 
 - **Secure Chrome extension relay CDP** (`a1e89afcc`): Adds token-based authentication via the `x-openclaw-relay-token` header and loopback address validation to the Chrome DevTools Protocol relay (`src/browser/extension-relay.ts:79,104-134,177-178`). This prevents unauthorized CDP access from non-localhost sources, hardening the browser automation infrastructure against network-based attacks.
 
 This is new security hardening unrelated to the existing audit claims. All three legitimate defense-in-depth gaps remain open as of PR #11 (gateway env blocklist, pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (PR #12)
+
+Sixty-four upstream commits (merged via PR #12 from `openclaw/main`) introduced seven security-relevant changes.
+
+#### Critical: Gateway Env Var Blocklist (Closes Legitimate Gap #1)
+
+- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation in exec tool (#4896) (thanks @HassanFleyah)
+
+  The gateway-side env var blocklist gap is now closed. New security controls:
+
+  1. **Blocklist** (`src/agents/bash-tools.exec.ts:61-78`):
+     - `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_AUDIT`
+     - `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH`
+     - `NODE_OPTIONS`, `NODE_PATH`, `PYTHONPATH`, `PYTHONHOME`
+     - `RUBYLIB`, `PERL5LIB`, `BASH_ENV`, `ENV`, `GCONV_PATH`, `IFS`, `SSLKEYLOGFILE`
+
+  2. **Prefix blocking** (`line 79`): `DYLD_*`, `LD_*` prefixes
+
+  3. **Validation function** (`lines 83-107`): `validateHostEnv()` throws on any dangerous variable, prefix match, or PATH modification
+
+  4. **Enforcement** (`lines 971-973`): Validation runs before env merge for non-sandbox host execution
+
+#### Additional Security Hardening
+
+- **`b796f6ec0`** — Web tools and file parsing hardening (#4058) (thanks @VACInc)
+- **`a2b00495c`** — TLS 1.3 minimum requirement (`src/infra/tls/gateway.ts:137`) (thanks @loganaden)
+- **`1bdd9e313`** — WhatsApp accountId path traversal prevention (#4610)
+- **`9b6fffd00`** — Message tool sandbox path validation (#6398)
+- **`7aeabbabd`** — OAuth provider guard refinement
+
+**Updated gap status:** One gap closed (gateway env blocklist). Two gaps remain open (pipe-delimited token format, outPath validation).
 
 ---
 

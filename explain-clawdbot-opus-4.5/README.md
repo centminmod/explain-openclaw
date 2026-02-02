@@ -149,7 +149,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-160`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format (`src/gateway/device-auth.ts:13-31`) lacks input sanitization (true), but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` (`src/infra/exec-safety.ts:16-44`) validates executable *names* (not commands). `BARE_NAME_PATTERN = /^[A-Za-z0-9._+-]+$/` is strict. Article conflates config validation with shell injection. |
-| 8 | Environment variable injection (LD_PRELOAD) | **Partially true** | Gateway merges `params.env` without blocklist (`src/agents/bash-tools.exec.ts:919`). Node-host has blocklist (`src/node-host/runner.ts:156-165`). Requires human approval + localhost + no sandbox. |
+| 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec.ts:61-78,971-973`). Node-host has blocklist (`src/node-host/runner.ts:156-165`). Requires human approval + localhost + no sandbox. |
 
 **Result: 0 of 8 claims are exploitable as described.**
 
@@ -161,7 +161,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 Three defense-in-depth items were identified (not exploitable as described, but worth hardening):
 
-1. **Gateway-side env var blocklist:** The node-host blocks `LD_*`/`DYLD_*`/`NODE_OPTIONS`, but the gateway-side env merge lacks this blocklist.
+1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust.
 3. **outPath validation:** `screen_record` outPath accepts arbitrary paths. Writes are confined to the paired node device, but path validation would add depth.
 
@@ -223,6 +223,22 @@ One security-relevant commit:
 - **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:79,104-134,177-178`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
 
 This is new security hardening unrelated to existing audit claims. **All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (PR #12 — 64 commits)
+
+**Critical: Gateway env var blocklist gap closed.**
+
+Seven security-relevant commits:
+
+- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation (#4896) (thanks @HassanFleyah): `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` now block `LD_PRELOAD`, `DYLD_*`, `NODE_OPTIONS`, `PATH`, etc. on gateway host execution (`src/agents/bash-tools.exec.ts:59-107,971-973`). **Closes Legitimate Gap #1.**
+
+- **`b796f6ec0`** — Web tools and file parsing hardening (#4058) (thanks @VACInc)
+- **`a2b00495c`** — TLS 1.3 minimum requirement (thanks @loganaden)
+- **`1bdd9e313`** — WhatsApp accountId path traversal prevention (#4610)
+- **`9b6fffd00`** — Message tool sandbox path validation (#6398)
+- **`7aeabbabd`** — OAuth provider guard refinement
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
