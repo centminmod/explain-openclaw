@@ -367,7 +367,7 @@ All four AI-generated summaries in this project covered the report. The followin
 | [Gemini 3.0 Pro](./explain-clawdbot-gemini-3.0-pro/README.md) | Brief index entry only; lists "race conditions" as a key risk | **Inaccurate on race conditions** -- code uses `proper-lockfile` with exponential backoff; no race exists |
 | [Kimi K2.5](./explain-clawdbot-kilocode-kimi-k2.5/security-analysis.md#github-issue-1796-argus-security-audit) | Detailed 8-claim breakdown with code snippets, scanner statistics, remediation advice | **Inaccurate** -- accepts all 8 CRITICAL claims at face value; does not verify against source code; presents "plaintext storage" and "hardcoded secrets" as vulnerabilities rather than standard CLI practice per RFC 8252 |
 
-**Key disagreement resolved:** Gemini 3.0 Pro accepted the race condition claim at face value. Code review (`src/agents/auth-profiles/oauth.ts:47-102`, config in `constants.ts:12-21`) confirms locking is correctly implemented. The other three models correctly identified this as a false positive.
+**Key disagreement resolved:** Gemini 3.0 Pro accepted the race condition claim at face value. Code review (`src/agents/auth-profiles/oauth.ts:43-105`, config in `constants.ts:12-21`) confirms locking is correctly implemented. The other three models correctly identified this as a false positive.
 
 **Additional disagreement (Kimi K2.5):** Kimi K2.5 presents all 8 CRITICAL findings as actual vulnerabilities requiring remediation, including recommending keychain integration for token storage and disabling `config.patch` entirely. Code review confirms: (1) token storage with `0o600` permissions is standard CLI practice per RFC 8252, (2) `config.patch` executes inside Docker containers with `no-new-privileges`, (3) DNS pinning (`src/infra/net/ssrf.ts:209-247`) prevents the SSRF chain Kimi K2.5 describes, and (4) RBAC (`src/gateway/server-methods.ts:93-160`) prevents agent self-approval. The remediation advice in Kimi K2.5 is well-intentioned but addresses non-existent vulnerabilities.
 
@@ -375,12 +375,12 @@ All four AI-generated summaries in this project covered the report. The followin
 
 | # | Claim | Verdict | Source code evidence |
 |---|-------|---------|---------------------|
-| 1 | Plaintext OAuth token storage | **True, by design** | `src/infra/json-file.ts:20` sets `0o600` on every write. Standard for CLI tools (`gh`, `gcloud`). |
-| 2 | Missing CSRF in OAuth state | **False** | `extensions/google-gemini-cli-auth/oauth.ts:538-539` performs strict `state !== verifier` check. |
+| 1 | Plaintext OAuth token storage | **True, by design** | `src/infra/json-file.ts:22` sets `0o600` on every write. Standard for CLI tools (`gh`, `gcloud`). |
+| 2 | Missing CSRF in OAuth state | **False** | `extensions/google-gemini-cli-auth/oauth.ts:618-619` performs strict `state !== verifier` check. |
 | 3 | Hardcoded OAuth client secret | **True, standard practice** | [RFC 8252 Sections 8.4-8.5](https://datatracker.ietf.org/doc/html/rfc8252#section-8.4): CLI apps are "public clients." |
-| 4 | Token refresh race condition | **False** | `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:12-21`), lock held throughout refresh+save (`src/agents/auth-profiles/oauth.ts:47-102`). |
+| 4 | Token refresh race condition | **False** | `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:12-21`), lock held throughout refresh+save (`src/agents/auth-profiles/oauth.ts:43-105`). |
 | 5 | Insufficient file permission checks | **True, by design** | `0o600` on every write + `openclaw security audit`/`fix` tooling. |
-| 6 | Path traversal in agent dirs | **False** | Paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,12`) which calls `path.resolve()` (`src/utils.ts:209`), normalizing traversal. IDs from env/config, not user input. |
+| 6 | Path traversal in agent dirs | **False** | Paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,13`) which calls `path.resolve()` (`src/utils.ts:243,245`), normalizing traversal. IDs from env/config, not user input. |
 | 7 | Webhook signature bypass | **True, properly gated** | `skipVerification` in `extensions/voice-call/src/webhook-security.ts` requires explicit param; dev-only, off by default. |
 | 8 | Insufficient token expiry validation | **False** | `Date.now() < cred.expires` checked on every token use (`src/agents/auth-profiles/oauth.ts:176-197`). |
 
@@ -613,6 +613,14 @@ Two security-relevant commits:
 
 Additional commits:
 - **`01449a2f4`** — Telegram download timeouts (#6914): Complementary timeout handling for Telegram downloads (thanks @hclsys).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 2 sync 4)
+
+One security-relevant commit:
+
+- **`d03eca845`** — Harden plugin and hook install paths: Adds path traversal detection to plugin and hook installation. `validateHookId()` + `resolveSafeInstallDir()` (`src/hooks/install.ts:55-97`) and `validatePluginId()` + `resolveSafeInstallDir()` (`src/plugins/install.ts:59-115`) now reject hook/plugin names containing `..`, `/`, `\`, or reserved segments. Prevents directory traversal attacks during extension installation.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 

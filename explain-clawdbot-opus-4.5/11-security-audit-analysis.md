@@ -32,7 +32,7 @@ Tokens are stored as JSON files with `0o600` permissions (owner read/write only)
 
 **Verdict: False.**
 
-The scanner flagged a `?? expectedState` expression as evidence of a bypass, but this is a parsing fallback for extracting the state value from the callback URL, not a validation bypass. The actual CSRF validation occurs downstream with a strict `state !== verifier` comparison before any token exchange takes place (`extensions/google-gemini-cli-auth/oauth.ts:538-539`). If the state does not match, the flow rejects the request.
+The scanner flagged a `?? expectedState` expression as evidence of a bypass, but this is a parsing fallback for extracting the state value from the callback URL, not a validation bypass. The actual CSRF validation occurs downstream with a strict `state !== verifier` comparison before any token exchange takes place (`extensions/google-gemini-cli-auth/oauth.ts:618-619`). If the state does not match, the flow rejects the request.
 
 ### 3. Hardcoded OAuth Client Secret
 
@@ -53,7 +53,7 @@ The token refresh implementation uses `proper-lockfile` with:
 - 30-second stale lock timeout
 - Lock held throughout the entire refresh-and-save cycle
 
-See `src/agents/auth-profiles/oauth.ts:47-102` for lock acquisition and `src/agents/auth-profiles/constants.ts:12-21` for the retry/backoff configuration. Errors propagate to callers rather than silently failing. The locking mechanism prevents the race condition the scanner described.
+See `src/agents/auth-profiles/oauth.ts:43-105` for lock acquisition and `src/agents/auth-profiles/constants.ts:12-21` for the retry/backoff configuration. Errors propagate to callers rather than silently failing. The locking mechanism prevents the race condition the scanner described.
 
 ### 5. Insufficient File Permission Checks
 
