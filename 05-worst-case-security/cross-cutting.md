@@ -410,3 +410,4 @@ If you suspect any compromise:
 | File permissions | `src/config/io.ts` | 477, 489 |
 | Message envelope format | Agent runtime | Wraps user messages |
 | External content wrapping | Web fetch tools | Marks untrusted content |
+| SSRF protection | `src/infra/net/ssrf.ts`, `src/infra/net/fetch-guard.ts` | DNS pinning for web/media fetches |
