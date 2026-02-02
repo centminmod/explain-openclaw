@@ -18,9 +18,12 @@
 - **Optimizations:**
   - [Overview](./06-optimizations/README.md)
   - [Cost + token optimization](./06-optimizations/cost-token-optimization.md)
-- [Security audit analysis (Issue #1796)](#security-audit-analysis-issue-1796) *(inline below)*
-- [Second security audit (Medium article)](#second-security-audit-medium-article) *(inline below)*
-- [Ecosystem security threats (supply chain and social engineering)](#ecosystem-security-threats) *(inline below)*
+- **Security documentation:**
+  - [Official security advisories (CVEs/GHSAs)](#official-security-advisories-cvesghsas) *(inline below)*
+  - [Security audit analysis (Issue #1796)](#security-audit-analysis-issue-1796) *(inline below)*
+  - [Second security audit (Medium article)](#second-security-audit-medium-article) *(inline below)*
+  - [Post-merge security hardening](#post-merge-security-hardening) *(inline below)*
+  - [Ecosystem security threats](#ecosystem-security-threats) *(inline below)*
 - [AI model analysis comparison](#ai-model-analysis-comparison) *(inline below)*
 - **Worst-case security scenarios:**
   - [Overview](./05-worst-case-security/README.md)
@@ -351,6 +354,71 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 
 ---
 
+## Official Security Advisories (CVEs/GHSAs)
+
+> **Source:** [github.com/openclaw/openclaw/security](https://github.com/openclaw/openclaw/security)
+>
+> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. All were patched in v2026.1.29.
+
+### Advisory Summary
+
+| ID | Severity | Summary | CWE | Patched | Credits |
+|----|----------|---------|-----|---------|---------|
+| [CVE-2026-24763](https://github.com/openclaw/openclaw/security/advisories/GHSA-mc68-q9jw-2h3v) | HIGH | Command Injection via Docker PATH Variable | CWE-78 | v2026.1.29 | @berkdedekarginoglu |
+| [GHSA-g8p2-7wf7-98mq](https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq) | HIGH | 1-Click RCE via gatewayUrl Token Exfiltration | CWE-200 | v2026.1.29 | DepthFirstDisclosures, @0xacb, @mavlevin |
+| [GHSA-q284-4pvr-m585](https://github.com/openclaw/openclaw/security/advisories/GHSA-q284-4pvr-m585) | HIGH | OS Command Injection via sshNodeCommand | - | v2026.1.29 | @koko9xxx |
+
+### CVE-2026-24763: Docker PATH Command Injection
+
+**GHSA:** GHSA-mc68-q9jw-2h3v
+**Severity:** HIGH (CWE-78: OS Command Injection)
+**Affected:** ≤ v2026.1.24
+**Credits:** @berkdedekarginoglu
+
+**Description:** Unsafe handling of the PATH environment variable when constructing shell commands in Docker sandbox execution. Authenticated users who could control environment variables could influence command execution within the container context.
+
+**Impact:** Execution of unintended commands inside the container, access to container filesystem and environment variables, exposure of sensitive data.
+
+**Fix:** Commit `771f23d` moved `setupCommand` PATH handling from shell string interpolation to a container env var. See [Post-merge hardening (PR #1)](#post-merge-hardening-pr-1-129-upstream-commits).
+
+### GHSA-g8p2-7wf7-98mq: gatewayUrl Token Exfiltration
+
+**Severity:** HIGH (CWE-200: Exposure of Sensitive Information)
+**Affected:** ≤ v2026.1.28
+**Credits:** DepthFirstDisclosures, @0xacb, @mavlevin
+
+**Description:** The Control UI trusted `gatewayUrl` from query string without validation and auto-connected on load, sending the stored gateway token in the WebSocket connect payload. Clicking a crafted link could send the token to an attacker-controlled server.
+
+**Impact:** Full gateway compromise. The attacker gains operator-level access to the gateway API, enabling arbitrary config changes and code execution. Works even when gateway binds to loopback because the victim's browser acts as the bridge.
+
+**Fix:** Control UI now requires user confirmation before connecting to a new gateway URL (`ui/src/ui/views/gateway-url-confirmation.ts`).
+
+### GHSA-q284-4pvr-m585: sshNodeCommand Injection
+
+**Severity:** HIGH
+**Affected:** < v2026.1.29
+**Credits:** @koko9xxx
+
+**Description:** Two related vulnerabilities in the macOS app's SSH remote connection handling (`apps/macos/Sources/OpenClaw/CommandResolver.swift`):
+1. `sshNodeCommand` constructed shell script without escaping user-supplied project path in error messages
+2. `parseSSHTarget` did not validate that SSH targets couldn't begin with a dash
+
+**Impact:** Arbitrary code execution on either the user's local machine or configured remote SSH host.
+
+**Affected component:** macOS menubar application (Remote/SSH mode only). Not affected: CLI, web gateway, iOS/Android apps, Local mode users.
+
+**Fix:** Commit `06289b36d` validates SSH targets and escapes paths.
+
+### Relationship to Third-Party Audits
+
+These official CVEs are **distinct from** the two third-party security audits documented below:
+- [Issue #1796 (Argus)](#security-audit-analysis-issue-1796) — Automated scanner report (0/8 exploitable)
+- [Medium Article (Saad Khalid)](#second-security-audit-medium-article) — Manual pentest claims (0/8 exploitable)
+
+The official CVEs were responsibly disclosed through GitHub Security Advisories and patched before public disclosure. The third-party audits contain false positives, design observations, and overstated claims (see analysis sections).
+
+---
+
 ## Security audit analysis (Issue [#1796](https://github.com/clawdbot/clawdbot/issues/1796))
 
 In January 2026, the Argus Security Platform (v1.0.15) filed an automated scan report claiming **512 findings including 8 CRITICAL** against the Clawdbot repository. The scan combined Semgrep, Trivy, Gitleaks, TruffleHog, and Claude Sonnet 4.5 AI analysis.
@@ -499,25 +567,37 @@ The article claims a "Complete White Box Penetration Test" but demonstrates a pa
 | Exploitable as described | 0 of 8 | 0 of 8 |
 | Core weakness | Pattern matching without context | Code reading without architectural context |
 
-### Legitimate gaps noted
+For defense-in-depth gap status and post-merge hardening notes, see [Post-merge security hardening](#post-merge-security-hardening).
 
-Three defense-in-depth items were identified (not exploitable as described, but worth hardening):
+For full detailed analysis: [Opus 4.5 Security Audit Analysis](./explain-clawdbot-opus-4.5/11-security-audit-analysis.md#second-security-audit-medium-article-january-2026)
+
+Article: [Why Clawdbot is a Bad Idea (Medium)](https://saadkhalidhere.medium.com/why-clawdbot-is-a-bad-idea-critical-zero-days-found-in-my-audit-full-report-634602cb053f)
+
+---
+
+## Post-Merge Security Hardening
+
+> This section tracks security-relevant commits merged from upstream. Entries are added by the sync-explain-docs-with-upstream skill.
+
+### Legitimate Gaps Status
+
+Three defense-in-depth items were identified across both audits:
 
 1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,971-973`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
 
+**Gap status: 1 closed, 2 remain open.**
+
 ### Post-merge hardening (PR #1, 129 upstream commits)
 
 Three commits directly strengthened controls referenced by both audits:
 
-- **Docker PATH injection fix** (`771f23d`): `setupCommand` PATH handling moved from shell string interpolation to a container env var, closing a command injection vector inside the sandbox (Audit 2 Claim 1).
+- **Docker PATH injection fix** (`771f23d`): `setupCommand` PATH handling moved from shell string interpolation to a container env var, closing a command injection vector inside the sandbox (Audit 2 Claim 1). Also addresses [CVE-2026-24763](#cve-2026-24763-docker-path-command-injection).
 - **Per-sender tool policies** (`3b0c80c`): RBAC now extends to per-user tool policies in group chats, deepening the access control that already prevented agent self-approval (Audit 2 Claim 5).
 - **Webhook timing-safe comparison** (`3b8792e`): LINE webhook signature validation switched from `===` to `crypto.timingSafeEqual()`, eliminating a theoretical timing side-channel (Audit 1 Claim 7).
 
 Additional security improvements: hardened file serving via `O_NOFOLLOW` + inode verification (`5eee991`), and browser JS execution gated behind `evaluateEnabled` config flag (`78f0bc3`).
-
-All three legitimate defense-in-depth gaps (gateway env blocklist, pipe-delimited token format, outPath validation) remain open as of this merge.
 
 ### Post-merge hardening (PR #2, 40 upstream commits)
 
@@ -533,37 +613,31 @@ Five security-relevant changes were introduced:
 
 - **Formal security models** (`3bf768a`): New TLA+ machine-checked models document security invariants for pairing, ingress gating, and routing/session-key isolation (`docs/security/formal-verification.md`).
 
-All three legitimate defense-in-depth gaps from PR #1 remain open (gateway env blocklist, pipe-delimited token format, outPath validation).
-
 ### Post-Merge Hardening (PR #3 — 4 commits)
 
 One security-relevant commit:
-- **`b71772427`** — XML attribute injection prevention in media text attachments (#3700): escapes special characters (`<`, `>`, `"`, `'`, `&`) in file names and MIME types, adds UTF-16/BOM detection, MIME override logging for auditability
 
-**All three legitimate gaps remain open.**
+- **`b71772427`** — XML attribute injection prevention in media text attachments (#3700): escapes special characters (`<`, `>`, `"`, `'`, `&`) in file names and MIME types, adds UTF-16/BOM detection, MIME override logging for auditability
 
 ### Post-Merge Hardening (PR #5 — 25 commits)
 
 One security-relevant commit:
-- **`c6ddc95fc`** — Telegram skill command scoping (#4360): scopes skill commands to bound agent per bot, preventing cross-agent command registration (thanks @robhparker)
 
-**All three legitimate gaps remain open.**
+- **`c6ddc95fc`** — Telegram skill command scoping (#4360): scopes skill commands to bound agent per bot, preventing cross-agent command registration (thanks @robhparker)
 
 ### Post-Merge Hardening (PR #6 — 34 commits)
 
 One security-relevant commit:
+
 - **`201d7fa95`** — Gateway token undefined fix (#4873): prevents `String(undefined)` from producing the literal `"undefined"` string as a gateway token. Ensures empty/undefined input falls through to `randomToken()` (thanks @Hisleren)
 
 Additionally, `SECURITY.md` was updated (`2cdfecdde`) to clarify: no bug bounty program, and public internet exposure is out of scope—reinforcing the existing threat model.
 
-**All three legitimate gaps remain open.**
-
 ### Post-Merge Hardening (PR #7)
 
 One security-relevant commit:
-- **`c67df653b`** — Restricts local path extraction in media parser to prevent LFI (#4880): hardens `src/media/parse.ts` against local file inclusion attacks via path extraction, adds test coverage in `src/media/parse.test.ts`
 
-This is new security hardening unrelated to existing audit claims. **All three legitimate gaps remain open.**
+- **`c67df653b`** — Restricts local path extraction in media parser to prevent LFI (#4880): hardens `src/media/parse.ts` against local file inclusion attacks via path extraction, adds test coverage in `src/media/parse.test.ts`
 
 ### Post-Merge Hardening (PR #9 — 50 commits)
 
@@ -574,18 +648,15 @@ Two critical security fixes:
 - **`34e2425b4`** — LFI prevention: Restrict MEDIA path extraction (#4930): The `src/auto-reply/reply/stage-sandbox-media.ts` now restricts inbound media staging to the media directory only, preventing local file inclusion attacks via path traversal.
 
 Additional security hardening:
+
 - **`7a6c40872`** — System prompt safety guardrails (#5445): Adds runtime guardrails to agent system prompts.
 - **`baf9505bf`** — Formal models conformance check (CI): Adds informational TLA+ conformance verification to CI.
-
-**All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
 
 ### Post-Merge Hardening (PR #11 — 21 commits)
 
 One security-relevant commit:
 
 - **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:79,104-134,177-178`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
-
-This is new security hardening unrelated to existing audit claims. **All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
 
 ### Post-Merge Hardening (PR #12 — 64 commits)
 
@@ -601,8 +672,6 @@ Seven security-relevant commits:
 - **`9b6fffd00`** — Message tool sandbox path validation (#6398)
 - **`7aeabbabd`** — OAuth provider guard refinement
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
-
 ### Post-Merge Hardening (PR #13)
 
 Two security-relevant commits:
@@ -612,17 +681,14 @@ Two security-relevant commits:
 - **`d46b489e2`** — Telegram download timeout (CWE-400): Adds timeout to Telegram file downloads to prevent resource exhaustion from slow/hanging connections. Defense-in-depth against denial-of-service via malicious media attachments.
 
 Additional commits:
-- **`01449a2f4`** — Telegram download timeouts (#6914): Complementary timeout handling for Telegram downloads (thanks @hclsys).
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+- **`01449a2f4`** — Telegram download timeouts (#6914): Complementary timeout handling for Telegram downloads (thanks @hclsys).
 
 ### Post-Merge Hardening (Feb 2 sync 4)
 
 One security-relevant commit:
 
 - **`d03eca845`** — Harden plugin and hook install paths: Adds path traversal detection to plugin and hook installation. `validateHookId()` + `resolveSafeInstallDir()` (`src/hooks/install.ts:55-97`) and `validatePluginId()` + `resolveSafeInstallDir()` (`src/plugins/install.ts:59-115`) now reject hook/plugin names containing `..`, `/`, `\`, or reserved segments. Prevents directory traversal attacks during extension installation.
-
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
 ### Post-Merge Hardening (Feb 2 sync 10)
 
@@ -633,12 +699,6 @@ Three security-relevant commits:
 - **`9bd64c8a1`** — Expand SSRF guard coverage: Extended SSRF protection to media understanding providers (Deepgram, Google, OpenAI audio/video transcription) and skills installation. Shared utilities in `src/media-understanding/providers/shared.ts`.
 
 - **`57d008a33`** — Harden global updates: New `update-global.ts` validates update sources before executing global npm installs (`src/infra/update-global.ts`).
-
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
-
-For full detailed analysis: [Opus 4.5 Security Audit Analysis](./explain-clawdbot-opus-4.5/11-security-audit-analysis.md#second-security-audit-medium-article-january-2026)
-
-Article: [Why Clawdbot is a Bad Idea (Medium)](https://saadkhalidhere.medium.com/why-clawdbot-is-a-bad-idea-critical-zero-days-found-in-my-audit-full-report-634602cb053f)
 
 ---
 
