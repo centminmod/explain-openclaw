@@ -201,7 +201,7 @@ However, the article omits critical context:
 
 **Verdict: True observation, but overstated scope.**
 
-The code path exists (`src/agents/tools/nodes-tool.ts:341-343`):
+The code path exists (`src/agents/tools/nodes-tool.ts:344-347`):
 ```
 const filePath =
   typeof params.outPath === "string" && params.outPath.trim()
