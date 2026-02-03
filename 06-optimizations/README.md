@@ -43,6 +43,8 @@ Running a self-hosted AI assistant incurs costs from model API calls and can con
 | **Reduce tokens** | Context pruning, efficient prompts | [Cost + token optimization](./cost-token-optimization.md#token-usage-strategies) |
 | **Track spending** | OpenRouter dashboard, budget alerts | [Cost + token optimization](./cost-token-optimization.md#monitoring-costs) |
 | **Zero cost** | Free model routing | [Cost + token optimization](./cost-token-optimization.md#free-router-openrouterfree) |
+| **Per-function optimization** | Right-size models for each task | [Model recommendations by function](./cost-token-optimization.md#model-recommendations-by-function) |
+| **Local models** | Zero API cost with Docker/Ollama | [Local models: zero API cost](./cost-token-optimization.md#local-models-zero-api-cost) |
 
 ---
 

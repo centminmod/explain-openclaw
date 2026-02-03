@@ -18,6 +18,7 @@
 - **Optimizations:**
   - [Overview](./06-optimizations/README.md)
   - [Cost + token optimization](./06-optimizations/cost-token-optimization.md)
+  - [Model recommendations by function](./06-optimizations/cost-token-optimization.md#model-recommendations-by-function)
 - **Security documentation:**
   - [Official security advisories (CVEs/GHSAs)](#official-security-advisories-cvesghsas) *(inline below)*
   - [Security audit analysis (Issue #1796)](#security-audit-analysis-issue-1796) *(inline below)*

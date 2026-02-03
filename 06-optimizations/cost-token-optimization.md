@@ -374,6 +374,456 @@ agents:
 
 ---
 
+## Model Recommendations by Function
+
+> **Video source:** [OpenClaw Cost Optimization Guide](https://www.youtube.com/watch?v=lxfakTpdz1Y)
+
+Different OpenClaw functions have varying compute requirements. Using the right model for each function can reduce costs by 50-80% without sacrificing quality where it matters.
+
+### Quick Reference Table
+
+| Function | Optimal Model | Cheapest Model | Config Path |
+|----------|--------------|----------------|-------------|
+| **Main Chat (Brain)** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | `agents.defaults.model` |
+| **Heartbeat** | `anthropic/claude-haiku-4-5` | `anthropic/claude-haiku-4-5` | `agents.defaults.heartbeat.model` |
+| **Coding** | `codex-cli/gpt-5.2-codex` | `minimax/MiniMax-M2.1` | `agents.defaults.cliBackends` |
+| **Web Search/Browsing** | `perplexity/sonar-pro` | `deepseek/deepseek-chat` | `tools.web.search.perplexity.model` |
+| **Content Writing** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | (same as main chat) |
+| **Voice** | `openai/gpt-4o-mini-transcribe` | `openai/gpt-4o-mini-transcribe` | `tools.media.audio.models` |
+| **Vision** | `anthropic/claude-opus-4-5` | `google/gemini-3-flash-preview` | `agents.defaults.imageModel` |
+
+---
+
+### 1. Main Chat (The Brain)
+
+The primary model used for direct communication and decision making.
+
+**Config path:** `agents.defaults.model.primary` and `agents.defaults.model.fallbacks`
+
+#### Optimal Configuration (Opus 4.5)
+
+```yaml
+agents:
+  defaults:
+    model:
+      primary: anthropic/claude-opus-4-5
+      fallbacks:
+        - anthropic/claude-sonnet-4-5
+        - openai/gpt-5.2
+```
+
+#### Budget Configuration (Kimi K2.5)
+
+```yaml
+# First, register Moonshot provider (if not using OpenRouter)
+models:
+  providers:
+    moonshot:
+      baseUrl: https://api.moonshot.ai/v1
+      apiKey: ${MOONSHOT_API_KEY}
+      api: openai-completions
+      models:
+        - id: kimi-k2.5
+          name: Kimi K2.5
+          input: ["text"]
+          contextWindow: 256000
+          maxTokens: 8192
+
+agents:
+  defaults:
+    model:
+      primary: moonshot/kimi-k2.5
+      fallbacks:
+        - anthropic/claude-sonnet-4-5
+```
+
+**Why Kimi K2.5?** Near-Opus intelligence and personality at a fraction of the price.
+
+---
+
+### 2. Heartbeat (Autonomous Monitoring)
+
+The heartbeat checks periodically to see if the bot has tasks to perform. Requires minimal compute.
+
+**Config path:** `agents.defaults.heartbeat`
+
+#### Optimal and Cheapest (Claude Haiku)
+
+```yaml
+agents:
+  defaults:
+    heartbeat:
+      # Use the cheapest capable model (Haiku tier)
+      model: anthropic/claude-haiku-4-5
+      # Reduce frequency: 30min default -> 60min saves significant cost
+      every: 60m
+      # Optional: limit to business hours
+      activeHours:
+        start: "09:00"
+        end: "18:00"
+        timezone: "user"
+      # Optional: specify delivery target
+      target: "last"  # last | none | <channel id>
+```
+
+**Cost tip:** Changing heartbeat from every 30 minutes (default) to once per hour reduces daily costs significantly. The heartbeat requires minimal compute - Haiku tier is more than sufficient.
+
+---
+
+### 3. Coding and Vibe Coding
+
+Models used when the bot needs to interact with a CLI or write software.
+
+**Config path:** `agents.defaults.cliBackends`
+
+#### Optimal Configuration (Codex GPT 5.2)
+
+The Codex CLI backend is built-in when you have Codex installed:
+
+```yaml
+agents:
+  defaults:
+    cliBackends:
+      codex-cli:
+        command: codex
+        args: ["--model", "gpt-5.2-codex"]
+        output: json
+        modelArg: "--model"
+        modelAliases:
+          default: "gpt-5.2-codex"
+          fast: "gpt-5.2"
+```
+
+Or use the model directly if Codex API access is configured:
+
+```yaml
+agents:
+  defaults:
+    model:
+      primary: openai-codex/gpt-5.2-codex
+```
+
+#### Budget Configuration (MiniMax M2.1)
+
+MiniMax M2.1 offers strong coding capabilities at a lower price point:
+
+```yaml
+# Register MiniMax provider (portal uses Anthropic-compatible API)
+models:
+  providers:
+    minimax:
+      baseUrl: https://api.minimax.io/anthropic
+      apiKey: ${MINIMAX_API_KEY}
+      api: anthropic-messages
+      models:
+        - id: MiniMax-M2.1
+          name: MiniMax M2.1
+          input: ["text"]
+          contextWindow: 200000
+          maxTokens: 8192
+
+agents:
+  defaults:
+    model:
+      primary: minimax/MiniMax-M2.1
+      fallbacks:
+        - anthropic/claude-sonnet-4-5
+```
+
+**Tip:** MiniMax also offers specific coding plans for specialized workloads.
+
+---
+
+### 4. Web Search and Browsing
+
+Models used to crawl the internet and extract information.
+
+**Config path:** `tools.web.search` and `tools.web.fetch`
+
+#### Optimal Configuration (Perplexity Sonar Pro)
+
+Perplexity Sonar Pro provides the best web search quality:
+
+```yaml
+tools:
+  web:
+    search:
+      enabled: true
+      provider: perplexity
+      perplexity:
+        apiKey: ${PERPLEXITY_API_KEY}
+        model: perplexity/sonar-pro
+      maxResults: 10
+      timeoutSeconds: 30
+      cacheTtlMinutes: 60
+    fetch:
+      enabled: true
+      maxChars: 50000
+      timeoutSeconds: 30
+      readability: true
+```
+
+#### Budget Configuration (DeepSeek V3 via OpenRouter)
+
+Route through OpenRouter to use DeepSeek for cheaper web search:
+
+```yaml
+tools:
+  web:
+    search:
+      enabled: true
+      provider: perplexity
+      perplexity:
+        apiKey: ${OPENROUTER_API_KEY}
+        baseUrl: https://openrouter.ai/api/v1
+        model: deepseek/deepseek-chat  # DeepSeek V3
+      maxResults: 10
+      timeoutSeconds: 30
+      cacheTtlMinutes: 120  # Longer cache = fewer API calls
+```
+
+**Why DeepSeek V3?** Highly efficient for web crawling and extraction at much lower cost than Opus.
+
+---
+
+### 5. Content Writing
+
+Models used for generating scripts, emails, or creative text. Uses the same configuration as Main Chat.
+
+#### Optimal (Opus 4.5)
+
+See [Main Chat configuration](#1-main-chat-the-brain) above.
+
+#### Budget (Kimi K2.5)
+
+```yaml
+agents:
+  defaults:
+    model:
+      primary: moonshot/kimi-k2.5
+```
+
+**Why Kimi K2.5 for writing?** Similar training and personality traits to Opus, excellent at mimicking specific voices and styles.
+
+---
+
+### 6. Voice (Audio Transcription)
+
+Models used for processing voice notes via Telegram or phone calls.
+
+**Config path:** `tools.media.audio`
+
+#### Optimal and Cheapest (GPT-4o Transcribe)
+
+GPT-4o provides the best balance of quality and price for voice:
+
+```yaml
+tools:
+  media:
+    audio:
+      enabled: true
+      maxBytes: 20971520  # 20MB (default)
+      timeoutSeconds: 120
+      models:
+        - provider: openai
+          model: gpt-4o-mini-transcribe
+          capabilities: ["audio"]
+```
+
+#### Alternative: Deepgram Nova 2 (High volume, lower cost)
+
+For very high volume transcription, Deepgram offers lower per-minute costs:
+
+```yaml
+tools:
+  media:
+    audio:
+      enabled: true
+      models:
+        - provider: deepgram
+          model: nova-2
+          capabilities: ["audio"]
+          providerOptions:
+            deepgram:
+              detectLanguage: true
+              punctuate: true
+              smartFormat: true
+```
+
+---
+
+### 7. Vision (Image Understanding)
+
+Models used for analyzing images in emails, social media feeds, or direct uploads.
+
+**Config path:** `agents.defaults.imageModel` and `tools.media.image`
+
+#### Optimal Configuration (Opus 4.5)
+
+```yaml
+agents:
+  defaults:
+    imageModel:
+      primary: anthropic/claude-opus-4-5
+      fallbacks:
+        - openai/gpt-5.2
+        - google/gemini-3-pro-preview
+```
+
+#### Budget Configuration (Gemini 3 Flash)
+
+Gemini Flash provides excellent vision capabilities at a fraction of the cost:
+
+```yaml
+agents:
+  defaults:
+    imageModel:
+      primary: google/gemini-3-flash-preview
+      fallbacks:
+        - openai/gpt-5-mini
+
+tools:
+  media:
+    image:
+      enabled: true
+      maxBytes: 20971520  # 20MB
+      models:
+        - provider: google
+          model: gemini-3-flash-preview
+          capabilities: ["image"]
+```
+
+---
+
+### Local Models: Zero API Cost
+
+For maximum savings, run budget models locally on powerful hardware (Mac Studio, etc.):
+
+```yaml
+# LM Studio provider for local models
+models:
+  providers:
+    lmstudio:
+      baseUrl: http://127.0.0.1:1234/v1
+      apiKey: lmstudio  # Placeholder, not required
+      api: openai-responses
+      models:
+        - id: deepseek-r1-70b
+          name: DeepSeek R1 70B
+          reasoning: true
+          input: ["text"]
+          contextWindow: 128000
+          maxTokens: 8192
+          cost:
+            input: 0
+            output: 0
+            cacheRead: 0
+            cacheWrite: 0
+
+agents:
+  defaults:
+    model:
+      primary: lmstudio/deepseek-r1-70b
+```
+
+Or using Ollama:
+
+```yaml
+models:
+  providers:
+    ollama:
+      baseUrl: http://127.0.0.1:11434/v1
+      apiKey: ollama
+      api: openai-completions
+      models:
+        - id: llama3.3:70b
+          name: Llama 3.3 70B
+          reasoning: false
+          input: ["text"]
+          contextWindow: 128000
+          maxTokens: 8192
+          cost:
+            input: 0
+            output: 0
+            cacheRead: 0
+            cacheWrite: 0
+
+agents:
+  defaults:
+    model:
+      primary: ollama/llama3.3:70b
+```
+
+**Supported local models:**
+- DeepSeek V3 / R1 (best for reasoning tasks)
+- Llama 3.3 70B
+- Qwen 2.5 72B
+- MiniMax M2.1 (via local deployment)
+
+See [Docker Model Runner deployment](../03-deploy/docker-model-runner.md) for complete local model setup.
+
+---
+
+### Combined Budget Configuration
+
+Here's a complete budget-optimized configuration using the cheapest models for each function:
+
+```yaml
+# Register budget providers
+models:
+  providers:
+    moonshot:
+      baseUrl: https://api.moonshot.ai/v1
+      apiKey: ${MOONSHOT_API_KEY}
+      api: openai-completions
+      models:
+        - id: kimi-k2.5
+          name: Kimi K2.5
+          input: ["text"]
+          contextWindow: 256000
+          maxTokens: 8192
+
+agents:
+  defaults:
+    # Main chat: Kimi K2.5 (budget Opus alternative)
+    model:
+      primary: moonshot/kimi-k2.5
+      fallbacks:
+        - anthropic/claude-haiku-4-5
+
+    # Vision: Gemini Flash (budget vision)
+    imageModel:
+      primary: google/gemini-3-flash-preview
+
+    # Heartbeat: Haiku + reduced frequency
+    heartbeat:
+      model: anthropic/claude-haiku-4-5
+      every: 60m
+      target: "last"
+
+tools:
+  # Web search: DeepSeek V3 via OpenRouter
+  web:
+    search:
+      enabled: true
+      provider: perplexity
+      perplexity:
+        apiKey: ${OPENROUTER_API_KEY}
+        baseUrl: https://openrouter.ai/api/v1
+        model: deepseek/deepseek-chat
+
+  # Audio: GPT-4o transcribe (best price/performance)
+  media:
+    audio:
+      enabled: true
+      models:
+        - provider: openai
+          model: gpt-4o-mini-transcribe
+          capabilities: ["audio"]
+```
+
+---
+
 ## Monitoring Costs
 
 ### OpenRouter Activity Dashboard
