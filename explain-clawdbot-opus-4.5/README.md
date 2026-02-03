@@ -268,6 +268,18 @@ Four security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 3 sync 3)
+
+Three security-relevant commits:
+
+- **`afbb1af6c`** — Restore safety + session_status hints: Re-adds safety guidelines to agent system prompts (`src/agents/system-prompt.ts`). Regression fix for accidentally removed safety section.
+
+- **`c248da031`** — Memory: harden QMD memory_get path checks: Validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts`). Mitigates path traversal attacks.
+
+- **`1861e7636`** — Memory: clamp QMD citations to injected budget: Budget clamping for memory citations (`src/agents/tools/memory-tool.ts`). Defense-in-depth against prompt injection.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---

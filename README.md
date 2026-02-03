@@ -717,6 +717,16 @@ Additional integrity fix:
 
 - **`cfd6b21d0`** — Repair malformed tool calls and session transcripts (#7473): Session file repair utilities to recover from corrupted tool call structures (`src/agents/session-file-repair.ts`, `src/agents/session-transcript-repair.ts`). Defense-in-depth for transcript integrity (thanks @justinhuangcode).
 
+### Post-Merge Hardening (Feb 3 sync 3)
+
+Three security-relevant commits:
+
+- **`afbb1af6c`** — Restore safety + session_status hints: Re-adds safety guidelines to agent system prompts (`src/agents/system-prompt.ts`), including self-preservation prevention, compliance with stop/pause/audit requests, and safeguard manipulation prevention. Regression fix for accidentally removed safety section.
+
+- **`c248da031`** — Memory: harden QMD memory_get path checks: Validates accessed files end with `.md` extension and checks file type via `fs.lstat()` to reject symbolic links and non-regular files (`src/memory/qmd-manager.ts`). Mitigates path traversal and symlink attacks in QMD memory backend.
+
+- **`1861e7636`** — Memory: clamp QMD citations to injected budget: Implements budget clamping for memory citation snippets respecting `maxInjectedChars` limit (`src/agents/tools/memory-tool.ts`). Defense-in-depth against prompt injection via unbounded memory content.
+
 ---
 
 ## Ecosystem Security Threats
