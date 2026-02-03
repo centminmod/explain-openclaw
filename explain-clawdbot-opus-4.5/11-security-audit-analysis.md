@@ -310,7 +310,7 @@ Previously, the gateway host merged `params.env` without sanitization. As of PR 
 - Validation function at `src/agents/bash-tools.exec.ts:83-107`
 - Enforcement at `src/agents/bash-tools.exec.ts:971-973`
 
-On the node host, there is an explicit blocklist (`src/node-host/runner.ts:156-165`):
+On the node host, there is an explicit blocklist (`src/node-host/runner.ts:165-174`):
 ```
 const blockedEnvKeys = new Set(["NODE_OPTIONS", "PYTHONHOME", "PYTHONPATH", "PERL5LIB", "PERL5OPT", "RUBYOPT"]);
 const blockedEnvPrefixes = ["DYLD_", "LD_"];
@@ -503,7 +503,7 @@ These commits add defense-in-depth to channel media handling but do not address 
 
 Four security-relevant commits:
 
-- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:652,719`). Addresses Audit 2 Claim 7 "shell injection regex" by preventing shell expansion within quoted arguments during allowlist evaluation.
+- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:664,719`). Addresses Audit 2 Claim 7 "shell injection regex" by preventing shell expansion within quoted arguments during allowlist evaluation.
 
 - **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`). Prevents auth bypass when only Tailscale identity is available but no device pairing exists.
 
@@ -526,6 +526,18 @@ Three security-relevant commits:
 - **`c248da031`** — Memory: harden QMD memory_get path checks: Validates accessed files end with `.md` extension and checks file type via `fs.lstat()` to reject symbolic links and non-regular files (`src/memory/qmd-manager.ts`). Mitigates path traversal and symlink attacks in QMD memory backend.
 
 - **`1861e7636`** — Memory: clamp QMD citations to injected budget: Implements budget clamping for memory citation snippets respecting `maxInjectedChars` limit (`src/agents/tools/memory-tool.ts`). Defense-in-depth against prompt injection via unbounded memory content.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 4 sync 1)
+
+Three security-relevant commits:
+
+- **`a7f4a53ce`** — Harden Windows exec allowlist: Blocks cmd.exe bypass via `&` metacharacter. New `WINDOWS_UNSUPPORTED_TOKENS` set rejects `& | < > ^ ( ) % !` in Windows shell commands. Prevents allowlist circumvention on Windows platforms (`src/infra/exec-approvals.ts`, `src/node-host/runner.ts`). Thanks @simecek.
+
+- **`8f3bfbd1c`** — Matrix allowlist hardening: Requires full MXIDs (`@user:server`) for Matrix allowlists. Display name resolution only accepts single exact matches from directory search. Closes ambiguous name resolution vulnerability (`extensions/matrix/src/matrix/monitor/allowlist.ts`). Thanks @MegaManSec.
+
+- **`f8dfd034f`** — Voice-call inbound policy hardening: Requires exact phone number matching (no suffix), rejects anonymous callers, requires Telnyx `publicKey` for allowlist/pairing, token-gates Twilio media streams, caps webhook body to 1MB (`extensions/voice-call/src/`). Thanks @simecek.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 

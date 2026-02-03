@@ -149,7 +149,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-160`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format (`src/gateway/device-auth.ts:13-31`) lacks input sanitization (true), but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` (`src/infra/exec-safety.ts:16-44`) validates executable *names* (not commands). `BARE_NAME_PATTERN = /^[A-Za-z0-9._+-]+$/` is strict. Article conflates config validation with shell injection. |
-| 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec.ts:61-78,971-973`). Node-host has blocklist (`src/node-host/runner.ts:156-165`). Requires human approval + localhost + no sandbox. |
+| 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec.ts:61-78,971-973`). Node-host has blocklist (`src/node-host/runner.ts:165-174`). Requires human approval + localhost + no sandbox. |
 
 **Result: 0 of 8 claims are exploitable as described.**
 
@@ -256,7 +256,7 @@ Two security-relevant commits:
 
 Four security-relevant commits:
 
-- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings (`src/infra/exec-approvals.ts:652,719`). Addresses Audit 2 "shell injection regex" claim.
+- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings (`src/infra/exec-approvals.ts:664,719`). Addresses Audit 2 "shell injection regex" claim.
 
 - **`fe81b1d71`** — Require shared auth before device bypass: Validates shared secret auth before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`).
 
@@ -277,6 +277,18 @@ Three security-relevant commits:
 - **`c248da031`** — Memory: harden QMD memory_get path checks: Validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts`). Mitigates path traversal attacks.
 
 - **`1861e7636`** — Memory: clamp QMD citations to injected budget: Budget clamping for memory citations (`src/agents/tools/memory-tool.ts`). Defense-in-depth against prompt injection.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 4 sync 1)
+
+Three security-relevant commits:
+
+- **`a7f4a53ce`** — Harden Windows exec allowlist: Blocks cmd.exe bypass via `&` metacharacter. New `WINDOWS_UNSUPPORTED_TOKENS` set rejects `& | < > ^ ( ) % !` in Windows shell commands. Prevents allowlist circumvention on Windows platforms (`src/infra/exec-approvals.ts`, `src/node-host/runner.ts`). Thanks @simecek.
+
+- **`8f3bfbd1c`** — Matrix allowlist hardening: Requires full MXIDs (`@user:server`) for Matrix allowlists. Display name resolution only accepts single exact matches from directory search. Closes ambiguous name resolution vulnerability (`extensions/matrix/src/matrix/monitor/allowlist.ts`). Thanks @MegaManSec.
+
+- **`f8dfd034f`** — Voice-call inbound policy hardening: Requires exact phone number matching (no suffix), rejects anonymous callers, requires Telnyx `publicKey` for allowlist/pairing, token-gates Twilio media streams, caps webhook body to 1MB (`extensions/voice-call/src/`). Thanks @simecek.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
