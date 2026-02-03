@@ -105,6 +105,20 @@ Mitigations:
 - inspect code on disk
 - keep an allowlist (if supported)
 
+#### ClawHub Marketplace
+
+ClawHub is a third-party skills marketplace for OpenClaw. In Feb 2026, **341 malicious skills** were discovered (12% of audited packages). The "ClawHavoc" campaign used social engineering (fake prerequisite commands) to install Atomic Stealer malware.
+
+**Key risk:** Skills run in-process with the Gateway. A malicious skill has full access to credentials, sessions, and network.
+
+**Additional mitigations for ClawHub:**
+- Avoid skills less than 30 days old
+- Never run "prerequisite" terminal commands from skill docs
+- Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) before installing
+- Inspect skill code in `~/.openclaw/skills/` before enabling
+
+See: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
+
 ---
 
 ## A practical attacker model

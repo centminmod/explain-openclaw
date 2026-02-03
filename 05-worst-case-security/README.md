@@ -140,7 +140,9 @@ Throughout this guide, we use these severity indicators:
    - [Moltworker Risks](./moltworker-risks.md)
 3. **Read Cross-Cutting Vulnerabilities** for risks that affect everyone:
    - [Cross-Cutting Vulnerabilities](./cross-cutting.md)
-4. **Check the Misconfiguration Examples** to see if you've made common mistakes:
+4. **Read ClawHub Marketplace Risks** for skills/plugin supply chain threats:
+   - [ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)
+5. **Check the Misconfiguration Examples** to see if you've made common mistakes:
    - [Misconfiguration Hall of Shame](./misconfiguration-examples.md)
 5. **Run the security audit** to verify your configuration:
    ```bash
@@ -194,5 +196,6 @@ Choose your deployment type and continue to the detailed guide:
 - **[VPS Risks](./vps-risks.md)** - Internet exposure, multi-tenant risks, credential storage
 - **[Moltworker Risks](./moltworker-risks.md)** - Trust boundaries, egress filtering, R2 storage
 - **[Cross-Cutting Vulnerabilities](./cross-cutting.md)** - Prompt injection, tool execution, credentials
+- **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)** - Skills marketplace supply chain attacks (Feb 2026 ClawHavoc campaign)
 - **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 20 attack examples with data exfiltration
 - **[Misconfiguration Examples](./misconfiguration-examples.md)** - Real mistakes and how to fix them

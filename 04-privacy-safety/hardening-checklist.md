@@ -158,4 +158,18 @@ Recommendations:
 - pin versions
 - inspect code on disk
 
+### ClawHub Skills Warning
+
+In Feb 2026, **341 malicious skills** (12% of audited packages) were found on ClawHub. The attack used social engineering, not code exploits.
+
+**Before installing any ClawHub skill:**
+- [ ] Check skill age (avoid < 30 days old)
+- [ ] Verify publisher reputation
+- [ ] Read the actual code, not just documentation
+- [ ] **NEVER** run "prerequisite" terminal commands from skill docs
+- [ ] Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) to check skills
+- [ ] Be especially suspicious of crypto-related skills
+
+See: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
+
 Docs: https://docs.openclaw.ai/plugin and https://docs.openclaw.ai/gateway/security

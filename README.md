@@ -32,6 +32,7 @@
   - [VPS risks](./05-worst-case-security/vps-risks.md)
   - [Moltworker risks](./05-worst-case-security/moltworker-risks.md)
   - [Cross-cutting vulnerabilities](./05-worst-case-security/cross-cutting.md)
+  - [ClawHub marketplace risks](./05-worst-case-security/clawhub-marketplace-risks.md) *(Feb 2026 campaign)*
   - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(20 examples)*
   - [Misconfiguration examples](./05-worst-case-security/misconfiguration-examples.md)
 
@@ -856,6 +857,8 @@ Before installing or following any link, verify you are using official sources:
 - [ ] Run `openclaw security audit --deep` regularly
 - [ ] Use encrypted disk (FileVault/LUKS) for credential protection
 - [ ] Review installed plugins and their permissions
+- [ ] Never run "prerequisite" terminal commands from skill docs without reviewing code
+- [ ] Use Koi Security Scanner before installing ClawHub skills
 
 ### Threat Summary
 
@@ -866,6 +869,38 @@ Before installing or following any link, verify you are using official sources:
 | **Session stealing** | Malware, malicious plugins | Account takeover | Check linked devices |
 | **Shodan exposure** | Misconfiguration | Full compromise | Check Shodan, audit config |
 | **Fake SaaS** | Social engineering | API key theft | Never share keys externally |
+| **ClawHub malicious skills** | Supply chain, social engineering | Credential theft, malware | Check skill age, scan with Koi |
+
+### 6. ClawHub Malicious Skills (ClawHavoc Campaign)
+
+**What it is:** ClawHub is a third-party skills marketplace for OpenClaw. In February 2026, security researchers discovered **341 malicious skills** (12% of audited packages) designed to steal credentials and install malware.
+
+**How it works:**
+- Attackers publish skills with professional-looking documentation
+- "Prerequisites" section instructs users to run terminal commands or download files
+- Commands fetch Atomic Stealer (macOS) or keyloggers (Windows) from attacker infrastructure
+- Malware harvests crypto wallets, browser passwords, SSH keys, and API credentials
+
+**Campaign details:**
+- **Scale:** 341 malicious skills out of 2,857 audited (Koi Security)
+- **Primary payload:** Atomic Stealer (AMOS) for macOS
+- **Disguises:** Crypto tools (Solana trackers, Polymarket bots), YouTube utilities, ClawHub typosquats
+- **Attack method:** Social engineering via fake "prerequisites", not code exploits
+
+**Real-world sources:**
+- [Koi Security ClawHavoc Report](https://www.koi.ai/blog/clawhavoc-341-malicious-clawedbot-skills-found-by-the-bot-they-were-targeting)
+- [The Hacker News](https://thehackernews.com/2026/02/researchers-find-341-malicious-clawhub.html)
+- [BleepingComputer](https://www.bleepingcomputer.com/news/security/malicious-moltbot-skills-used-to-push-password-stealing-malware)
+
+**Mitigations:**
+- **Never run prerequisite commands** without reading the code first
+- Avoid skills less than 30 days old or from unknown publishers
+- Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) to check skills before installing
+- Inspect skill code in `~/.openclaw/skills/` before enabling
+- Be extremely suspicious of crypto-related skills
+- Run OpenClaw in a VM/container for skill testing
+
+For detailed analysis, see: [ClawHub Marketplace Risks](./05-worst-case-security/clawhub-marketplace-risks.md)
 
 For detailed hardening guidance, see:
 - [Hardening checklist](./04-privacy-safety/hardening-checklist.md)
@@ -915,6 +950,7 @@ Based on source code review of:
 | [VPS Risks](./05-worst-case-security/vps-risks.md) | Internet exposure, multi-tenant risks, credential storage |
 | [Moltworker Risks](./05-worst-case-security/moltworker-risks.md) | Trust boundaries, egress filtering, R2 single point of failure |
 | [Cross-Cutting](./05-worst-case-security/cross-cutting.md) | Prompt injection, tool execution, channel tokens, supply chain |
+| [ClawHub Marketplace Risks](./05-worst-case-security/clawhub-marketplace-risks.md) | Skills marketplace supply chain, ClawHavoc campaign, social engineering |
 | [Prompt Injection Attacks](./05-worst-case-security/prompt-injection-attacks.md) | 20 attack examples with data exfiltration scenarios |
 | [Misconfiguration Examples](./05-worst-case-security/misconfiguration-examples.md) | 10 real mistakes with step-by-step fixes |
 

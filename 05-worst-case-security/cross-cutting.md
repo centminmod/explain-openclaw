@@ -215,6 +215,23 @@ You trust OpenClaw
 - Review what plugins have access to before installing
 - Use `npm audit` to check for known vulnerabilities
 
+### ClawHub Marketplace: The Feb 2026 Attack
+
+In February 2026, security researchers discovered **341 malicious skills** on ClawHub, OpenClaw's third-party skills marketplace. This coordinated campaign ("ClawHavoc") used professional-looking documentation with fake "Prerequisites" sections to trick users into running malware.
+
+**Key facts:**
+- 12% of audited skills were malicious (341 out of 2,857)
+- Primarily macOS-targeting (Atomic Stealer / AMOS)
+- Social engineering attack, not code exploits
+- Skills run in-process with full Gateway access
+
+**Why ClawHub is different from npm:**
+- npm packages run during install, then stop
+- ClawHub skills run continuously in your Gateway process
+- A malicious skill can read credentials, sessions, and exfiltrate data silently
+
+For the full analysis, attack vectors, and recovery procedures, see: **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)**
+
 ---
 
 ## F. Session Isolation
