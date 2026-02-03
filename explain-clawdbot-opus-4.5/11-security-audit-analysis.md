@@ -499,6 +499,24 @@ These commits add defense-in-depth to channel media handling but do not address 
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 3 sync 2)
+
+Four security-relevant commits:
+
+- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:652,719`). Addresses Audit 2 Claim 7 "shell injection regex" by preventing shell expansion within quoted arguments during allowlist evaluation.
+
+- **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`). Prevents auth bypass when only Tailscale identity is available but no device pairing exists.
+
+- **`fff59da96`** — Slack fail closed on slash command channel type lookup: Slash command handler now fails closed when Slack API channel type lookup fails (`src/slack/monitor/slash.ts:181-182`). Infers channel type from ID prefix (D*/C*/G*) as fallback. Addresses potential authorization bypass in Slack slash commands.
+
+- **`578bde1e0`** — Security: healthcheck skill (#7641): Adds bootstrap audit guidance tooling for deployment validation against security claims (`skills/healthcheck/SKILL.md`). New skill for systematic security healthchecks (thanks @Takhoffman).
+
+Additional integrity fix:
+
+- **`cfd6b21d0`** — Repair malformed tool calls and session transcripts (#7473): Session file repair utilities to recover from corrupted tool call structures (`src/agents/session-file-repair.ts`, `src/agents/session-transcript-repair.ts`). Defense-in-depth for transcript integrity (thanks @justinhuangcode).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Recommended Hardening Measures

@@ -252,6 +252,22 @@ Two security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 3 sync 2)
+
+Four security-relevant commits:
+
+- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings (`src/infra/exec-approvals.ts:652,719`). Addresses Audit 2 "shell injection regex" claim.
+
+- **`fe81b1d71`** — Require shared auth before device bypass: Validates shared secret auth before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`).
+
+- **`fff59da96`** — Slack fail closed on channel type lookup: Fails closed when channel type lookup fails, infers type from ID prefix (`src/slack/monitor/slash.ts:181-182`).
+
+- **`578bde1e0`** — Security: healthcheck skill (#7641): Bootstrap audit guidance tooling (`skills/healthcheck/SKILL.md`) (thanks @Takhoffman).
+
+- **`cfd6b21d0`** — Repair malformed tool calls (#7473): Session transcript integrity fix (thanks @justinhuangcode).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
