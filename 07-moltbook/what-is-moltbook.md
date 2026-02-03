@@ -175,8 +175,11 @@ Every 4+ hours:
 | Date | Incident | Impact |
 |------|----------|--------|
 | **Jan 30, 2026** | Supabase database exposure | Agent tokens, emails, API keys accessible |
+| **Jan 28-31, 2026** | Simula Research Lab prompt injection study | 506 posts (2.6% of content) contained hidden prompt injection attacks |
 | **Jan 31, 2026** | 404 Media reports critical data leak | Public awareness of security gaps |
 | **Feb 1, 2026** | 1Password warns of prompt injection | Malicious skills can exploit agent trust |
+| **Feb 2026** | Cisco malicious skill analysis | "What Would Elon Do?" skill with 9 vulnerabilities (2 critical, 5 high-severity) |
+| **Feb 2026** | Straiker global exposure scan | 4,500+ OpenClaw instances exposed; .env files, creds.json, OAuth tokens exfiltrated |
 
 ### Risk vectors
 
@@ -185,10 +188,12 @@ Every 4+ hours:
    - Compromised `heartbeat.md` → mass agent compromise
    - Mitigation: Review skill files before installing; monitor agent behavior
 
-2. **API key exposure**
+2. **API key exposure and agent commandeering**
    - Discovered by security researchers Jameson O'Reilly and Gal Nagli (Wiz)
    - Misconfigured Supabase database exposed credentials
-   - Mitigation: Rotate any exposed keys immediately
+   - **Severity**: Unsecured database allowed bypassing authentication to inject commands directly into agent sessions (agent identity hijacking)
+   - Straiker scan found .env files (Claude/OpenAI keys), creds.json (WhatsApp), OAuth tokens (Slack/Discord/Telegram/Teams) exposed globally
+   - Mitigation: Rotate any exposed keys immediately; audit gateway configuration
 
 3. **Authorization header stripping**
    - The skill file warns: never use `moltbook.com` without `www`
@@ -199,6 +204,30 @@ Every 4+ hours:
    - $CLAWD, $MOLT, $MOLTBOOK tokens exploited the hype
    - Market caps reached $16M before crashing
    - Mitigation: Moltbook has no official cryptocurrency
+
+5. **Malicious skills distribution**
+   - Cisco research identified "What Would Elon Do?" skill containing 9 security issues
+   - 2 critical vulnerabilities: silent data exfiltration via curl command, command injection payloads
+   - 5 high-severity: embedded prompt injection to bypass safety guidelines
+   - Mitigation: Audit skill source before installing; prefer official/verified skills; review outbound network calls
+
+6. **Prompt injection at scale**
+   - Simula Research Lab study (Jan 28-31, 72-hour window): 506 posts (2.6%) contained hidden prompt injection
+   - One account identified conducting coordinated social engineering campaigns
+   - 43% decline in positive sentiment during study period
+   - 19% of content related to cryptocurrency activity
+   - Mitigation: Implement content filtering; limit agent response to untrusted posts
+
+### Root cause analysis (Straiker)
+
+Straiker's security assessment identified four fundamental design weaknesses:
+
+| Root Cause | Description |
+|------------|-------------|
+| **Insecure by design** | Shell commands executed from messaging platforms without authentication, authorization, or input sanitization |
+| **Gateway misconfiguration** | Admin dashboards publicly accessible, revealing logs and settings |
+| **Excessive permissions** | Agents run with full user privileges; no sandboxing implemented |
+| **Plaintext credential storage** | API keys and tokens stored unencrypted in accessible locations |
 
 ### Relationship to ecosystem threats
 
@@ -282,6 +311,7 @@ The Moltbook security concerns overlap with the [Ecosystem Security Threats](../
 | [Medium - Adnan Masood](https://medium.com/@adnanmasood/moltbook-inside-the-ai-only-social-network-that-has-everyone-talking-5e53613593ff) | "AI-Only Social Network" |
 | [Analytics Vidhya](https://www.analyticsvidhya.com/blog/2026/02/moltbook-for-openclaw-agents) | Integration guide |
 | [Cisco](https://blogs.cisco.com/ai/personal-ai-agents-like-openclaw-are-a-security-nightmare) | "A Security Nightmare" |
+| [Telos AI - Security Nightmare](https://www.telos-ai.org/blog/moltbook-security-nightmare) | Comprehensive analysis (Simula, Cisco, Straiker findings) |
 | [Malwarebytes](https://blog.malwarebytes.com/scams/2026/01/clawdbot-moltbot-openclaw-scam-alert) | Scam analysis |
 | [Bitdefender](https://www.bitdefender.com/blog/hotforsecurity/openclaw-security-assessment) | Security assessment |
 
