@@ -1,3 +1,9 @@
+<p align="center">
+    <picture>
+        <img src="logo3a.png" srcset="logo3a.png 1x, logo3.png 2x" alt="OpenClaw" width="440">
+    </picture>
+</p>
+
 # Explain OpenClaw (formerly Moltbot/Clawdbot) - Integrated Beginner + Technical Guide
 
 
