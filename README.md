@@ -24,6 +24,7 @@
   - [Security audit analysis (Issue #1796)](#security-audit-analysis-issue-1796) *(inline below)*
   - [Second security audit (Medium article)](#second-security-audit-medium-article) *(inline below)*
   - [Post-merge security hardening](#post-merge-security-hardening) *(inline below)*
+  - [Open upstream security issues](#open-upstream-security-issues) *(inline below)*
   - [Ecosystem security threats](#ecosystem-security-threats) *(inline below)*
 - [AI model analysis comparison](#ai-model-analysis-comparison) *(inline below)*
 - **Worst-case security scenarios:**
@@ -745,6 +746,54 @@ Two security-relevant commits:
 - **`66d8117d4`** — Control UI origin hardening: New `checkBrowserOrigin()` (`src/gateway/origin-check.ts:57-85`) validates WebSocket Origin headers for Control UI and Webchat connections. Accepts only: configured `allowedOrigins`, same-host requests, or loopback addresses. Prevents clickjacking and cross-origin WebSocket hijacking. New config: `gateway.controlUi.allowedOrigins`.
 
 - **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:93`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
+
+---
+
+## Open Upstream Security Issues
+
+> **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
+>
+> **Last checked:** 04-02-2026
+
+| Issue | Severity | Summary | Local Impact |
+|-------|----------|---------|--------------|
+| [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path validation bypass via `startsWith` prefix | `src/infra/archive.ts:81,89` - zip/tar extraction |
+| [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:315-316` - security settings reset |
+| [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets exposed in session transcripts | By design - `config.get` returns resolved values |
+| [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
+| [#8054](https://github.com/openclaw/openclaw/issues/8054) | HIGH | Type coercion `"undefined"` credentials | `src/wizard/onboarding.gateway-config.ts:206` |
+
+### #3277: Path Validation Bypasses
+
+**Vulnerability:** `startsWith(params.destDir)` is bypassable when paths share prefixes (e.g., `/tmp/foo` vs `/tmp/foobar`). Tar extraction has zero path validation.
+
+**Affected code:**
+- `src/infra/archive.ts:81,89` - zip extraction
+- `src/infra/archive.ts:112` - tar extraction with no filter
+
+### #5052: Config Validation Silently Drops Security Settings
+
+**Vulnerability:** When config validation fails, the entire config including `dmPolicy`, `allowFrom`, and all security settings are silently reset to `{}`. The bot will respond to ANY sender.
+
+**Affected code:** `src/config/io.ts:315-316`
+
+### #5995: Secrets in Session Transcripts
+
+**Vulnerability:** When agents call `gateway config.get` or shell commands like `env`, resolved secret values are persisted to session transcript `.jsonl` files. Even users following best practices (env vars, 1Password) have secrets logged.
+
+**Note:** `logging.redactSensitive` only affects console output, not transcripts.
+
+### #8027: web_fetch Hidden Text Prompt Injection
+
+**Vulnerability:** HTML elements with `style="display:none"` or `visibility:hidden` pass through to agent context. Malicious web pages can inject hidden instructions.
+
+**Affected code:** `src/agents/tools/web-fetch-utils.ts:31-34` strips `<script>/<style>/<noscript>` but not CSS-hidden elements.
+
+### #8054: Type Coercion "undefined" Credentials
+
+**Vulnerability:** `String(undefined).trim()` produces the literal string `"undefined"`, not an empty string. Attackers may authenticate with password/token `"undefined"`.
+
+**Affected code:** `src/wizard/onboarding.gateway-config.ts:206` and similar patterns across CLI files.
 
 ---
 
