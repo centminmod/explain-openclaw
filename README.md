@@ -753,6 +753,16 @@ Two security-relevant commits:
 
 - **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:93`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
 
+### Post-Merge Hardening (Feb 4 sync 3)
+
+Three security-relevant commits:
+
+- **`35eb40a70`** — fix(security): separate untrusted channel metadata from system prompt (#7872) (thanks @KonstantinMirin): New `src/security/channel-metadata.ts` isolates untrusted Discord/Slack channel topics from system prompt injection. Channel topic/purpose metadata moved from `GroupSystemPrompt` (instruction-bearing) to `UntrustedContext` (display-only with security warnings). Prevents channel admins from injecting instructions via topic/purpose fields.
+
+- **`a749db982`** — fix: harden voice-call webhook verification: Significantly enhanced webhook verification in `extensions/voice-call/src/webhook-security.ts` (+270 lines). Added provider-specific validation for Twilio and Plivo with comprehensive test coverage (134 new tests). Reinforces Audit 1 Claim 7 (webhook signature bypass) controls.
+
+- **`6fdb13668`** — docs: document secure DM mode preset (#7872): Formalizes `session.dmScope: "per-channel-peer"` configuration for DM context isolation. Documents mitigation for cross-user context leakage in multi-sender DMs.
+
 ---
 
 ## Open Upstream Security Issues

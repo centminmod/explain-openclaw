@@ -302,6 +302,18 @@ Two security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 4 sync 3)
+
+Three security-relevant commits:
+
+- **`35eb40a70`** — fix(security): separate untrusted channel metadata from system prompt (#7872) (thanks @KonstantinMirin): New `src/security/channel-metadata.ts` isolates untrusted Discord/Slack channel topics from system prompt injection. Prevents channel admins from injecting instructions via topic/purpose fields.
+
+- **`a749db982`** — fix: harden voice-call webhook verification: Enhanced webhook verification in `extensions/voice-call/src/webhook-security.ts` with provider-specific validation for Twilio and Plivo. 134 new tests added.
+
+- **`6fdb13668`** — docs: document secure DM mode preset (#7872): Formalizes `session.dmScope: "per-channel-peer"` configuration for DM context isolation.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
