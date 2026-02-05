@@ -428,7 +428,7 @@ The official CVEs were responsibly disclosed through GitHub Security Advisories 
 
 ---
 
-## Security audit analysis (Issue [#1796](https://github.com/clawdbot/clawdbot/issues/1796))
+## Security audit analysis (Issue [#1796](https://github.com/openclaw/openclaw/issues/1796))
 
 In January 2026, the Argus Security Platform (v1.0.15) filed an automated scan report claiming **512 findings including 8 CRITICAL** against the Clawdbot repository. The scan combined Semgrep, Trivy, Gitleaks, TruffleHog, and Claude Sonnet 4.5 AI analysis.
 
@@ -480,7 +480,7 @@ The 512-finding headline reflects raw pattern-match counts from scanners without
 
 ### Maintainer response
 
-The maintainer ([steipete](https://github.com/steipete)) reviewed and [confirmed on the issue](https://github.com/clawdbot/clawdbot/issues/1796):
+The maintainer ([steipete](https://github.com/steipete)) reviewed and [confirmed on the issue](https://github.com/openclaw/openclaw/issues/1796):
 
 > Some items are accurate but by design (public OAuth client secret; plaintext credential stores with 0600 perms). Other items are incorrect or overstated (OAuth state; token-refresh lock "race"). Webhook signatures are verified by default and only bypassed via an explicit dev-only config flag.
 
@@ -552,7 +552,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks path validation (`src/agents/tools/nodes-tool.ts:344-347`), but writes to paired node device, not gateway. |
 | 3 | Log traversal via `logs.tail` | **False** | Schema has `additionalProperties: false`, accepts only `cursor`/`limit`/`maxBytes` (`src/gateway/protocol/schema/logs-chat.ts:4-11`). File path from config, not request. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` pins DNS (`src/infra/net/ssrf.ts:270-307`). Redirect-to-private-IP tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
-| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` enforces role checks on every call (`src/gateway/server-methods.ts:93-160`). Agents blocked from approval methods. |
+| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` enforces role checks on every call (`src/gateway/server-methods.ts:93-160`). Agents blocked from approval methods. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format exists (`src/gateway/device-auth.ts:13-31`) but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` validates executable *names*, not commands (`src/infra/exec-safety.ts:16-44`). Strict allowlist: `/^[A-Za-z0-9._+-]+$/`. |
 | 8 | Env variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec.ts:61-78,971-973`). Node-host has blocklist (`src/node-host/runner.ts:165-174`). Requires human approval + localhost. |
@@ -793,6 +793,18 @@ Files added/modified (29 files, +663 lines):
 - `docs/providers/cloudflare-ai-gateway.md` — Setup documentation
 
 See: https://developers.cloudflare.com/ai-gateway/
+
+### Post-Merge Hardening (Feb 5 sync 2)
+
+Four security-relevant commits:
+
+- **`392bbddf2`** — Owner-only tools + command auth hardening (#9202): New `applyOwnerOnlyToolPolicy()` (`src/agents/tool-policy.ts:91-110`) gates sensitive tools (currently `whatsapp_login`) to owner senders only. Treats undefined `senderIsOwner` as unauthorized (default-deny). New `commands.ownerAllowFrom` config parameter for explicit owner identification. Defense-in-depth for tool access control (thanks @victormier).
+
+- **`4434cae56`** — Harden sandboxed media handling (#9182): New `assertMediaNotDataUrl()` and `resolveSandboxedMediaSource()` (`src/agents/sandbox-paths.ts:55-82`) block data-URL payloads and validate media paths within sandbox boundaries. Enforcement moved to `message-action-runner.ts` for delivery-point validation. Prevents path traversal and sandbox escape via media parameters (thanks @victormier).
+
+- **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
+
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:207-241`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
 
 ---
 

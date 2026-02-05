@@ -1,6 +1,6 @@
 # Security Audit Analysis
 
-Code-verified analysis of the automated Argus Security audit (GitHub Issue [#1796](https://github.com/clawdbot/clawdbot/issues/1796)).
+Code-verified analysis of the automated Argus Security audit (GitHub Issue [#1796](https://github.com/openclaw/openclaw/issues/1796)).
 
 ---
 
@@ -146,7 +146,7 @@ The 512-finding headline reflects raw pattern-match counts, not 512 security pro
 
 ## Maintainer Response
 
-The project maintainer ([steipete](https://github.com/steipete)) reviewed the report and [responded on the issue](https://github.com/clawdbot/clawdbot/issues/1796):
+The project maintainer ([steipete](https://github.com/steipete)) reviewed the report and [responded on the issue](https://github.com/openclaw/openclaw/issues/1796):
 
 > Some items are accurate but by design (public OAuth client secret; plaintext credential stores with 0600 perms). Other items are incorrect or overstated (OAuth state; token-refresh lock "race"). Webhook signatures are verified by default and only bypassed via an explicit dev-only config flag.
 
@@ -157,7 +157,7 @@ The issue was closed after review.
 ## Related Documentation
 
 - [07 - Security & Privacy](./07-security-privacy.md) -- Clawdbot's security architecture, access controls, credential handling, and privacy model
-- [GitHub Issue #1796](https://github.com/clawdbot/clawdbot/issues/1796) -- Full Argus Security report and maintainer response
+- [GitHub Issue #1796](https://github.com/openclaw/openclaw/issues/1796) -- Full Argus Security report and maintainer response
 
 ---
 
@@ -332,7 +332,7 @@ The gateway-side gap is real but heavily mitigated:
 | 2 | Arbitrary write via `nodes:screen_record` outPath | 8.8 | **True but overstated** | Low-Medium (5-6) — writes to node device, not gateway |
 | 3 | Log traversal via `logs.tail` | 8.6 | **False** | None — schema rejects file path input |
 | 4 | DNS rebinding SSRF via web-fetch | 9.8 | **False** | None — DNS pinning + redirect blocking implemented |
-| 5 | Self-approving agent (no RBAC) | 9.1 | **False** | None — RBAC enforced on every method call |
+| 5 | Self-approving agent (no RBAC) | 9.1 | **False** | None — RBAC enforced on every method call. Further hardened by owner-only tools + owner allowlist (`392bbddf2`, `385a7eba3`). |
 | 6 | Token field shifting via pipe injection | 7.5 | **Misleading** | Minimal — RSA signing prevents exploitation |
 | 7 | Shell injection via incomplete regex | 8.8 | **False** | None — function validates executable names, not commands |
 | 8 | Environment variable injection (LD_PRELOAD) | 8.0 | **Partially true** | Low-Medium (4-5) — requires approval + localhost + no sandbox |
@@ -563,6 +563,20 @@ Three security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 5 sync 2)
+
+Four security-relevant commits:
+
+- **`392bbddf2`** — Owner-only tools + command auth hardening (#9202): New `applyOwnerOnlyToolPolicy()` (`src/agents/tool-policy.ts:91-110`) gates sensitive tools (currently `whatsapp_login`) to owner senders only. Treats undefined `senderIsOwner` as unauthorized (default-deny). New `commands.ownerAllowFrom` config parameter for explicit owner identification. Defense-in-depth for tool access control (thanks @victormier).
+
+- **`4434cae56`** — Harden sandboxed media handling (#9182): New `assertMediaNotDataUrl()` and `resolveSandboxedMediaSource()` (`src/agents/sandbox-paths.ts:55-82`) block data-URL payloads and validate media paths within sandbox boundaries. Enforcement moved to `message-action-runner.ts` for delivery-point validation. Prevents path traversal and sandbox escape via media parameters (thanks @victormier).
+
+- **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
+
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:207-241`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Recommended Hardening Measures
@@ -599,7 +613,7 @@ Block destructive patterns in tool policies:
 ## Related Documentation
 
 - [07 - Security & Privacy](./07-security-privacy.md) -- Moltbot's security architecture, access controls, credential handling, and privacy model
-- [GitHub Issue #1796](https://github.com/clawdbot/clawdbot/issues/1796) -- Full Argus Security report and maintainer response
+- [GitHub Issue #1796](https://github.com/openclaw/openclaw/issues/1796) -- Full Argus Security report and maintainer response
 - [Medium Article (Saad Khalid)](https://saadkhalidhere.medium.com/why-clawdbot-is-a-bad-idea-critical-zero-days-found-in-my-audit-full-report-634602cb053f) -- Second audit article
 - [Moltbot Security Setup Guide (VibeProof)](https://vibeproof.dev/blog/moltbot-security-setup-guide) -- External security hardening guide
 

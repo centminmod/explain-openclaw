@@ -59,7 +59,7 @@ clawdbot gateway run --port 18789
 ## Official Resources
 
 - **Documentation**: https://docs.clawd.bot
-- **GitHub Repository**: https://github.com/clawdbot/clawdbot
+- **GitHub Repository**: https://github.com/openclaw/openclaw
 - **Default Port**: 18789
 - **Config File**: `~/.clawdbot/clawdbot.json`
 
@@ -75,7 +75,7 @@ This guide focuses on two privacy-conscious deployment scenarios:
 
 ---
 
-## Security Audit Analysis (Issue [#1796](https://github.com/clawdbot/clawdbot/issues/1796))
+## Security Audit Analysis (Issue [#1796](https://github.com/openclaw/openclaw/issues/1796))
 
 In January 2026, the Argus Security Platform (v1.0.15) ran an automated 6-phase scan combining Semgrep, Trivy, Gitleaks, TruffleHog, and Claude Sonnet 4.5 AI analysis against the Clawdbot repository. The report claimed **512 total findings including 8 CRITICAL**. This section provides a code-verified analysis of those claims.
 
@@ -115,7 +115,7 @@ Automated scanners without codebase context produce high false-positive rates. T
 
 ### Maintainer Response
 
-The maintainer ([steipete](https://github.com/steipete)) reviewed and [confirmed](https://github.com/clawdbot/clawdbot/issues/1796):
+The maintainer ([steipete](https://github.com/steipete)) reviewed and [confirmed](https://github.com/openclaw/openclaw/issues/1796):
 
 > Some items are accurate but by design (public OAuth client secret; plaintext credential stores with 0600 perms). Other items are incorrect or overstated (OAuth state; token-refresh lock "race"). Webhook signatures are verified by default and only bypassed via an explicit dev-only config flag.
 
@@ -146,7 +146,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks validation (`src/agents/tools/nodes-tool.ts:344-347`), but writes to paired node device, not gateway host. Requires node pairing approval. Real risk: Low-Medium. |
 | 3 | Log traversal via `logs.tail` | **False** | `LogsTailParamsSchema` has `additionalProperties: false` with only `cursor`, `limit`, `maxBytes`. File path from `getResolvedLoggerSettings().file` (config), not user input. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` (`src/infra/net/ssrf.ts:209-247`) pin DNS resolution. Redirect-to-private-IP explicitly tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
-| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-160`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. |
+| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-160`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format (`src/gateway/device-auth.ts:13-31`) lacks input sanitization (true), but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` (`src/infra/exec-safety.ts:16-44`) validates executable *names* (not commands). `BARE_NAME_PATTERN = /^[A-Za-z0-9._+-]+$/` is strict. Article conflates config validation with shell injection. |
 | 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec.ts:61-78,971-973`). Node-host has blocklist (`src/node-host/runner.ts:165-174`). Requires human approval + localhost + no sandbox. |
@@ -311,6 +311,20 @@ Three security-relevant commits:
 - **`a749db982`** — fix: harden voice-call webhook verification: Enhanced webhook verification in `extensions/voice-call/src/webhook-security.ts` with provider-specific validation for Twilio and Plivo. 134 new tests added.
 
 - **`6fdb13668`** — docs: document secure DM mode preset (#7872): Formalizes `session.dmScope: "per-channel-peer"` configuration for DM context isolation.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 5 sync 2)
+
+Four security-relevant commits:
+
+- **`392bbddf2`** — Owner-only tools + command auth hardening (#9202): New `applyOwnerOnlyToolPolicy()` (`src/agents/tool-policy.ts:91-110`) gates sensitive tools (currently `whatsapp_login`) to owner senders only. Treats undefined `senderIsOwner` as unauthorized (default-deny). New `commands.ownerAllowFrom` config parameter for explicit owner identification. Defense-in-depth for tool access control (thanks @victormier).
+
+- **`4434cae56`** — Harden sandboxed media handling (#9182): New `assertMediaNotDataUrl()` and `resolveSandboxedMediaSource()` (`src/agents/sandbox-paths.ts:55-82`) block data-URL payloads and validate media paths within sandbox boundaries. Enforcement moved to `message-action-runner.ts` for delivery-point validation. Prevents path traversal and sandbox escape via media parameters (thanks @victormier).
+
+- **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
+
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:207-241`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
