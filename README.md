@@ -376,6 +376,8 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 | [CVE-2026-24763](https://github.com/openclaw/openclaw/security/advisories/GHSA-mc68-q9jw-2h3v) | HIGH | Command Injection via Docker PATH Variable | CWE-78 | v2026.1.29 | @berkdedekarginoglu |
 | [GHSA-g8p2-7wf7-98mq](https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq) | HIGH | 1-Click RCE via gatewayUrl Token Exfiltration | CWE-200 | v2026.1.29 | DepthFirstDisclosures, @0xacb, @mavlevin |
 | [GHSA-q284-4pvr-m585](https://github.com/openclaw/openclaw/security/advisories/GHSA-q284-4pvr-m585) | HIGH | OS Command Injection via sshNodeCommand | - | v2026.1.29 | @koko9xxx |
+| [CVE-2026-25593](https://github.com/openclaw/openclaw/security/advisories/GHSA-g55j-c2v4-pjcg) | HIGH | Unauthenticated Local RCE via WebSocket config.apply | CWE-20, CWE-78, CWE-306 | v2026.1.20 | @hackerman70000 |
+| [CVE-2026-25475](https://github.com/openclaw/openclaw/security/advisories/GHSA-r8g4-86fx-92mq) | MEDIUM | Local File Inclusion via MEDIA: Path Extraction | CWE-22, CWE-200 | v2026.1.30 | @jasonsutter87 |
 
 ### CVE-2026-24763: Docker PATH Command Injection
 
@@ -417,6 +419,36 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 **Affected component:** macOS menubar application (Remote/SSH mode only). Not affected: CLI, web gateway, iOS/Android apps, Local mode users.
 
 **Fix:** Commit `06289b36d` validates SSH targets and escapes paths.
+
+### CVE-2026-25593: Unauthenticated Local RCE via WebSocket config.apply
+
+**GHSA:** GHSA-g55j-c2v4-pjcg
+**Severity:** HIGH (CWE-20: Improper Input Validation, CWE-78: OS Command Injection, CWE-306: Missing Authentication)
+**Affected:** < v2026.1.20
+**Credits:** @hackerman70000
+
+**Description:** Unauthenticated local WebSocket client could write an unsafe `cliPath` value via the `config.apply` method, enabling command injection. An attacker on the same machine could connect to the gateway's WebSocket endpoint and modify configuration to inject arbitrary commands.
+
+**Impact:** Local privilege escalation and arbitrary code execution as the OpenClaw gateway process user.
+
+**Affected component:** Gateway WebSocket API. Requires local network access to gateway port.
+
+**Fix:** Gateway now validates `cliPath` and requires authentication for config modification methods.
+
+### CVE-2026-25475: Local File Inclusion via MEDIA: Path Extraction
+
+**GHSA:** GHSA-r8g4-86fx-92mq
+**Severity:** MEDIUM (CWE-22: Path Traversal, CWE-200: Information Exposure)
+**Affected:** < v2026.1.30
+**Credits:** @jasonsutter87
+
+**Description:** The `isValidMedia()` function in `src/media/parse.ts:17-27` accepted arbitrary paths including system files like `/etc/passwd`, `~/.ssh/id_rsa`, and traversal paths like `../../../etc/passwd`. An attacker could craft a message containing a `MEDIA:` reference pointing to sensitive local files.
+
+**Impact:** Exposure of sensitive local files (credentials, configuration, SSH keys) through the media pipeline.
+
+**Affected component:** Media path parsing in `src/media/parse.ts`.
+
+**Fix:** Media path validation now restricts extraction to the media directory and rejects traversal sequences.
 
 ### Relationship to Third-Party Audits
 
@@ -804,7 +836,17 @@ Four security-relevant commits:
 
 - **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
 
-- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:207-241`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:216-259`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
+
+### Post-Merge Hardening (Feb 5 sync 3)
+
+Two security-relevant commits strengthening Windows ACL test coverage:
+
+- **`f26cc6087`** — Tests: add test coverage for security/windows-acl.ts: Adds 26 comprehensive unit tests for Windows ACL inspection utilities including `resolveWindowsUserPrincipal`, `parseIcaclsOutput`, `summarizeWindowsAcl`, `inspectWindowsAcl`, `formatWindowsAclSummary`, and `createIcaclsResetCommand`. Strengthens Windows file permission security testing (thanks @M00N7682).
+
+- **`d6cde28c8`** — fix: stabilize windows acl tests and command auth registry (#9335): Stabilizes Windows ACL tests and fixes command auth registry behavior (thanks @M00N7682).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
 ---
 
@@ -812,12 +854,13 @@ Four security-relevant commits:
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 04-02-2026
+> **Last checked:** 05-02-2026
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
 | [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path validation bypass via `startsWith` prefix | `src/infra/archive.ts:81,89` - zip/tar extraction |
 | [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:315-316` - security settings reset |
+| [#5255](https://github.com/openclaw/openclaw/issues/5255) | HIGH | Browser file upload arbitrary read | `src/browser/pw-tools-core.interactions.ts:531` |
 | [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets exposed in session transcripts | By design - `config.get` returns resolved values |
 | [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
 | [#8054](https://github.com/openclaw/openclaw/issues/8054) | HIGH | Type coercion `"undefined"` credentials | `src/wizard/onboarding.gateway-config.ts:206` |
@@ -835,6 +878,12 @@ Four security-relevant commits:
 **Vulnerability:** When config validation fails, the entire config including `dmPolicy`, `allowFrom`, and all security settings are silently reset to `{}`. The bot will respond to ANY sender.
 
 **Affected code:** `src/config/io.ts:315-316`
+
+### #5255: Browser File Upload Arbitrary Read
+
+**Vulnerability:** The `setInputFilesViaPlaywright` function accepts user-controlled file paths and passes them directly to Playwright without validation. Attackers with browser control access can read arbitrary files readable by the OpenClaw process.
+
+**Affected code:** `src/browser/pw-tools-core.interactions.ts:531` - `opts.paths` passed directly to `setInputFiles()` without path validation.
 
 ### #5995: Secrets in Session Transcripts
 
