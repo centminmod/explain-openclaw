@@ -1003,7 +1003,7 @@ Six security-relevant commits:
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 06-02-2026
+> **Last checked:** 06-02-2026 (09:05 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1033,6 +1033,7 @@ Six security-relevant commits:
 | [#9792](https://github.com/openclaw/openclaw/issues/9792) | INVALID | validateHostEnv skips baseEnv (by design) | `src/agents/bash-tools.exec.ts:967-975` |
 | [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:110-148` |
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
+| [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check) |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | MEDIUM | Webhook token accepted via query parameters | `src/gateway/hooks.ts:67-70` |
 | [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:74-119` |
 | [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
@@ -1041,7 +1042,10 @@ Six security-relevant commits:
 | [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `src/auto-reply/reply/session.ts:87` |
 | [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
 | [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | No detection of encoded/obfuscated commands | `src/infra/exec-safety.ts:1-44` |
+| [#8588](https://github.com/openclaw/openclaw/issues/8588) | MEDIUM | Sensitive config files accessible when sandbox is home dir | `src/agents/sandbox/context.ts:39-46` (workspaceAccess=rw) |
+| [#8589](https://github.com/openclaw/openclaw/issues/8589) | LOW | Sandbox file read lacks content filtering | `src/agents/pi-tools.read.ts:286-302` (no redaction on read) |
 | [#8593](https://github.com/openclaw/openclaw/issues/8593) | MEDIUM | chat.send handler lacks input length validation | `src/gateway/protocol/schema/logs-chat.ts:34-45` |
+| [#8594](https://github.com/openclaw/openclaw/issues/8594) | MEDIUM | No rate limiting on gateway endpoints | `src/gateway/server-constants.ts` (no rate limit controls) |
 | [#9007](https://github.com/openclaw/openclaw/issues/9007) | LOW | Google Places URL path interpolation (skill, not core) | `skills/local-places/src/local_places/google_places.py:238` |
 | [#9065](https://github.com/openclaw/openclaw/issues/9065) | LOW | ~/.openclaw group-writable after sudo install | Operational - code uses `0o700` but sudo bypasses |
 
@@ -1451,6 +1455,64 @@ Six security-relevant commits:
 **Vulnerability claimed:** Incomplete JWT token verification in `src/auth/jwt.ts` allows authentication bypass.
 
 **Our analysis:** The file `src/auth/jwt.ts` **does not exist** in the codebase. Grep confirms zero JWT-related files in the entire `src/` directory. This was filed by an "automated bug hunting system" with a generic proposed fix referencing a nonexistent file. Entirely fabricated.
+
+### #4940: commands.restart Bypass via Exec Tool
+
+**Severity:** MEDIUM
+**CWE:** CWE-863 (Incorrect Authorization)
+
+**Vulnerability:** The gateway tool correctly checks `commands.restart=true` before allowing restart actions (`src/agents/tools/gateway-tool.ts:77-80`), but the exec tool can run `openclaw gateway restart` without checking this config flag. The exec approval system (`src/infra/exec-approvals.ts`) only validates executable paths against allowlist patterns, not the semantic meaning of commands.
+
+**Affected code:**
+- `src/agents/tools/gateway-tool.ts:77-80` - correctly checks `commands.restart` (this is the SECURE path)
+- `src/agents/bash-tools.exec.ts` - no check for `commands.restart` (BYPASS path)
+- `src/infra/exec-approvals.ts` - no command-semantic filtering
+
+**Note:** Requires agent to have exec access (security mode `allowlist` with `openclaw` allowlisted, or `full`).
+
+### #8588: Sensitive Config Files Accessible When Sandbox Is Home Dir
+
+**Severity:** MEDIUM (partially affected)
+**CWE:** CWE-552 (Files or Directories Accessible to External Parties)
+
+**Vulnerability:** When users configure `workspace: "~"` (home directory) with `workspaceAccess: "rw"`, the sandbox root becomes the home directory, exposing `~/.openclaw/openclaw.json` (API keys, bot tokens) and `~/.openclaw/credentials/` to the agent. The sandbox path validation only prevents path escape, with no exclusion of sensitive subdirectories.
+
+**Affected code:**
+- `src/agents/sandbox/context.ts:39-46` - `workspaceAccess === "rw"` uses `agentWorkspaceDir` as sandbox root
+- `src/agents/sandbox-paths.ts:33-47` - path escape protection only, no sensitive dir exclusion
+- `src/agents/sandbox/config.ts:149` - default `workspaceAccess: "none"` (safe)
+
+**Note:** Default configuration is SAFE. Only manifests with explicit non-default workspace + rw config.
+
+### #8589: Sandbox File Read Lacks Content Filtering
+
+**Severity:** LOW
+**CWE:** CWE-200 (Exposure of Sensitive Information)
+
+**Vulnerability:** The file read tool returns raw file contents without content filtering or sensitive-data redaction. Comprehensive redaction patterns exist in `src/logging/redact.ts` (API keys, tokens, PEM keys, etc.) but are only used for log/UI display, not applied to file read results returned to the agent.
+
+**Affected code:**
+- `src/agents/pi-tools.read.ts:286-302` - read tool returns raw content, processes only image MIME
+- `src/logging/redact.ts:13-36,124-137` - redaction patterns exist but NOT applied to read results
+
+**Note:** Sandbox path enforcement is the primary control. This is a defense-in-depth gap, not a boundary breach. Low severity because the sandbox boundary itself is correctly enforced.
+
+### #8594: No Rate Limiting on Gateway Endpoints
+
+**Severity:** MEDIUM
+**CWE:** CWE-770 (Allocation of Resources Without Limits or Throttling)
+
+**Vulnerability:** The gateway server lacks rate limiting on all RPC, HTTP, and WebSocket endpoints. No per-client, per-IP, or per-connection request throttling exists. Authenticated clients can send unlimited requests.
+
+**Affected code:**
+- `src/gateway/server-constants.ts` - payload size limits only (`MAX_PAYLOAD_BYTES=512KB`, `MAX_BUFFERED_BYTES=1.5MB`), no rate constants
+- `src/gateway/server-http.ts` - no rate limiting middleware
+- `src/gateway/server/ws-connection/message-handler.ts` - no per-message rate limiting
+
+**Existing protections (not rate limiting):**
+- Authentication required (not anonymous)
+- Payload size limits (512KB frame, 256KB HTTP body)
+- Deduplication cache (prevents duplicate processing but NOT request frequency)
 
 ### Notable Non-Core Issues
 
