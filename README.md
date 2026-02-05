@@ -854,22 +854,42 @@ Two security-relevant commits strengthening Windows ACL test coverage:
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 05-02-2026
+> **Last checked:** 06-02-2026
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
 | [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass gateway authentication | `src/gateway/server/plugins-http.ts:17-59` |
 | [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path validation bypass via `startsWith` prefix | `src/infra/archive.ts:81,89` - zip/tar extraction |
+| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:36` - no Host header validation |
+| [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH | Arbitrary JS execution via browser evaluate (default on) | `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true` |
+| [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage dmPolicy auto-responds with pairing codes | `src/imessage/monitor/monitor-provider.ts:184,342-381` |
 | [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:315-316` - security settings reset |
 | [#5255](https://github.com/openclaw/openclaw/issues/5255) | HIGH | Browser file upload arbitrary read | `src/browser/pw-tools-core.interactions.ts:531` |
 | [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets exposed in session transcripts | By design - `config.get` returns resolved values |
+| [#6606](https://github.com/openclaw/openclaw/issues/6606) | HIGH | Telegram webhook binds to 0.0.0.0 with optional secret | `src/telegram/webhook.ts:26,36,46-48` |
 | [#6609](https://github.com/openclaw/openclaw/issues/6609) | HIGH | Browser bridge server optional authentication | `src/browser/bridge-server.ts:33-42` |
 | [#8054](https://github.com/openclaw/openclaw/issues/8054) | HIGH | Type coercion `"undefined"` credentials | `src/wizard/onboarding.gateway-config.ts:206` |
+| [#8516](https://github.com/openclaw/openclaw/issues/8516) | HIGH | Browser download/trace endpoints arbitrary file write | `src/browser/routes/agent.act.ts:447-480` |
+| [#8586](https://github.com/openclaw/openclaw/issues/8586) | HIGH | Configurable bypass allows unrestricted command exec | `src/agents/bash-tools.exec.ts:940-948,1273` |
+| [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH | Env vars exposed via shell commands | `src/agents/bash-tools.exec.ts:967,975` |
+| [#8590](https://github.com/openclaw/openclaw/issues/8590) | HIGH | Status endpoint exposes sensitive internal info | `src/gateway/server-methods/health.ts:28-31` |
 | [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal | `src/browser/pw-tools-core.downloads.ts:20-24` |
+| [#8776](https://github.com/openclaw/openclaw/issues/8776) | HIGH | soul-evil hook silently hijacks agent | `src/hooks/soul-evil.ts:217-280` |
+| [#9435](https://github.com/openclaw/openclaw/issues/9435) | HIGH | Gateway auth token exposed in URL query params | `src/commands/dashboard.ts:34`, `src/gateway/hooks.ts:67-69` |
 | [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:214,221` |
 | [#9517](https://github.com/openclaw/openclaw/issues/9517) | HIGH | Gateway canvas host auth bypass | `src/gateway/server-http.ts:289-296` |
-| [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
+| [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON after update/doctor | `src/config/io.ts:480-537` |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | MEDIUM | Webhook token accepted via query parameters | `src/gateway/hooks.ts:67-70` |
+| [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:74-119` |
+| [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
+| [#5124](https://github.com/openclaw/openclaw/issues/5124) | MEDIUM | ReDoS in log redaction patterns | `src/logging/redact.ts:47-61` |
+| [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM | Timing attack in non-gateway token comparisons | `src/gateway/server-http.ts:86`, `src/infra/node-pairing.ts:277` |
+| [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `src/auto-reply/reply/session.ts:87` |
+| [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
+| [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | No detection of encoded/obfuscated commands | `src/infra/exec-safety.ts:1-44` |
+| [#8593](https://github.com/openclaw/openclaw/issues/8593) | MEDIUM | chat.send handler lacks input length validation | `src/gateway/protocol/schema/logs-chat.ts:34-45` |
+| [#9007](https://github.com/openclaw/openclaw/issues/9007) | LOW | Google Places URL path interpolation (skill, not core) | `skills/local-places/src/local_places/google_places.py:238` |
+| [#9065](https://github.com/openclaw/openclaw/issues/9065) | LOW | ~/.openclaw group-writable after sudo install | Operational - code uses `0o700` but sudo bypasses |
 
 ### #3277: Path Validation Bypasses
 
@@ -996,6 +1016,230 @@ Two security-relevant commits strengthening Windows ACL test coverage:
 - `src/gateway/hooks.ts:67-70` - Query token extraction still processed despite deprecation warning
 
 **Note:** Token is logged as deprecated but still accepted and processed. Credential leakage possible via URL logging, browser history, and HTTP Referer headers.
+
+### #4949: Browser Control Server DNS Rebinding
+
+**Severity:** HIGH
+**CWE:** CWE-350 (Reliance on Reverse DNS Resolution)
+
+**Vulnerability:** Browser control server binds to `127.0.0.1` but performs no Host header validation. DNS rebinding attacks can bypass localhost restriction to reach browser automation endpoints from a remote origin.
+
+**Affected code:**
+- `src/browser/server.ts:36` - binds to `"127.0.0.1"` but no Host header check
+- `src/browser/server.ts:26-41` - no `isLocalDirectRequest` or origin validation
+
+### #4950: Arbitrary JS Execution via Browser Evaluate (Default On)
+
+**Severity:** HIGH
+**CWE:** CWE-94 (Improper Control of Code Generation)
+
+**Vulnerability:** Browser evaluate tool is enabled by default (`DEFAULT_BROWSER_EVALUATE_ENABLED = true`), allowing execution of arbitrary JavaScript in the browser context without sandboxing.
+
+**Affected code:**
+- `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true`
+- `src/browser/pw-tools-core.interactions.ts:219-268` - `evaluateViaPlaywright()` passes JS directly to `page.evaluate()` without sandbox
+
+**Note:** Config flag exists (commit `78f0bc3`) but defaults to enabled. Users must explicitly opt out.
+
+### #4995: iMessage dmPolicy Auto-Responds with Pairing Codes
+
+**Severity:** HIGH
+**CWE:** CWE-200 (Exposure of Sensitive Information)
+
+**Vulnerability:** Default `dmPolicy` is `"pairing"`, which automatically responds to unknown contacts with valid pairing codes. Any sender can receive a pairing code without owner verification.
+
+**Affected code:**
+- `src/imessage/monitor/monitor-provider.ts:184` - default `dmPolicy` is `"pairing"`
+- `src/imessage/monitor/monitor-provider.ts:342-381` - auto-responds with pairing code to unknown contacts
+
+### #5122: readJsonBody() Slowloris DoS (No Read Timeout)
+
+**Severity:** MEDIUM
+**CWE:** CWE-400 (Uncontrolled Resource Consumption)
+
+**Vulnerability:** `readJsonBody()` has a body size limit but no read timeout. An attacker can hold connections open indefinitely by sending data one byte at a time (Slowloris attack).
+
+**Affected code:** `src/gateway/hooks.ts:74-119` - size limit present, timeout absent.
+
+### #5123: ReDoS in Session Filter Regex
+
+**Severity:** MEDIUM
+**CWE:** CWE-1333 (Inefficient Regular Expression Complexity)
+
+**Vulnerability:** User-supplied strings are compiled into regexes via `new RegExp()` without safeguards. Malicious patterns can cause catastrophic backtracking.
+
+**Affected code:**
+- `src/infra/exec-approval-forwarder.ts:70-77` - `matchSessionFilter()` compiles arbitrary user regex
+- `src/discord/monitor/exec-approvals.ts:235-239` - same vulnerable pattern
+
+### #5124: ReDoS in Log Redaction Patterns
+
+**Severity:** MEDIUM
+**CWE:** CWE-1333 (Inefficient Regular Expression Complexity)
+
+**Vulnerability:** Log redaction `parsePattern()` compiles arbitrary regex patterns that could cause catastrophic backtracking on large log entries.
+
+**Affected code:** `src/logging/redact.ts:47-61` - `parsePattern()` compiles arbitrary regex for log processing.
+
+### #6021: Timing Attack in Non-Gateway Token Comparisons
+
+**Severity:** MEDIUM
+**CWE:** CWE-208 (Observable Timing Discrepancy)
+
+**Vulnerability:** Gateway auth correctly uses `safeEqual` (timing-safe), but hook tokens, node pairing, and device pairing use direct `===`/`!==` comparisons vulnerable to timing attacks.
+
+**Affected code:**
+- `src/gateway/auth.ts:35-40` - `safeEqual` uses `timingSafeEqual` (correct)
+- `src/gateway/server-http.ts:86` - hook token uses direct `!==` (vulnerable)
+- `src/infra/node-pairing.ts:277` - node token uses direct `===` (vulnerable)
+- `src/infra/device-pairing.ts:434` - device token uses direct `!==` (vulnerable)
+
+### #6606: Telegram Webhook Binds to 0.0.0.0 with Optional Secret
+
+**Severity:** HIGH
+**CWE:** CWE-668 (Exposure of Resource to Wrong Sphere)
+
+**Vulnerability:** Telegram webhook server defaults to binding on `0.0.0.0` (all interfaces), and the webhook secret token is optional. Without a secret, any network client can send fake webhook events.
+
+**Affected code:**
+- `src/telegram/webhook.ts:26` - defaults to `0.0.0.0` binding
+- `src/telegram/webhook.ts:36` - `webhookSecret` is optional
+- `src/telegram/webhook.ts:46-48` - secret validation only IF configured
+
+### #7862: Session Transcripts 644 Instead of 600
+
+**Severity:** MEDIUM
+**CWE:** CWE-732 (Incorrect Permission Assignment for Critical Resource)
+
+**Vulnerability:** Session transcript `.jsonl` files are created with default permissions (0o644) instead of restrictive permissions (0o600). Other local users can read session data containing tool calls, messages, and potentially secrets.
+
+**Affected code:**
+- `src/auto-reply/reply/session.ts:87` - `writeFileSync` with no explicit mode
+- `src/gateway/server-methods/chat.ts:73,81` - transcript file creation with no explicit mode
+
+**Note:** `src/security/fix.ts:442,451` applies 0o600 to `auth-profiles.json` and `sessions.json` but NOT individual `.jsonl` transcript files.
+
+### #8516: Browser Download/Trace Endpoints Arbitrary File Write
+
+**Severity:** HIGH
+**CWE:** CWE-22 (Path Traversal)
+
+**Vulnerability:** Browser download and trace endpoints accept arbitrary file paths without validation or authentication. POST `/download` and `/trace/stop` pass `body.path` directly to file system operations.
+
+**Affected code:**
+- `src/browser/routes/agent.act.ts:447-480` - POST `/download` passes `body.path` directly
+- `src/browser/routes/agent.debug.ts:119-150` - POST `/trace/stop` uses `body.path` without validation
+
+**Note:** Related to #8696 (Playwright download path traversal) but affects different endpoints.
+
+### #8586: Configurable Bypass Allows Unrestricted Command Exec
+
+**Severity:** HIGH
+**CWE:** CWE-269 (Improper Privilege Management)
+
+**Vulnerability:** When `elevatedMode=full` is configured, all security controls on command execution are bypassed. The `bypassApprovals` flag skips `resolveExecApprovals` entirely, allowing any command without user confirmation.
+
+**Affected code:**
+- `src/agents/bash-tools.exec.ts:940-941,946-948` - `elevatedMode=full` sets security to "full", ask to "off"
+- `src/agents/bash-tools.exec.ts:1273` - `bypassApprovals` skips all approval checks
+
+### #8590: Status Endpoint Exposes Sensitive Internal Info
+
+**Severity:** HIGH
+**CWE:** CWE-200 (Exposure of Sensitive Information)
+
+**Vulnerability:** Gateway status/health endpoint returns unredacted internal information including file paths, session IDs, agent IDs, and model configuration to any connected client.
+
+**Affected code:**
+- `src/gateway/server-methods/health.ts:28-31` - returns full unredacted `getStatusSummary()`
+- `src/commands/status.summary.ts:134-195` - exposes paths, session IDs, agent IDs, model configs
+
+### #8591: Env Vars Exposed via Shell Commands
+
+**Severity:** HIGH
+**CWE:** CWE-526 (Exposure of Sensitive Information Through Environmental Variables)
+
+**Vulnerability:** Full `process.env` is passed as the base environment to child processes. An agent can run `env` or `printenv` to dump all environment variables, including API keys and secrets.
+
+**Affected code:**
+- `src/agents/bash-tools.exec.ts:967,975` - full `process.env` passed to child spawn
+- `src/agents/bash-tools.exec.ts:61-78` - `DANGEROUS_HOST_ENV_VARS` blocks injection INTO env, but doesn't filter what children can READ
+
+### #8592: No Detection of Encoded/Obfuscated Commands
+
+**Severity:** MEDIUM (partially affected)
+**CWE:** CWE-116 (Improper Encoding or Escaping)
+
+**Vulnerability:** `isSafeExecutableValue()` validates executable names against an allowlist but does not detect base64-encoded, hex-encoded, or otherwise obfuscated command arguments.
+
+**Affected code:** `src/infra/exec-safety.ts:1-44` - validates executable names only; obfuscated arguments pass through.
+
+### #8593: chat.send Handler Lacks Input Length Validation
+
+**Severity:** MEDIUM (partially affected)
+**CWE:** CWE-20 (Improper Input Validation)
+
+**Vulnerability:** `ChatSendParamsSchema` validates structure but the message field has no `maxLength` constraint. Extremely large messages could cause resource exhaustion.
+
+**Affected code:** `src/gateway/protocol/schema/logs-chat.ts:34-45` - schema exists but lacks length limits on message field.
+
+### #8776: soul-evil Hook Silently Hijacks Agent
+
+**Severity:** HIGH
+**CWE:** CWE-506 (Embedded Malicious Code)
+
+**Vulnerability:** The `soul-evil` hook ships bundled with OpenClaw and can silently replace the agent's SOUL.md (system prompt) content. When activated, it overrides the agent's personality and behavior without explicit user notification.
+
+**Affected code:**
+- `src/hooks/bundled/soul-evil/handler.ts:8-49` - bundled hook handler
+- `src/hooks/soul-evil.ts:217-280` - `applySoulEvilOverride` swaps SOUL.md content
+- `src/hooks/soul-evil.ts:187-216` - `decideSoulEvil` activation logic
+
+**Note:** May be an intentional Easter egg feature, but the security impact (silent system prompt replacement) is real.
+
+### #9007: Google Places URL Path Interpolation (Skill, Not Core)
+
+**Severity:** LOW (partially affected)
+**CWE:** CWE-918 (Server-Side Request Forgery)
+
+**Vulnerability:** Google Places API URL construction interpolates `place_id` without sanitization. Located in the optional `local-places` skill, not core code.
+
+**Affected code:**
+- `skills/local-places/src/local_places/google_places.py:238` - `place_id` interpolated into URL
+- `skills/local-places/src/local_places/main.py:52-54` - FastAPI route passes `place_id` directly
+
+### #9065: ~/.openclaw Group-Writable After sudo Install
+
+**Severity:** LOW (partially affected)
+**CWE:** CWE-276 (Incorrect Default Permissions)
+
+**Vulnerability:** Code correctly uses `mode: 0o700` for directory creation (`src/config/io.ts:495`), but when installed via `sudo`, the directory inherits root ownership. Subsequent user-space operations may create group-writable files.
+
+**Note:** This is an operational issue (sudo usage), not a code bug. `src/security/audit.ts:159-176` already detects group-writable state directories.
+
+### #9435: Gateway Auth Token Exposed in URL Query Params
+
+**Severity:** HIGH
+**CWE:** CWE-598 (Sensitive Query Strings)
+
+**Vulnerability:** Gateway authentication tokens are passed via URL query parameters (`?token=...`) in dashboard and onboarding flows, exposing credentials through logs, browser history, and Referer headers.
+
+**Affected code:**
+- `src/commands/dashboard.ts:34` - constructs `?token=` URL query param
+- `src/commands/onboard-helpers.ts:190` - same token-in-URL pattern
+- `src/gateway/hooks.ts:67-69` - server accepts `url.searchParams.get("token")`
+
+### #9627: Config Secrets Exposed in JSON After Update/Doctor
+
+**Severity:** HIGH
+**CWE:** CWE-312 (Cleartext Storage of Sensitive Information)
+
+**Vulnerability:** When `openclaw doctor` or `openclaw config set` writes the config file, environment variable references (`${VAR}`) are resolved to plaintext values. The write-back serializes resolved secrets to disk in cleartext JSON, destroying the original `${VAR}` references.
+
+**Affected code:**
+- `src/config/io.ts:480-537` - `writeConfigFile` serializes resolved config without restoring `${VAR}` references
+- `src/config/env-substitution.ts:83-89` - `substituteString` is a one-way transformation
+- `src/commands/doctor.ts:285` - `writeConfigFile(cfg)` writes env-resolved config back to disk
 
 ---
 
