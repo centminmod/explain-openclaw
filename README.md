@@ -879,6 +879,11 @@ Two security-relevant commits strengthening Windows ACL test coverage:
 | [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:214,221` |
 | [#9517](https://github.com/openclaw/openclaw/issues/9517) | HIGH | Gateway canvas host auth bypass | `src/gateway/server-http.ts:289-296` |
 | [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON after update/doctor | `src/config/io.ts:480-537` |
+| [#9813](https://github.com/openclaw/openclaw/issues/9813) | HIGH (DUPLICATE #9627) | Gateway expands ${ENV_VAR} on meta writeback | `src/config/io.ts:496` |
+| [#9795](https://github.com/openclaw/openclaw/issues/9795) | LOW | sanitizeMimeType regex not end-anchored (by design) | `src/media-understanding/apply.ts:96-106` |
+| [#9792](https://github.com/openclaw/openclaw/issues/9792) | INVALID | validateHostEnv skips baseEnv (by design) | `src/agents/bash-tools.exec.ts:967-975` |
+| [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:110-148` |
+| [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | MEDIUM | Webhook token accepted via query parameters | `src/gateway/hooks.ts:67-70` |
 | [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:74-119` |
 | [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
@@ -1240,6 +1245,73 @@ Two security-relevant commits strengthening Windows ACL test coverage:
 - `src/config/io.ts:480-537` - `writeConfigFile` serializes resolved config without restoring `${VAR}` references
 - `src/config/env-substitution.ts:83-89` - `substituteString` is a one-way transformation
 - `src/commands/doctor.ts:285` - `writeConfigFile(cfg)` writes env-resolved config back to disk
+
+### #9813: Gateway Expands ${ENV_VAR} on Meta Writeback (DUPLICATE of #9627)
+
+**Severity:** HIGH (DUPLICATE)
+**CWE:** CWE-312 (Cleartext Storage of Sensitive Information)
+
+**Vulnerability:** Same root cause as #9627. When the gateway updates `meta.lastTouchedAt` in the config file, the writeback path resolves `${ENV_VAR}` references to plaintext values, destroying the original references.
+
+**Affected code:**
+- `src/config/io.ts:496` - `JSON.stringify` serializes resolved config during meta writeback
+
+**Our analysis:** This is the same `writeConfigFile` code path documented in #9627. The trigger differs (gateway meta writeback vs `doctor`/`config set`), but the underlying bug — env var expansion on write — is identical. Fix for #9627 would resolve this as well.
+
+### #9795: sanitizeMimeType Regex Not End-Anchored (By Design)
+
+**Severity:** LOW/INFORMATIONAL
+**CWE:** N/A
+
+**Vulnerability claimed:** The `sanitizeMimeType` regex `/^([\w-]+\/[\w.+-]+)/` is not end-anchored, potentially allowing MIME type confusion.
+
+**Affected code:**
+- `src/media-understanding/apply.ts:96-106` - `sanitizeMimeType` function
+
+**Our analysis:** The unanchored end is **standard MIME parsing behavior**. MIME types can include parameters like `; charset=utf-8` which the regex correctly discards by capturing only `type/subtype`. The function also calls `.toLowerCase()` (line 100) before the regex match, handling case-insensitivity. The reporter's suggested fix (adding `$` anchor) would break legitimate MIME types with parameters. This is a Qodo AI automated finding that misidentifies correct behavior as a vulnerability.
+
+### #9792: validateHostEnv Skips baseEnv (By Design)
+
+**Severity:** INVALID
+**CWE:** N/A
+
+**Vulnerability claimed:** `validateHostEnv` only validates agent-supplied `params.env` but not the host's own `baseEnv`, potentially allowing dangerous environment variables.
+
+**Affected code:**
+- `src/agents/bash-tools.exec.ts:967-975` - validation scoped to `params.env` only
+
+**Our analysis:** `baseEnv = coerceEnv(process.env)` is the **host's own environment**, not untrusted input. The code comment at line 969 states: "We validate BEFORE merging to prevent any dangerous vars from entering the stream." Validating `baseEnv` would **break the gateway** — the host always has `PATH` set, which `validateHostEnv` explicitly rejects (it's designed to block agents from injecting `PATH` overrides). The validation boundary is intentionally scoped to untrusted agent-supplied variables. This is a Qodo AI automated finding.
+
+### #9791: Fullwidth Character Markers Bypass (Fold Is Length-Preserving)
+
+**Severity:** INVALID
+**CWE:** N/A
+
+**Vulnerability claimed:** Fullwidth Unicode characters (e.g., `＜` U+FF1C) could bypass marker detection in `replaceMarkers`, causing index misalignment when mapping between folded and original strings.
+
+**Affected code:**
+- `src/security/external-content.ts:110-148` - `replaceMarkers` and `foldMarkerChar`
+
+**Our analysis:** `foldMarkerChar` maps each fullwidth character to a single ASCII character (`\uFF21`→`A`, `\uFF1C`→`<`, etc.). Both fullwidth characters and their ASCII replacements are **single BMP UTF-16 code units**, so the fold is **length-preserving**. Indices from `pattern.regex.exec(folded)` map correctly back to `content.slice()` positions on the original string. The reporter suggests "perform all operations on folded string" — this would **lose original content** between markers, which is the opposite of correct behavior. This is a Qodo AI automated finding.
+
+### #9667: JWT Token Verification Incomplete (File Does Not Exist)
+
+**Severity:** INVALID
+**CWE:** N/A
+
+**Vulnerability claimed:** Incomplete JWT token verification in `src/auth/jwt.ts` allows authentication bypass.
+
+**Our analysis:** The file `src/auth/jwt.ts` **does not exist** in the codebase. Grep confirms zero JWT-related files in the entire `src/` directory. This was filed by an "automated bug hunting system" with a generic proposed fix referencing a nonexistent file. Entirely fabricated.
+
+### Notable Non-Core Issues
+
+#### #9860: System Prompt Hijacking in google-antigravity Provider
+
+**Not a core OpenClaw vulnerability.** This is a dependency issue in the `@mariozechner/pi-ai` library used by the google-antigravity provider. The attack uses triple identity injection combined with role corruption (`system` → `user` role remapping) to hijack the system prompt. Affects users of the Gemini provider through OpenClaw. Worth monitoring but the fix must come from the upstream dependency.
+
+#### #9828: Config Schema Injected Into Every Session (~100-150k Tokens)
+
+**Design concern, not a vulnerability.** The full config schema is injected into every agent session's system prompt, consuming an estimated 50-75% of the 200k context window. This creates both an information disclosure vector (config schema reveals internal structure) and a resource waste problem (reduced effective context for actual conversation). A potential optimization would be to inject only relevant config keys per session.
 
 ---
 
