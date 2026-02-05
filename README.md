@@ -858,12 +858,18 @@ Two security-relevant commits strengthening Windows ACL test coverage:
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
+| [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass gateway authentication | `src/gateway/server/plugins-http.ts:17-59` |
 | [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path validation bypass via `startsWith` prefix | `src/infra/archive.ts:81,89` - zip/tar extraction |
 | [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:315-316` - security settings reset |
 | [#5255](https://github.com/openclaw/openclaw/issues/5255) | HIGH | Browser file upload arbitrary read | `src/browser/pw-tools-core.interactions.ts:531` |
 | [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets exposed in session transcripts | By design - `config.get` returns resolved values |
-| [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
+| [#6609](https://github.com/openclaw/openclaw/issues/6609) | HIGH | Browser bridge server optional authentication | `src/browser/bridge-server.ts:33-42` |
 | [#8054](https://github.com/openclaw/openclaw/issues/8054) | HIGH | Type coercion `"undefined"` credentials | `src/wizard/onboarding.gateway-config.ts:206` |
+| [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal | `src/browser/pw-tools-core.downloads.ts:20-24` |
+| [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:214,221` |
+| [#9517](https://github.com/openclaw/openclaw/issues/9517) | HIGH | Gateway canvas host auth bypass | `src/gateway/server-http.ts:289-296` |
+| [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
+| [#5120](https://github.com/openclaw/openclaw/issues/5120) | MEDIUM | Webhook token accepted via query parameters | `src/gateway/hooks.ts:67-70` |
 
 ### #3277: Path Validation Bypasses
 
@@ -902,6 +908,94 @@ Two security-relevant commits strengthening Windows ACL test coverage:
 **Vulnerability:** `String(undefined).trim()` produces the literal string `"undefined"`, not an empty string. Attackers may authenticate with password/token `"undefined"`.
 
 **Affected code:** `src/wizard/onboarding.gateway-config.ts:206` and similar patterns across CLI files.
+
+### #8512: Plugin HTTP Routes Bypass Gateway Authentication (CRITICAL)
+
+**Severity:** CRITICAL (CVSS 10.0)
+**CWE:** CWE-862 (Missing Authorization)
+
+**Vulnerability:** Gateway plugin HTTP routes are dispatched without any gateway authentication checks. `createGatewayPluginRequestHandler()` accepts only `registry` and `log` parameters — no authentication context, token validator, or security gate is passed. Any network client can reach plugin HTTP endpoints even when the gateway token/password is configured.
+
+**Affected code:**
+- `src/gateway/server/plugins-http.ts:12-61` - `createGatewayPluginRequestHandler` with no auth check before `route.handler(req, res)` dispatch
+
+**Verification:**
+- No imports for `authorizeGatewayConnect` or `resolvedAuth` validation in the file
+- Other endpoints (OpenAI, tools-invoke, open-responses) DO call `authorizeGatewayConnect`
+- Plugin HTTP dispatch at `server-http.ts:265` occurs without auth check
+
+### #6609: Browser Bridge Server Optional Authentication
+
+**Severity:** HIGH (CVSS 7.7)
+**CWE:** CWE-306 (Missing Authentication for Critical Function)
+
+**Vulnerability:** Browser bridge server's authentication token is optional. When started without `authToken`, all browser automation endpoints are exposed without authentication.
+
+**Affected code:**
+- `src/browser/bridge-server.ts:24` - `authToken?: string` (optional parameter)
+- `src/browser/bridge-server.ts:33-42` - Auth middleware only added IF token provided
+
+**Verification:**
+- `startBrowserBridgeServer` called at `src/agents/sandbox/browser.ts:192-200` WITHOUT `authToken` parameter
+- Browser bridge runs unauthenticated in sandbox context
+
+### #8696: Playwright Download Path Traversal
+
+**Severity:** HIGH (CVSS 8.8)
+**CWE:** CWE-22 (Path Traversal)
+
+**Vulnerability:** Playwright download helpers use the server's suggested filename without sanitization, allowing path traversal writes outside `/tmp/openclaw/downloads`. A malicious `Content-Disposition` header like `filename=../../../../../etc/passwd` can write files to arbitrary locations.
+
+**Affected code:**
+- `src/browser/pw-tools-core.downloads.ts:20-24` - `buildTempDownloadPath` uses `fileName.trim()` with no `path.basename()` or traversal stripping
+- `src/browser/pw-tools-core.downloads.ts:182-183` - `suggestedFilename()` passed directly without validation
+
+**Verification:**
+- No calls to `path.basename()` or path sanitization in the download path construction
+- `path.join()` does not prevent traversal — it concatenates path segments
+
+### #9512: Skill Download Archive Path Traversal
+
+**Severity:** HIGH (CVSS 7.6)
+**CWE:** CWE-22 (Path Traversal)
+
+**Vulnerability:** `skills.install` with download installer extracts archives via system `tar`/`unzip` without validating entry paths. Malicious archives with `../` sequences can write files outside the target directory (Zip Slip attack).
+
+**Affected code:**
+- `src/agents/skills-install.ts:202-226` - `extractArchive` function
+- `src/agents/skills-install.ts:206-212` - zip: `["unzip", "-q", archivePath, "-d", targetDir]` with no path filter
+- `src/agents/skills-install.ts:214-224` - tar: `["tar", "xf", archivePath, "-C", targetDir]` with no path filter
+
+**Verification:**
+- No entry path validation, `tar --transform`, or filter callback found
+- Directly related to ClawHavoc campaign (341 malicious skills could exploit this)
+
+### #9517: Gateway Canvas Host Auth Bypass
+
+**Severity:** HIGH (CVSS 7.5)
+**CWE:** CWE-862 (Missing Authorization)
+
+**Vulnerability:** Gateway HTTP server serves Canvas host and A2UI endpoints without enforcing gateway auth, allowing unauthenticated access to canvas files.
+
+**Affected code:**
+- `src/gateway/server-http.ts:289-296` - Canvas/A2UI handler dispatch without auth check
+- `src/gateway/server-http.ts:336-338` - WebSocket upgrade for live reload
+
+**Verification:**
+- No `authorizeGatewayConnect` call before `canvasHost.handleHttpRequest(req, res)`
+- Other endpoints in the same file DO call authorization methods
+
+### #5120: Webhook Token Accepted via Query Parameters
+
+**Severity:** MEDIUM
+**CWE:** CWE-598 (Sensitive Query Strings)
+
+**Vulnerability:** Webhook endpoint accepts authentication tokens via URL query parameters, causing credential leakage through logs, browser history, and Referer headers.
+
+**Affected code:**
+- `src/gateway/hooks.ts:67-70` - Query token extraction still processed despite deprecation warning
+
+**Note:** Token is logged as deprecated but still accepted and processed. Credential leakage possible via URL logging, browser history, and HTTP Referer headers.
 
 ---
 
