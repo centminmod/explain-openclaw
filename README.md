@@ -26,6 +26,7 @@
   - [Cost + token optimization](./06-optimizations/cost-token-optimization.md)
   - [Model recommendations by function](./06-optimizations/cost-token-optimization.md#model-recommendations-by-function)
 - **Security documentation:**
+  - [`openclaw security audit` command reference](#openclaw-security-audit-command-reference) *(inline below)*
   - [Official security advisories (CVEs/GHSAs)](#official-security-advisories-cvesghsas) *(inline below)*
   - [Security audit analysis (Issue #1796)](#security-audit-analysis-issue-1796) *(inline below)*
   - [Second security audit (Medium article)](#second-security-audit-medium-article) *(inline below)*
@@ -162,8 +163,30 @@ openclaw onboard --install-daemon
 openclaw gateway status
 openclaw status
 openclaw health
-openclaw security audit --deep
 ```
+
+### Security audit
+
+Three levels of security auditing:
+
+```bash
+# Read-only scan of config + filesystem permissions (no network calls)
+openclaw security audit
+
+# Everything above + live WebSocket probe of the running gateway
+openclaw security audit --deep
+
+# Apply safe auto-fixes first, then run full audit to show remaining issues
+openclaw security audit --fix
+```
+
+| Flag | What it adds | Modifies system? |
+| ------ | ------------- | ----------------- |
+| *(none)* | Scans config, filesystem permissions, channel policies, model hygiene, plugin trust, attack surface summary (50+ check IDs across 12 categories) | No — read-only |
+| `--deep` | All base checks + live WebSocket probe of running gateway (5 s timeout), verifies auth handshake | No — read-only probe |
+| `--fix` | Applies safe fixes **before** running the full audit: `chmod 600/700` on state/config/credentials, flips `groupPolicy open→allowlist`, sets `logging.redactSensitive off→"tools"`. Report shows remaining issues post-fix | Yes — safe defaults only; no destructive changes |
+
+> **Note:** `--fix` runs the fix pass **before** the audit (`src/cli/security-cli.ts:46`), so the report you see reflects the hardened state. Any findings that remain are issues `--fix` cannot auto-resolve.
 
 If you only do one security thing, do this:
 
@@ -171,7 +194,9 @@ If you only do one security thing, do this:
 openclaw security audit --fix
 ```
 
-(Security audit docs: https://docs.openclaw.ai/gateway/security)
+See the [full command reference below](#openclaw-security-audit-command-reference) for what each check covers, what `--fix` changes, and which documented issues the audit can and cannot detect.
+
+(Security audit docs: <https://docs.openclaw.ai/gateway/security>)
 
 ---
 
@@ -360,6 +385,112 @@ See: https://docs.openclaw.ai/gateway/local-models
 Consider DM session isolation (multi-user mode) so each peer gets an isolated DM session, and use identity linking only where appropriate.
 
 See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and https://docs.openclaw.ai/concepts/session
+
+---
+
+## `openclaw security audit` command reference
+
+> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:912-986`, `src/security/fix.ts:455-541`
+>
+> The built-in security audit scans your local config, filesystem permissions, and channel policies for common misconfigurations. It does **not** scan source code for vulnerabilities.
+
+### Command modes
+
+| Command | Behavior |
+| --------- | ---------- |
+| `openclaw security audit` | Read-only scan: 16 collector functions check config, filesystem, channels, models, plugins, hooks, gateway, browser. No network calls. |
+| `openclaw security audit --deep` | Everything above + `maybeProbeGateway()` connects to gateway WebSocket (5 s timeout), verifies auth, adds `gateway.probe_failed` if unreachable. |
+| `openclaw security audit --fix` | Runs `fixSecurityFootguns()` first, then full audit. Report reflects post-fix state. Also accepts `--deep`. |
+| `openclaw security audit --json` | Any mode above with JSON output instead of formatted text. |
+
+### Check categories (50+ check IDs)
+
+| # | Category | Check ID prefix | Severities | What it checks |
+| --- | ---------- | ---------------- | ------------ | --------------- |
+| 1 | Attack surface summary | `summary.attack_surface` | info | Counts open groups, elevated tools, hooks, browser control |
+| 2 | Synced folders | `fs.synced_dir` | warn | State/config in iCloud, Dropbox, OneDrive, Google Drive |
+| 3 | Filesystem permissions | `fs.state_dir.*`, `fs.config.*`, `fs.credentials_dir.*`, `fs.auth_profiles.*`, `fs.sessions_store.*`, `fs.log_file.*` | critical/warn | World/group-writable dirs, world/group-readable config/credentials, symlink detection |
+| 4 | Config include files | `fs.config_include.*` | critical/warn | Permissions on included config files |
+| 5 | Gateway configuration | `gateway.bind_no_auth`, `gateway.loopback_no_auth`, `gateway.tailscale_funnel`, `gateway.tailscale_serve`, `gateway.control_ui.*`, `gateway.token_too_short`, `gateway.trusted_proxies_missing` | critical/warn/info | Non-loopback bind without auth, Tailscale Funnel public exposure, Control UI insecure auth/device auth, token length, missing trusted proxy |
+| 6 | Browser control | `browser.remote_cdp_http`, `browser.control_invalid_config` | warn | Remote CDP over plain HTTP, invalid CDP config |
+| 7 | Logging | `logging.redact_off` | warn | `redactSensitive="off"` leaks secrets in tool summaries |
+| 8 | Elevated tools | `tools.elevated.allowFrom.*.wildcard`, `tools.elevated.allowFrom.*.large` | critical/warn | Wildcard `"*"` in elevated allowlist, oversized allowlist (>25 entries) |
+| 9 | Hooks hardening | `hooks.path_root`, `hooks.token_too_short`, `hooks.token_reuse_gateway_token` | critical/warn | Hooks base path is `"/"`, short token (<24 chars), token reuses gateway token |
+| 10 | Model hygiene | `models.legacy`, `models.weak_tier`, `models.small_params` | critical/warn | Legacy models (GPT-3.5, Claude 2), weak tier (Haiku, pre-GPT-5), small models (<=300B params) without sandboxing exposed to web tools |
+| 11 | Config secrets | `config.secrets.gateway_password_in_config`, `config.secrets.hooks_token_in_config` | warn/info | Secrets stored in config file instead of env vars |
+| 12 | Plugins/extensions | `plugins.extensions_no_allowlist` | critical | Extensions present but `plugins.allow` not configured (especially with skill commands exposed) |
+| 13 | Channel security | `channels.discord.*`, `channels.slack.*`, `channels.telegram.*`, `channels.*.dm.*` | critical/warn/info | DM policies (open/disabled/scoped), group policies, slash command restrictions, sender allowlists, multi-user DM session isolation |
+| 14 | Exposure matrix | `security.exposure.open_groups_with_elevated` | critical | Dangerous combination: open `groupPolicy` + elevated tools enabled |
+| — | Deep probe | `gateway.probe_failed` | warn | `--deep` only: gateway WebSocket unreachable or auth failed |
+
+### What `--fix` applies (`src/security/fix.ts:455-541`)
+
+**Config changes** (`applyConfigFixes`, line 277):
+
+- `logging.redactSensitive`: `"off"` → `"tools"` (prevents secrets in tool summaries)
+- `groupPolicy`: `"open"` → `"allowlist"` for all 7 supported channels (telegram, whatsapp, discord, signal, imessage, slack, msteams), including per-account overrides
+- WhatsApp `groupAllowFrom`: populated from pairing store when policy flipped (so existing paired contacts still work)
+
+**Filesystem hardening** (chmod/icacls):
+
+| Target | Mode | Purpose |
+| -------- | ------ | --------- |
+| `~/.openclaw/` (state dir) | `700` | User-only access to all state |
+| Config file | `600` | User-only read/write (contains tokens) |
+| Config include files | `600` | Same protection for split configs |
+| `~/.openclaw/credentials/` | `700` | OAuth credential directory |
+| `credentials/*.json` | `600` | Individual credential files |
+| `agents/<id>/agent/` | `700` | Per-agent directory |
+| `agents/<id>/agent/auth-profiles.json` | `600` | API keys and tokens |
+| `agents/<id>/sessions/` | `700` | Session transcript directory |
+| `agents/<id>/sessions/sessions.json` | `600` | Session metadata |
+
+On Windows: uses `icacls` ACL reset instead of `chmod`.
+
+`--fix` skips symlinks, missing paths, and already-correct permissions (safe + idempotent).
+
+### Coverage vs documented security issues
+
+The audit is a **configuration and filesystem hardening tool**. It detects misconfigurations but not code-level vulnerabilities.
+
+#### Issues the audit detects or mitigates
+
+| Issue | Severity | What the audit catches | Check ID |
+| ------- | ---------- | ---------------------- | ---------- |
+| [#9065](https://github.com/openclaw/openclaw/issues/9065) | LOW | `~/.openclaw` group-writable after sudo install | `fs.state_dir.perms_group_writable` (`--fix` applies chmod 700) |
+| [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `fs.sessions_store.perms_readable` (`--fix` applies chmod 600) |
+| [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON | `config.secrets.gateway_password_in_config` (warns; recommends env var) |
+| [#6609](https://github.com/openclaw/openclaw/issues/6609) | HIGH | Browser bridge server optional auth | `browser.control_invalid_config` (partial detection) |
+| General gateway exposure | — | Non-loopback bind, missing auth, Tailscale Funnel | `gateway.bind_no_auth`, `gateway.loopback_no_auth`, `gateway.tailscale_funnel` |
+| Channel misconfiguration | — | Open DMs, open groups, missing allowlists | All `channels.*` checks + `security.exposure.open_groups_with_elevated` |
+
+#### Issues the audit cannot detect (code-level bugs)
+
+| Issue | Severity | Why the audit cannot detect it |
+| ------- | ---------- | ------------------------------- |
+| [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass — code-level auth gap in `src/gateway/server/plugins-http.ts` |
+| [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path traversal via `startsWith` — code-level validation bug |
+| [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH | Browser evaluate default on — hardcoded constant, not configurable |
+| [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open — code-level bug in `src/config/io.ts` |
+| [#5255](https://github.com/openclaw/openclaw/issues/5255) | HIGH | Browser file upload arbitrary read — code-level |
+| [#8516](https://github.com/openclaw/openclaw/issues/8516) | HIGH | Browser download/trace arbitrary file write — code-level |
+| [#8586](https://github.com/openclaw/openclaw/issues/8586) | HIGH | Configurable exec bypass — code-level allowlist gap |
+| [#8590](https://github.com/openclaw/openclaw/issues/8590) | HIGH | Status endpoint info leak — code-level |
+| [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH | Env vars exposed via shell — code-level |
+| [#8776](https://github.com/openclaw/openclaw/issues/8776) | HIGH | soul-evil hook hijacking — code-level |
+| [#9435](https://github.com/openclaw/openclaw/issues/9435) | HIGH | Gateway token in URL query params — code-level |
+| [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill archive path traversal (Zip Slip) — code-level |
+| [#9517](https://github.com/openclaw/openclaw/issues/9517) | HIGH | Canvas host auth bypass — code-level |
+| [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal — code-level |
+| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser DNS rebinding — code-level (no Host header validation) |
+| [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage DM auto-responds with pairing codes — code-level |
+| [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets in session transcripts — by design |
+| [#6606](https://github.com/openclaw/openclaw/issues/6606) | HIGH | Telegram webhook binds 0.0.0.0 — code-level |
+| [#8054](https://github.com/openclaw/openclaw/issues/8054) | HIGH | Type coercion "undefined" credentials — code-level |
+
+#### Verdict
+
+> **The audit catches ~6 of 37 documented issues** (config/filesystem misconfigurations). The remaining ~31 are code-level vulnerabilities that require upstream patches. For defense-in-depth: run `openclaw security audit --fix` **and** monitor the [open upstream security issues](#open-upstream-security-issues) list.
 
 ---
 
