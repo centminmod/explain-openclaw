@@ -503,7 +503,7 @@ These commits add defense-in-depth to channel media handling but do not address 
 
 Four security-relevant commits:
 
-- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:664,719`). Addresses Audit 2 Claim 7 "shell injection regex" by preventing shell expansion within quoted arguments during allowlist evaluation.
+- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:696,699`). Addresses Audit 2 Claim 7 "shell injection regex" by preventing shell expansion within quoted arguments during allowlist evaluation.
 
 - **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`). Prevents auth bypass when only Tailscale identity is available but no device pairing exists.
 
@@ -602,6 +602,38 @@ Six security-relevant commits:
 - **`f32eeae3b`** — Compaction transcript repair: Removes orphaned tool_result messages when assistant messages with tool_use blocks are dropped during compaction pruning. Prevents API rejections due to unexpected tool_use_id. Defense-in-depth against prompt injection via malformed session transcripts.
 
 - **`7c951b01a`** — Feishu mention gating: Requires bot open_id match for group mention detection when bot ID is available. Prevents agent replies when other users (not the bot) are mentioned in Feishu groups. Access control hardening.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 6 sync 3)
+
+Fourteen security-relevant commits:
+
+**CRITICAL (3):**
+
+- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:92-126` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
+
+- **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** `config.get` previously exposed all secrets (tokens, API keys) to any connected gateway client. New `redactConfigSnapshot()` function in `src/config/redact-snapshot.ts:117-126` strips sensitive values from config snapshots before returning them over the gateway wire protocol. Partially addresses tracked issues [#5995](https://github.com/openclaw/openclaw/issues/5995), [#9627](https://github.com/openclaw/openclaw/issues/9627), [#9813](https://github.com/openclaw/openclaw/issues/9813). Tests: `src/config/redact-snapshot.test.ts` (335 lines).
+
+- **`bc88e58fc`** (PR [#9806](https://github.com/openclaw/openclaw/pull/9806)) — **Skill/plugin code safety scanner:** New `src/security/skill-scanner.ts` (441 lines) provides static analysis of skill/plugin source code for dangerous patterns (eval, child_process, network listeners, credential access). `scanDirectoryWithSummary()` at `:415` returns severity-bucketed findings. Integrated into skill installation flow via `collectSkillInstallScanWarnings()` in `src/agents/skills-install.ts:104-131` and into `openclaw security audit --deep` via `collectPluginsCodeSafetyFindings()` and `collectInstalledSkillsCodeSafetyFindings()` in `src/security/audit-extra.ts:1131,1235`. Tests: `src/security/skill-scanner.test.ts` (345 lines).
+
+**HIGH (4):**
+
+- **`141f551a4` + `6ff209e93`** (PRs [#9903](https://github.com/openclaw/openclaw/pull/9903)/[#9790](https://github.com/openclaw/openclaw/pull/9790)) — **Exec-approvals allowlist coercion:** Bare string entries in exec-approvals allowlists bypassed validation because they lacked the required `{ pattern: "..." }` wrapper. New `coerceAllowlistEntries()` in `src/infra/exec-approvals.ts:137-162` normalizes bare strings into proper allowlist objects during config load. Tests: `src/infra/exec-approvals.test.ts` (+130 lines). Thanks @mcaxtr.
+
+- **`57326f72e`** (PR [#2092](https://github.com/openclaw/openclaw/pull/2092)) — **Nextcloud-Talk HMAC signing:** Signs outbound message text with HMAC instead of the full JSON body, preventing message forgery if the transport is intercepted. Affects `extensions/nextcloud-talk/src/send.ts`.
+
+- **`34a58b839`** (PR [#9870](https://github.com/openclaw/openclaw/pull/9870)) — **Ollama API key env var:** Adds `OLLAMA_API_KEY` support to the Ollama provider configuration, enabling token-based authentication for remote Ollama deployments. Affects `src/agents/models-config.providers.ts` and `src/agents/model-auth.ts`.
+
+- **`02842bef9`** (PR [#9971](https://github.com/openclaw/openclaw/pull/9971)) — **Slack mention stripping:** Strips `@mentions` from Slack messages before processing `/new` and `/reset` commands to prevent mention-injection where crafted messages could trigger unintended bot responses.
+
+**MEDIUM (3 groups):**
+
+- **Cron race conditions** (3 commits — PRs [#9823](https://github.com/openclaw/openclaw/pull/9823)/[#9948](https://github.com/openclaw/openclaw/pull/9948)/[#9932](https://github.com/openclaw/openclaw/pull/9932)) — Fixes race conditions in cron job scheduling where concurrent timer fires could duplicate job executions. Adds locking in `src/cron/service/timer.ts`, `src/cron/service/jobs.ts`, and `src/cron/service/store.ts`. Tests: `src/cron/service.every-jobs-fire.test.ts` (127 lines), `src/cli/cron-cli/shared.test.ts` (63 lines).
+
+- **`ec0728b35`** (PR [#1962](https://github.com/openclaw/openclaw/pull/1962)) — **Session lock release:** Ensures session write locks are properly released on abnormal process exit, preventing deadlocked sessions. Affects `src/agents/session-write-lock.ts`.
+
+- **`861725fba`** (PR [#4598](https://github.com/openclaw/openclaw/pull/4598)) — **Aborted message tool extraction:** Fixes tool_use extraction from aborted/errored assistant messages during session transcript repair. Prevents orphaned tool_result blocks from causing API rejection. Affects `src/agents/session-transcript-repair.ts`.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 

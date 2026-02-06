@@ -256,7 +256,7 @@ Two security-relevant commits:
 
 Four security-relevant commits:
 
-- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings (`src/infra/exec-approvals.ts:664,719`). Addresses Audit 2 "shell injection regex" claim.
+- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings (`src/infra/exec-approvals.ts:696,699`). Addresses Audit 2 "shell injection regex" claim.
 
 - **`fe81b1d71`** — Require shared auth before device bypass: Validates shared secret auth before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`).
 
@@ -353,6 +353,36 @@ Six security-relevant commits:
 - **`f32eeae3b`** — Compaction transcript repair: Removes orphaned tool_result messages when assistant messages with tool_use blocks are dropped during compaction pruning. Prevents API rejections due to unexpected tool_use_id. Defense-in-depth against prompt injection via malformed session transcripts.
 
 - **`7c951b01a`** — Feishu mention gating: Requires bot open_id match for group mention detection when bot ID is available. Prevents agent replies when other users (not the bot) are mentioned in Feishu groups. Access control hardening.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 6 sync 3)
+
+Fourteen security-relevant commits:
+
+**CRITICAL (3):**
+
+- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue #9517. New `authorizeCanvasRequest()` in `src/gateway/server-http.ts:92-126`. Thanks @coygeek.
+
+- **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** New `redactConfigSnapshot()` in `src/config/redact-snapshot.ts:117-126`. Partially addresses #5995, #9627, #9813.
+
+- **`bc88e58fc`** (PR [#9806](https://github.com/openclaw/openclaw/pull/9806)) — **Skill/plugin code safety scanner:** New `src/security/skill-scanner.ts` (441 lines). Integrated into skill install and `openclaw security audit --deep`.
+
+**HIGH (4):**
+
+- **`141f551a4` + `6ff209e93`** (PRs [#9903](https://github.com/openclaw/openclaw/pull/9903)/[#9790](https://github.com/openclaw/openclaw/pull/9790)) — **Exec-approvals allowlist coercion:** New `coerceAllowlistEntries()` in `src/infra/exec-approvals.ts:137-162`. Thanks @mcaxtr.
+
+- **`57326f72e`** (PR [#2092](https://github.com/openclaw/openclaw/pull/2092)) — **Nextcloud-Talk HMAC signing.**
+
+- **`34a58b839`** (PR [#9870](https://github.com/openclaw/openclaw/pull/9870)) — **Ollama API key env var.**
+
+- **`02842bef9`** (PR [#9971](https://github.com/openclaw/openclaw/pull/9971)) — **Slack mention stripping.**
+
+**MEDIUM (3 groups):**
+
+- **Cron race conditions** (3 commits — PRs #9823/#9948/#9932).
+- **`ec0728b35`** (PR [#1962](https://github.com/openclaw/openclaw/pull/1962)) — **Session lock release.**
+- **`861725fba`** (PR [#4598](https://github.com/openclaw/openclaw/pull/4598)) — **Aborted message tool extraction.**
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 

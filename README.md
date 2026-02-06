@@ -390,7 +390,7 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 
 ## `openclaw security audit` command reference
 
-> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:912-986`, `src/security/fix.ts:455-541`
+> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:914-992`, `src/security/fix.ts:455-541`
 >
 > The built-in security audit scans your local config, filesystem permissions, and channel policies for common misconfigurations. It does **not** scan source code for vulnerabilities.
 
@@ -876,7 +876,7 @@ Three security-relevant commits:
 
 Four security-relevant commits:
 
-- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:664,719`). Addresses Audit 2 "shell injection regex" claim by preventing shell expansion within quoted arguments.
+- **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:696,699`). Addresses Audit 2 "shell injection regex" claim by preventing shell expansion within quoted arguments.
 
 - **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`). Prevents auth bypass when only Tailscale identity is available.
 
@@ -997,13 +997,45 @@ Six security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 6 sync 3)
+
+Fourteen security-relevant commits:
+
+**CRITICAL (3):**
+
+- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:92-126` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
+
+- **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** `config.get` previously exposed all secrets (tokens, API keys) to any connected gateway client. New `redactConfigSnapshot()` function in `src/config/redact-snapshot.ts:117-126` strips sensitive values from config snapshots before returning them over the gateway wire protocol. Partially addresses tracked issues [#5995](https://github.com/openclaw/openclaw/issues/5995), [#9627](https://github.com/openclaw/openclaw/issues/9627), [#9813](https://github.com/openclaw/openclaw/issues/9813). Tests: `src/config/redact-snapshot.test.ts` (335 lines).
+
+- **`bc88e58fc`** (PR [#9806](https://github.com/openclaw/openclaw/pull/9806)) — **Skill/plugin code safety scanner:** New `src/security/skill-scanner.ts` (441 lines) provides static analysis of skill/plugin source code for dangerous patterns (eval, child_process, network listeners, credential access). `scanDirectoryWithSummary()` at `:415` returns severity-bucketed findings. Integrated into skill installation flow via `collectSkillInstallScanWarnings()` in `src/agents/skills-install.ts:104-131` and into `openclaw security audit --deep` via `collectPluginsCodeSafetyFindings()` and `collectInstalledSkillsCodeSafetyFindings()` in `src/security/audit-extra.ts:1131,1235`. Tests: `src/security/skill-scanner.test.ts` (345 lines).
+
+**HIGH (4):**
+
+- **`141f551a4` + `6ff209e93`** (PRs [#9903](https://github.com/openclaw/openclaw/pull/9903)/[#9790](https://github.com/openclaw/openclaw/pull/9790)) — **Exec-approvals allowlist coercion:** Bare string entries in exec-approvals allowlists bypassed validation because they lacked the required `{ pattern: "..." }` wrapper. New `coerceAllowlistEntries()` in `src/infra/exec-approvals.ts:137-162` normalizes bare strings into proper allowlist objects during config load. Tests: `src/infra/exec-approvals.test.ts` (+130 lines). Thanks @mcaxtr.
+
+- **`57326f72e`** (PR [#2092](https://github.com/openclaw/openclaw/pull/2092)) — **Nextcloud-Talk HMAC signing:** Signs outbound message text with HMAC instead of the full JSON body, preventing message forgery if the transport is intercepted. Affects `extensions/nextcloud-talk/src/send.ts`.
+
+- **`34a58b839`** (PR [#9870](https://github.com/openclaw/openclaw/pull/9870)) — **Ollama API key env var:** Adds `OLLAMA_API_KEY` support to the Ollama provider configuration, enabling token-based authentication for remote Ollama deployments. Affects `src/agents/models-config.providers.ts` and `src/agents/model-auth.ts`.
+
+- **`02842bef9`** (PR [#9971](https://github.com/openclaw/openclaw/pull/9971)) — **Slack mention stripping:** Strips `@mentions` from Slack messages before processing `/new` and `/reset` commands to prevent mention-injection where crafted messages could trigger unintended bot responses.
+
+**MEDIUM (3 groups):**
+
+- **Cron race conditions** (3 commits — PRs [#9823](https://github.com/openclaw/openclaw/pull/9823)/[#9948](https://github.com/openclaw/openclaw/pull/9948)/[#9932](https://github.com/openclaw/openclaw/pull/9932)) — Fixes race conditions in cron job scheduling where concurrent timer fires could duplicate job executions. Adds locking in `src/cron/service/timer.ts`, `src/cron/service/jobs.ts`, and `src/cron/service/store.ts`. Tests: `src/cron/service.every-jobs-fire.test.ts` (127 lines), `src/cli/cron-cli/shared.test.ts` (63 lines).
+
+- **`ec0728b35`** (PR [#1962](https://github.com/openclaw/openclaw/pull/1962)) — **Session lock release:** Ensures session write locks are properly released on abnormal process exit, preventing deadlocked sessions. Affects `src/agents/session-write-lock.ts`.
+
+- **`861725fba`** (PR [#4598](https://github.com/openclaw/openclaw/pull/4598)) — **Aborted message tool extraction:** Fixes tool_use extraction from aborted/errored assistant messages during session transcript repair. Prevents orphaned tool_result blocks from causing API rejection. Affects `src/agents/session-transcript-repair.ts`.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Open Upstream Security Issues
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 06-02-2026 (09:05 AEST)
+> **Last checked:** 06-02-2026 (17:30 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1014,7 +1046,7 @@ Six security-relevant commits:
 | [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage dmPolicy auto-responds with pairing codes | `src/imessage/monitor/monitor-provider.ts:184,342-381` |
 | [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:315-316` - security settings reset |
 | [#5255](https://github.com/openclaw/openclaw/issues/5255) | HIGH | Browser file upload arbitrary read | `src/browser/pw-tools-core.interactions.ts:531` |
-| [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets exposed in session transcripts | By design - `config.get` returns resolved values |
+| [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets exposed in session transcripts | `config.get` now redacted via `redactConfigSnapshot()` (PR #9858); transcripts still expose by design |
 | [#6606](https://github.com/openclaw/openclaw/issues/6606) | HIGH | Telegram webhook binds to 0.0.0.0 with optional secret | `src/telegram/webhook.ts:26,36,46-48` |
 | [#6609](https://github.com/openclaw/openclaw/issues/6609) | HIGH | Browser bridge server optional authentication | `src/browser/bridge-server.ts:33-42` |
 | [#8054](https://github.com/openclaw/openclaw/issues/8054) | HIGH | Type coercion `"undefined"` credentials | `src/wizard/onboarding.gateway-config.ts:206` |
@@ -1025,10 +1057,10 @@ Six security-relevant commits:
 | [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal | `src/browser/pw-tools-core.downloads.ts:20-24` |
 | [#8776](https://github.com/openclaw/openclaw/issues/8776) | HIGH | soul-evil hook silently hijacks agent | `src/hooks/soul-evil.ts:217-280` |
 | [#9435](https://github.com/openclaw/openclaw/issues/9435) | HIGH | Gateway auth token exposed in URL query params | `src/commands/dashboard.ts:34`, `src/gateway/hooks.ts:67-69` |
-| [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:214,221` |
-| [#9517](https://github.com/openclaw/openclaw/issues/9517) | HIGH | Gateway canvas host auth bypass | `src/gateway/server-http.ts:289-296` |
-| [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON after update/doctor | `src/config/io.ts:480-537` |
-| [#9813](https://github.com/openclaw/openclaw/issues/9813) | HIGH (DUPLICATE #9627) | Gateway expands ${ENV_VAR} on meta writeback | `src/config/io.ts:496` |
+| [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:267,274` |
+| [#9517](https://github.com/openclaw/openclaw/issues/9517) | ~~HIGH~~ FIXED | Gateway canvas host auth bypass | Fixed in PR [#9518](https://github.com/openclaw/openclaw/pull/9518) — new `authorizeCanvasRequest()` at `src/gateway/server-http.ts:92-126` |
+| [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON after update/doctor | `src/config/io.ts:480-537` — partially mitigated by `redactConfigSnapshot()` (PR #9858) |
+| [#9813](https://github.com/openclaw/openclaw/issues/9813) | HIGH (DUPLICATE #9627) | Gateway expands ${ENV_VAR} on meta writeback | `src/config/io.ts:496` — partially mitigated by `redactConfigSnapshot()` (PR #9858) |
 | [#9795](https://github.com/openclaw/openclaw/issues/9795) | LOW | sanitizeMimeType regex not end-anchored (by design) | `src/media-understanding/apply.ts:96-106` |
 | [#9792](https://github.com/openclaw/openclaw/issues/9792) | INVALID | validateHostEnv skips baseEnv (by design) | `src/agents/bash-tools.exec.ts:967-975` |
 | [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:110-148` |
@@ -1038,7 +1070,7 @@ Six security-relevant commits:
 | [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:74-119` |
 | [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
 | [#5124](https://github.com/openclaw/openclaw/issues/5124) | MEDIUM | ReDoS in log redaction patterns | `src/logging/redact.ts:47-61` |
-| [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM | Timing attack in non-gateway token comparisons | `src/gateway/server-http.ts:86`, `src/infra/node-pairing.ts:277` |
+| [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM | Timing attack in non-gateway token comparisons | `src/gateway/server-http.ts:151`, `src/infra/node-pairing.ts:277` |
 | [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `src/auto-reply/reply/session.ts:87` |
 | [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
 | [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | No detection of encoded/obfuscated commands | `src/infra/exec-safety.ts:1-44` |
@@ -1100,7 +1132,7 @@ Six security-relevant commits:
 **Verification:**
 - No imports for `authorizeGatewayConnect` or `resolvedAuth` validation in the file
 - Other endpoints (OpenAI, tools-invoke, open-responses) DO call `authorizeGatewayConnect`
-- Plugin HTTP dispatch at `server-http.ts:265` occurs without auth check
+- Plugin HTTP dispatch at `server-http.ts:332` occurs without auth check
 
 ### #6609: Browser Bridge Server Optional Authentication
 
@@ -1140,9 +1172,9 @@ Six security-relevant commits:
 **Vulnerability:** `skills.install` with download installer extracts archives via system `tar`/`unzip` without validating entry paths. Malicious archives with `../` sequences can write files outside the target directory (Zip Slip attack).
 
 **Affected code:**
-- `src/agents/skills-install.ts:202-226` - `extractArchive` function
-- `src/agents/skills-install.ts:206-212` - zip: `["unzip", "-q", archivePath, "-d", targetDir]` with no path filter
-- `src/agents/skills-install.ts:214-224` - tar: `["tar", "xf", archivePath, "-C", targetDir]` with no path filter
+- `src/agents/skills-install.ts:255-279` - `extractArchive` function
+- `src/agents/skills-install.ts:263-268` - zip: `["unzip", "-q", archivePath, "-d", targetDir]` with no path filter
+- `src/agents/skills-install.ts:271-278` - tar: `["tar", "xf", archivePath, "-C", targetDir]` with no path filter
 
 **Verification:**
 - No entry path validation, `tar --transform`, or filter callback found
@@ -1156,8 +1188,8 @@ Six security-relevant commits:
 **Vulnerability:** Gateway HTTP server serves Canvas host and A2UI endpoints without enforcing gateway auth, allowing unauthenticated access to canvas files.
 
 **Affected code:**
-- `src/gateway/server-http.ts:289-296` - Canvas/A2UI handler dispatch without auth check
-- `src/gateway/server-http.ts:336-338` - WebSocket upgrade for live reload
+- `src/gateway/server-http.ts:356-376` - Canvas/A2UI handler dispatch (now auth-wrapped via `authorizeCanvasRequest()` at `:92-126`, PR #9518)
+- `src/gateway/server-http.ts:418-440` - WebSocket upgrade for canvas (now auth-wrapped via `authorizeCanvasRequest()` at `:425`, PR #9518)
 
 **Verification:**
 - No `authorizeGatewayConnect` call before `canvasHost.handleHttpRequest(req, res)`
@@ -1248,7 +1280,7 @@ Six security-relevant commits:
 
 **Affected code:**
 - `src/gateway/auth.ts:35-40` - `safeEqual` uses `timingSafeEqual` (correct)
-- `src/gateway/server-http.ts:86` - hook token uses direct `!==` (vulnerable)
+- `src/gateway/server-http.ts:151` - hook token uses direct `!==` (vulnerable)
 - `src/infra/node-pairing.ts:277` - node token uses direct `===` (vulnerable)
 - `src/infra/device-pairing.ts:434` - device token uses direct `!==` (vulnerable)
 
