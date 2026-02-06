@@ -1053,7 +1053,7 @@ Four security-relevant commits:
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 06-02-2026 (22:19 AEST)
+> **Last checked:** 06-02-2026 (22:27 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1098,6 +1098,11 @@ Four security-relevant commits:
 | [#8594](https://github.com/openclaw/openclaw/issues/8594) | MEDIUM | No rate limiting on gateway endpoints | `src/gateway/server-constants.ts` (no rate limit controls) |
 | [#9007](https://github.com/openclaw/openclaw/issues/9007) | LOW | Google Places URL path interpolation (skill, not core) | `skills/local-places/src/local_places/google_places.py:238` |
 | [#9065](https://github.com/openclaw/openclaw/issues/9065) | LOW | ~/.openclaw group-writable after sudo install | Operational - code uses `0o700` but sudo bypasses |
+| [#10324](https://github.com/openclaw/openclaw/issues/10324) | MEDIUM | Memory index multi-write lacks transactions | `src/memory/manager.ts:2257-2354` (DELETEs+INSERTs without BEGIN/COMMIT) |
+| [#10326](https://github.com/openclaw/openclaw/issues/10326) | MEDIUM | Child process stop() lacks SIGKILL escalation | `src/imessage/client.ts:110-131`, `src/signal/daemon.ts:96-100` |
+| [#10330](https://github.com/openclaw/openclaw/issues/10330) | MEDIUM | TOCTOU race in device auth token storage | `src/infra/device-auth-store.ts:92-119` (read+write with no lock) |
+| [#10331](https://github.com/openclaw/openclaw/issues/10331) | MEDIUM | Session store stale cache inside write lock | `src/config/sessions/store.ts:364,422` (missing `skipCache: true`) |
+| [#10333](https://github.com/openclaw/openclaw/issues/10333) | MEDIUM | BlueBubbles filename multipart header injection | `extensions/bluebubbles/src/attachments.ts:26-30,224-228`, `chat.ts:340-342` |
 
 ### #3277: Path Validation Bypasses
 
@@ -1561,6 +1566,65 @@ Four security-relevant commits:
 - Authentication required (not anonymous)
 - Payload size limits (512KB frame, 256KB HTTP body)
 - Deduplication cache (prevents duplicate processing but NOT request frequency)
+
+### #10324: Memory Index Multi-Write Lacks Transactions
+
+**Severity:** MEDIUM (CVSS 6.8)
+**CWE:** CWE-362 (Concurrent Execution Using Shared Resource with Improper Synchronization)
+
+**Vulnerability:** The `indexFile()` method performs multiple DELETE + INSERT operations across chunks, vector, FTS, and files tables without wrapping them in a database transaction. A crash or concurrent write mid-operation leaves the memory index in an inconsistent state (orphaned vectors, missing chunks, stale file records).
+
+**Affected code:**
+- `src/memory/manager.ts:2257-2354` — `indexFile()` performs 5+ SQL operations (DELETE vector :2273, DELETE FTS :2281, DELETE chunks :2287, INSERT loop :2290-2343, UPSERT files :2344-2353) with **no BEGIN/COMMIT**
+- Contrast: `src/memory/manager.ts:740,752` correctly uses `BEGIN`/`COMMIT` for similar batch operations
+
+### #10326: Child Process stop() Lacks SIGKILL Escalation
+
+**Severity:** MEDIUM (CVSS 5.5)
+**CWE:** CWE-404 (Improper Resource Shutdown or Release)
+
+**Vulnerability:** Child process termination in iMessage and Signal daemons sends only SIGTERM with no fallback to SIGKILL. Misbehaving or hung child processes can remain alive indefinitely, consuming resources.
+
+**Affected code:**
+- `src/imessage/client.ts:110-131` — `stop()` sends SIGTERM at :125 after 500ms timeout; `Promise.race` at :120 resolves regardless, but never force-kills
+- `src/signal/daemon.ts:96-100` — `stop()` sends SIGTERM at :98; fire-and-forget with no timeout or SIGKILL fallback
+
+### #10330: TOCTOU Race in Device Auth Token Storage
+
+**Severity:** MEDIUM (CVSS 6.2)
+**CWE:** CWE-367 (Time-of-check Time-of-use Race Condition)
+
+**Vulnerability:** `storeDeviceAuthToken()` reads the auth store from disk, modifies the in-memory object, and writes back without any file locking. Two concurrent authentication flows can race, with the second overwriting the first's token.
+
+**Affected code:**
+- `src/infra/device-auth-store.ts:92-119` — read at :100 (`readStore`), mutate :102-116, write at :117 (`writeStore`) with **no lock between read and write**
+- Called from `src/gateway/client.ts:254` during device authentication
+
+### #10331: Session Store Stale Cache Inside Write Lock
+
+**Severity:** MEDIUM (CVSS 5.9)
+**CWE:** CWE-662 (Improper Synchronization)
+
+**Vulnerability:** Two session store write methods call `loadSessionStore()` without `skipCache: true`, reading stale cached data even though they hold the write lock. Concurrent requests to the same session can silently lose metadata updates.
+
+**Affected code:**
+- `src/config/sessions/store.ts:364` — `updateSessionEntry()` inside `withSessionStoreLock()` calls `loadSessionStore(storePath)` **without `skipCache: true`**
+- `src/config/sessions/store.ts:422` — `updateLastRoute()` same pattern
+- Correct usage at :272 passes `{ skipCache: true }` when reading inside a write path
+
+**Impact:** 8 callers in hot paths (agent runner, channels, Slack, LINE, web) can lose session metadata updates under concurrent load.
+
+### #10333: BlueBubbles Filename Multipart Header Injection
+
+**Severity:** MEDIUM (CVSS 5.4)
+**CWE:** CWE-93 (Improper Neutralization of CRLF Sequences in HTTP Headers)
+
+**Vulnerability:** BlueBubbles attachment handling uses `path.basename()` as sole filename sanitization, which strips directory components but preserves `"`, `\r`, `\n`, and other characters that can inject into Content-Disposition headers.
+
+**Affected code:**
+- `extensions/bluebubbles/src/attachments.ts:26-30` — `sanitizeFilename()` uses only `path.basename()` at :28
+- `extensions/bluebubbles/src/attachments.ts:224-228` — `addFile()` interpolates filename unescaped into `Content-Disposition: form-data; name="${name}"; filename="${fileName}"` at :227
+- `extensions/bluebubbles/src/chat.ts:340-342` — constructs Content-Disposition header with `filename="${filename}"` at :342 with **no sanitization at all**
 
 ### Notable Non-Core Issues
 
