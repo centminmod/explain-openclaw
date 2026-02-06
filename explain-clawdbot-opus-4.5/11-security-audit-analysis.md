@@ -637,6 +637,24 @@ Fourteen security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 6 sync 4)
+
+Four security-relevant commits:
+
+**HIGH (2):**
+
+- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:46-63` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:150-157` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
+
+- **`bccdc95a9`** (PR [#10000](https://github.com/openclaw/openclaw/pull/10000)) — **Cap sessions_history payloads:** New `SESSIONS_HISTORY_MAX_BYTES` (80KB) and `SESSIONS_HISTORY_TEXT_MAX_CHARS` (4000) in `src/agents/tools/sessions-history-tool.ts:24-25`. Sanitization strips thinking signatures, image data, usage/cost metadata. Prevents DoS via unbounded session history injection. Thanks @gut-puncture.
+
+**MEDIUM (2):**
+
+- **`c75275f10`** (PR [#10146](https://github.com/openclaw/openclaw/pull/10146)) — **Harden control UI asset handling in update flow:** New `resolveControlUiDistIndexHealth()` in `src/infra/control-ui-assets.ts:19-32`. Update runner uses explicit entry point and adds post-doctor UI repair. Defense-in-depth for update flow integrity. Thanks @gumadeiras.
+
+- **`4a59b7786`** — **Harden CLI update restart imports and version resolution:** Version resolution in `src/version.ts` uses structured candidate search with package name validation (`PACKAGE_JSON_CANDIDATES` at line 6, `BUILD_INFO_CANDIDATES` at line 13). Defense-in-depth for self-update integrity.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Recommended Hardening Measures

@@ -478,7 +478,7 @@ The audit is a **configuration and filesystem hardening tool**. It detects misco
 | [#8590](https://github.com/openclaw/openclaw/issues/8590) | HIGH | Status endpoint info leak — code-level |
 | [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH | Env vars exposed via shell — code-level |
 | [#8776](https://github.com/openclaw/openclaw/issues/8776) | HIGH | soul-evil hook hijacking — code-level |
-| [#9435](https://github.com/openclaw/openclaw/issues/9435) | HIGH | Gateway token in URL query params — code-level |
+| [#9435](https://github.com/openclaw/openclaw/issues/9435) | ~~HIGH~~ FIXED | Gateway token in URL query params — fixed in PR #9436 |
 | [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill archive path traversal (Zip Slip) — code-level |
 | [#9517](https://github.com/openclaw/openclaw/issues/9517) | HIGH | Canvas host auth bypass — code-level |
 | [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal — code-level |
@@ -1029,13 +1029,31 @@ Fourteen security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 6 sync 4)
+
+Four security-relevant commits:
+
+**HIGH (2):**
+
+- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:46-63` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:150-157` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
+
+- **`bccdc95a9`** (PR [#10000](https://github.com/openclaw/openclaw/pull/10000)) — **Cap sessions_history payloads:** New `SESSIONS_HISTORY_MAX_BYTES` (80KB) and `SESSIONS_HISTORY_TEXT_MAX_CHARS` (4000) in `src/agents/tools/sessions-history-tool.ts:24-25`. Sanitization strips thinking signatures, image data, usage/cost metadata. Prevents DoS via unbounded session history injection. Thanks @gut-puncture.
+
+**MEDIUM (2):**
+
+- **`c75275f10`** (PR [#10146](https://github.com/openclaw/openclaw/pull/10146)) — **Harden control UI asset handling in update flow:** New `resolveControlUiDistIndexHealth()` in `src/infra/control-ui-assets.ts:19-32`. Update runner uses explicit entry point and adds post-doctor UI repair. Defense-in-depth for update flow integrity. Thanks @gumadeiras.
+
+- **`4a59b7786`** — **Harden CLI update restart imports and version resolution:** Version resolution in `src/version.ts` uses structured candidate search with package name validation (`PACKAGE_JSON_CANDIDATES` at line 6, `BUILD_INFO_CANDIDATES` at line 13). Defense-in-depth for self-update integrity.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Open Upstream Security Issues
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 06-02-2026 (17:30 AEST)
+> **Last checked:** 06-02-2026 (22:19 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1056,7 +1074,7 @@ Fourteen security-relevant commits:
 | [#8590](https://github.com/openclaw/openclaw/issues/8590) | HIGH | Status endpoint exposes sensitive internal info | `src/gateway/server-methods/health.ts:28-31` |
 | [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal | `src/browser/pw-tools-core.downloads.ts:20-24` |
 | [#8776](https://github.com/openclaw/openclaw/issues/8776) | HIGH | soul-evil hook silently hijacks agent | `src/hooks/soul-evil.ts:217-280` |
-| [#9435](https://github.com/openclaw/openclaw/issues/9435) | HIGH | Gateway auth token exposed in URL query params | `src/commands/dashboard.ts:34`, `src/gateway/hooks.ts:67-69` |
+| [#9435](https://github.com/openclaw/openclaw/issues/9435) | ~~HIGH~~ FIXED | Gateway auth token exposed in URL query params | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token acceptance removed from `src/gateway/hooks.ts`, dashboard URL no longer passes `?token=` |
 | [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:267,274` |
 | [#9517](https://github.com/openclaw/openclaw/issues/9517) | ~~HIGH~~ FIXED | Gateway canvas host auth bypass | Fixed in PR [#9518](https://github.com/openclaw/openclaw/pull/9518) — new `authorizeCanvasRequest()` at `src/gateway/server-http.ts:92-126` |
 | [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON after update/doctor | `src/config/io.ts:480-537` — partially mitigated by `redactConfigSnapshot()` (PR #9858) |
@@ -1066,11 +1084,11 @@ Fourteen security-relevant commits:
 | [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:110-148` |
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check) |
-| [#5120](https://github.com/openclaw/openclaw/issues/5120) | MEDIUM | Webhook token accepted via query parameters | `src/gateway/hooks.ts:67-70` |
-| [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:74-119` |
+| [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` |
+| [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:65-111` |
 | [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
 | [#5124](https://github.com/openclaw/openclaw/issues/5124) | MEDIUM | ReDoS in log redaction patterns | `src/logging/redact.ts:47-61` |
-| [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM | Timing attack in non-gateway token comparisons | `src/gateway/server-http.ts:151`, `src/infra/node-pairing.ts:277` |
+| [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM | Timing attack in non-gateway token comparisons | `src/gateway/server-http.ts:160`, `src/infra/node-pairing.ts:277` |
 | [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `src/auto-reply/reply/session.ts:87` |
 | [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
 | [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | No detection of encoded/obfuscated commands | `src/infra/exec-safety.ts:1-44` |
@@ -1197,15 +1215,14 @@ Fourteen security-relevant commits:
 
 ### #5120: Webhook Token Accepted via Query Parameters
 
-**Severity:** MEDIUM
+**Status: FIXED** in PR [#9436](https://github.com/openclaw/openclaw/pull/9436)
+
+**Severity:** ~~MEDIUM~~ FIXED
 **CWE:** CWE-598 (Sensitive Query Strings)
 
-**Vulnerability:** Webhook endpoint accepts authentication tokens via URL query parameters, causing credential leakage through logs, browser history, and Referer headers.
+**Vulnerability:** Webhook endpoint accepted authentication tokens via URL query parameters, causing credential leakage through logs, browser history, and Referer headers.
 
-**Affected code:**
-- `src/gateway/hooks.ts:67-70` - Query token extraction still processed despite deprecation warning
-
-**Note:** Token is logged as deprecated but still accepted and processed. Credential leakage possible via URL logging, browser history, and HTTP Referer headers.
+**Fix:** Query token extraction removed entirely from `src/gateway/hooks.ts`. `extractHookToken()` now only accepts `Authorization: Bearer` header and `X-OpenClaw-Token` header. Server returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:150-157`).
 
 ### #4949: Browser Control Server DNS Rebinding
 
@@ -1249,7 +1266,7 @@ Fourteen security-relevant commits:
 
 **Vulnerability:** `readJsonBody()` has a body size limit but no read timeout. An attacker can hold connections open indefinitely by sending data one byte at a time (Slowloris attack).
 
-**Affected code:** `src/gateway/hooks.ts:74-119` - size limit present, timeout absent.
+**Affected code:** `src/gateway/hooks.ts:65-111` - size limit present, timeout absent.
 
 ### #5123: ReDoS in Session Filter Regex
 
@@ -1280,7 +1297,7 @@ Fourteen security-relevant commits:
 
 **Affected code:**
 - `src/gateway/auth.ts:35-40` - `safeEqual` uses `timingSafeEqual` (correct)
-- `src/gateway/server-http.ts:151` - hook token uses direct `!==` (vulnerable)
+- `src/gateway/server-http.ts:160` - hook token uses direct `!==` (vulnerable)
 - `src/infra/node-pairing.ts:277` - node token uses direct `===` (vulnerable)
 - `src/infra/device-pairing.ts:434` - device token uses direct `!==` (vulnerable)
 
@@ -1409,15 +1426,14 @@ Fourteen security-relevant commits:
 
 ### #9435: Gateway Auth Token Exposed in URL Query Params
 
-**Severity:** HIGH
+**Status: FIXED** in PR [#9436](https://github.com/openclaw/openclaw/pull/9436)
+
+**Severity:** ~~HIGH~~ FIXED
 **CWE:** CWE-598 (Sensitive Query Strings)
 
-**Vulnerability:** Gateway authentication tokens are passed via URL query parameters (`?token=...`) in dashboard and onboarding flows, exposing credentials through logs, browser history, and Referer headers.
+**Vulnerability:** Gateway authentication tokens were passed via URL query parameters (`?token=...`) in dashboard and onboarding flows, exposing credentials through logs, browser history, and Referer headers.
 
-**Affected code:**
-- `src/commands/dashboard.ts:34` - constructs `?token=` URL query param
-- `src/commands/onboard-helpers.ts:190` - same token-in-URL pattern
-- `src/gateway/hooks.ts:67-69` - server accepts `url.searchParams.get("token")`
+**Fix:** Query token acceptance completely removed. `extractHookToken()` in `src/gateway/hooks.ts:46-63` no longer reads `url.searchParams`. `src/commands/dashboard.ts` no longer constructs `?token=` URLs. `src/commands/onboard-helpers.ts` no longer passes token in URL. Server now returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:150-157`).
 
 ### #9627: Config Secrets Exposed in JSON After Update/Doctor
 

@@ -386,6 +386,24 @@ Fourteen security-relevant commits:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 6 sync 4)
+
+Four security-relevant commits:
+
+**HIGH (2):**
+
+- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters.** FIXES #5120 and #9435 (CWE-598). Thanks @coygeek.
+
+- **`bccdc95a9`** (PR [#10000](https://github.com/openclaw/openclaw/pull/10000)) — **Cap sessions_history payloads** (80KB/4000 chars). DoS prevention. Thanks @gut-puncture.
+
+**MEDIUM (2):**
+
+- **`c75275f10`** (PR [#10146](https://github.com/openclaw/openclaw/pull/10146)) — **Harden control UI asset handling in update flow.** Thanks @gumadeiras.
+
+- **`4a59b7786`** — **Harden CLI update restart imports and version resolution.**
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
