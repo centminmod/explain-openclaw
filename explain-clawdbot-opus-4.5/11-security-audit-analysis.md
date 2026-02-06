@@ -73,7 +73,7 @@ There is no pre-load permission validation (i.e., Clawdbot does not refuse to re
 
 **Verdict: False.**
 
-All agent paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,12`), which internally calls `path.resolve()` (`src/utils.ts:209,211`), normalizing traversal sequences (`../`, `./`) into absolute paths. Agent IDs originate from environment variables and configuration files, not from user-supplied input. There is no HTTP endpoint or CLI argument that passes an unvalidated agent ID directly into a path construction.
+All agent paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,13`), which internally calls `path.resolve()` (`src/utils.ts:243,245`), normalizing traversal sequences (`../`, `./`) into absolute paths. Agent IDs originate from environment variables and configuration files, not from user-supplied input. There is no HTTP endpoint or CLI argument that passes an unvalidated agent ID directly into a path construction.
 
 ### 7. Webhook Signature Bypass
 
@@ -652,6 +652,16 @@ Four security-relevant commits:
 - **`c75275f10`** (PR [#10146](https://github.com/openclaw/openclaw/pull/10146)) — **Harden control UI asset handling in update flow:** New `resolveControlUiDistIndexHealth()` in `src/infra/control-ui-assets.ts:19-32`. Update runner uses explicit entry point and adds post-doctor UI repair. Defense-in-depth for update flow integrity. Thanks @gumadeiras.
 
 - **`4a59b7786`** — **Harden CLI update restart imports and version resolution:** Version resolution in `src/version.ts` uses structured candidate search with package name validation (`PACKAGE_JSON_CANDIDATES` at line 6, `BUILD_INFO_CANDIDATES` at line 13). Defense-in-depth for self-update integrity.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 7 sync 1)
+
+One security-relevant commit:
+
+**MEDIUM (1):**
+
+- **`421644940`** (PR [#10176](https://github.com/openclaw/openclaw/pull/10176)) — **Guard resolveUserPath against undefined input:** New `resolveRunWorkspaceDir()` in `src/agents/workspace-run.ts:72` validates workspace dir type/value before resolution, falls back to per-agent defaults (not CWD). New `classifySessionKeyShape()` in `src/routing/session-key.ts:62` rejects malformed `agent:` session keys. New SHA256-based identifier redaction in `src/logging/redact-identifier.ts` for safe audit logging. Addresses **Audit 1 Claim #6** (path traversal in agent dirs) — adds defense-in-depth upstream of `resolveUserPath()` (`src/agents/agent-paths.ts:10,13` → `src/utils.ts:243,245`). 139 new test lines covering edge cases. Thanks @Yida-Dev.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
