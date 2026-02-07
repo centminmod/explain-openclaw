@@ -1092,7 +1092,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 07-02-2026 (23:03 AEST)
+> **Last checked:** 08-02-2026 (07:06 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1154,6 +1154,11 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 | [#10033](https://github.com/openclaw/openclaw/issues/10033) | ENHANCEMENT | Feature: secrets management integration | Enhancement request; current state: plaintext creds with 0o600 perms |
 | [#10927](https://github.com/openclaw/openclaw/issues/10927) | ENHANCEMENT | Random IDs for external content wrapper tags | `src/security/external-content.ts:47-48` — static tags; `replaceMarkers()` at `:110-150` already sanitizes injected markers |
 | [#10890](https://github.com/openclaw/openclaw/issues/10890) | ENHANCEMENT | RFC: Skill Security Framework (manifests, signing, sandboxing) | Comprehensive proposal for phased skill security; relates to #9512 (skill path traversal) |
+| [#11437](https://github.com/openclaw/openclaw/issues/11437) | CRITICAL | CWD .env → config path override → plugin code exec via jiti | `src/infra/dotenv.ts:10`, `src/config/paths.ts:99`, `src/plugins/config-state.ts:69,190` |
+| [#11434](https://github.com/openclaw/openclaw/issues/11434) | CRITICAL | CWD .env → arbitrary dynamic import via OPENCLAW_BROWSER_CONTROL_MODULE | `src/gateway/server-browser.ts:13-14` — raw `await import(override)` |
+| [#11431](https://github.com/openclaw/openclaw/issues/11431) | CRITICAL | Hook/plugin npm install runs lifecycle scripts (no --ignore-scripts) | `src/hooks/install.ts:237`, `src/plugins/install.ts:281` |
+| [#11023](https://github.com/openclaw/openclaw/issues/11023) | HIGH | Sandbox browser bridge started without auth token | `src/agents/sandbox/browser.ts:192` — no `authToken` passed; relates to #6609 |
+| [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
 
 ### #10646: Weak UUID / Math.random() in Tool Call IDs
