@@ -1073,7 +1073,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 07-02-2026 (13:11 AEST)
+> **Last checked:** 07-02-2026 (14:26 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1104,7 +1104,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 | [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:110-148` |
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check) |
-| [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` |
+| [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` (note: upstream issue still OPEN) |
 | [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:65-111` |
 | [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
 | [#5124](https://github.com/openclaw/openclaw/issues/5124) | MEDIUM | ReDoS in log redaction patterns | `src/logging/redact.ts:47-61` |
@@ -1123,6 +1123,38 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 | [#10330](https://github.com/openclaw/openclaw/issues/10330) | MEDIUM | TOCTOU race in device auth token storage | `src/infra/device-auth-store.ts:92-119` (read+write with no lock) |
 | [#10331](https://github.com/openclaw/openclaw/issues/10331) | MEDIUM | Session store stale cache inside write lock | `src/config/sessions/store.ts:364,422` (missing `skipCache: true`) |
 | [#10333](https://github.com/openclaw/openclaw/issues/10333) | MEDIUM | BlueBubbles filename multipart header injection | `extensions/bluebubbles/src/attachments.ts:26-30,224-228`, `chat.ts:340-342` |
+| [#10646](https://github.com/openclaw/openclaw/issues/10646) | HIGH | Weak UUID: Math.random() fallback + tool call IDs | `ui/src/ui/uuid.ts:23-33` (fallback), `src/auto-reply/reply/get-reply-inline-actions.ts:191` (toolCallId) |
+| [#7139](https://github.com/openclaw/openclaw/issues/7139) | MEDIUM | Default config: sandbox off, plaintext creds | `src/agents/sandbox/config.ts:147` (mode="off"), gateway loopback is safe; creds 0o600 |
+| [#9875](https://github.com/openclaw/openclaw/issues/9875) | MEDIUM | Orphaned tool_use blocks from backgrounded exec | `src/agents/session-transcript-repair.ts:166-318` (reactive repair, not proactive) |
+| [#6304](https://github.com/openclaw/openclaw/issues/6304) | LOW | Matrix plugin transitive dep vuln (request pkg) | `extensions/matrix/package.json` — transitive via `@vector-im/matrix-bot-sdk` (CVE-2023-28155) |
+| [#4807](https://github.com/openclaw/openclaw/issues/4807) | LOW | Sandbox setup script missing from npm package | `package.json` files array excludes `scripts/`; `scripts/sandbox-common-setup.sh` not shipped |
+| [#3359](https://github.com/openclaw/openclaw/issues/3359) | ~~MEDIUM~~ MITIGATED | npm audit vulns in tar/hono | `package.json` pnpm.overrides: tar@7.5.7, hono@4.11.8 (above vuln thresholds) |
+| [#3086](https://github.com/openclaw/openclaw/issues/3086) | ~~LOW~~ FIXED | Windows ACL false flag as mode=666 | `src/security/audit-fs.ts:86-116` + `src/security/windows-acl.ts` — icacls-based ACL checks implemented |
+| [#10521](https://github.com/openclaw/openclaw/issues/10521) | INVALID | Security audit flags claude-opus-4-6 as below 4.5 | `src/security/audit-extra.ts:321` regex correctly matches `claude-opus-4-6` in current code (2026.2.6) |
+| [#10033](https://github.com/openclaw/openclaw/issues/10033) | ENHANCEMENT | Feature: secrets management integration | Enhancement request; current state: plaintext creds with 0o600 perms |
+| [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
+
+### #10646: Weak UUID / Math.random() in Tool Call IDs
+
+**Vulnerability:** Two distinct Math.random() usages in security-relevant contexts.
+
+1. **UI UUID fallback** (`ui/src/ui/uuid.ts:23-33`): `weakRandomBytes()` uses `Math.floor(Math.random() * 256)` when Web Crypto API is unavailable. Low practical risk since modern environments always have crypto.
+
+2. **Tool call IDs** (`src/auto-reply/reply/get-reply-inline-actions.ts:191`): `cmd_${Date.now()}_${Math.random().toString(16).slice(2)}` — always uses Math.random(), no crypto path. Used for tool call/result correlation in session transcripts.
+
+**Secondary:** Tmp file suffixes in `src/cron/store.ts:52`, `src/cron/run-log.ts:38`, `src/browser/trash.ts:16`, `src/tts/tts.ts:380` (low risk, collision-resistant via PID/timestamp).
+
+**Confirmed safe:** 52 files use `crypto.randomUUID`/`randomBytes` for proper crypto paths.
+
+### #7139: Default Config — Sandbox Disabled, Plaintext Credentials
+
+**Sandbox defaults to "off"** at `src/agents/sandbox/config.ts:147`:
+
+```
+mode: agentSandbox?.mode ?? agent?.mode ?? "off"
+```
+
+A Docker sandbox implementation exists with proper isolation (`--network none`, `--cap-drop ALL`, `--read-only`) but is opt-in only. Gateway bind defaults to "loopback" (safe). Credentials are plaintext with 0o600 permissions, flagged by `collectSecretsInConfigFindings()`. File permission hardening is extensive (80+ locations use 0o600/0o700).
 
 ### #3277: Path Validation Bypasses
 
