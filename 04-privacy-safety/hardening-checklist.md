@@ -177,3 +177,55 @@ In Feb 2026, **341 malicious skills** (12% of audited packages) were found on Cl
 See: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
 
 Docs: https://docs.openclaw.ai/plugin and https://docs.openclaw.ai/gateway/security
+
+---
+
+## 10) Control mDNS/Bonjour discovery
+
+The Gateway can broadcast its presence on the local network via mDNS. Check your current mode:
+
+```bash
+openclaw config get discovery.mdns
+```
+
+| Network environment | Recommended mode | Why |
+|---------------------|------------------|-----|
+| Home LAN (trusted) | `minimal` (default) | Convenient discovery; sensitive fields omitted |
+| Shared/public network | `off` | Don't advertise the gateway at all |
+| Debugging on trusted network | `full` | Exposes cliPath + sshPort for diagnostics |
+
+To disable mDNS entirely:
+```bash
+openclaw config set discovery.mdns off
+```
+
+Or via environment variable:
+```bash
+export OPENCLAW_DISABLE_BONJOUR=1
+```
+
+Source: `src/gateway/server-discovery-runtime.ts:19,23-30`, `src/infra/bonjour.ts:28-38`
+
+See: [Threat model - mDNS/Bonjour](./threat-model.md#6-mdnsbonjour-network-discovery)
+
+---
+
+## 11) Configure trusted proxies
+
+If you run a reverse proxy (nginx, Caddy, Traefik) in front of the Gateway, you **must** configure trusted proxies so the Gateway can correctly identify client IPs and enforce local-access checks.
+
+```bash
+openclaw config set gateway.trustedProxies '["127.0.0.1"]'
+```
+
+Verify your configuration:
+```bash
+openclaw security audit
+# Look for: gateway.trusted_proxies_missing
+```
+
+If you're not using a reverse proxy, leave `trustedProxies` empty (the default).
+
+Source: `src/gateway/net.ts:74-96`
+
+See: [Threat model - Trusted proxies](./threat-model.md#trusted-proxies-reverse-proxy-configuration)

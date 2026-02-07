@@ -199,3 +199,4 @@ Choose your deployment type and continue to the detailed guide:
 - **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)** - Skills marketplace supply chain attacks (Feb 2026 ClawHavoc campaign)
 - **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 20 attack examples with data exfiltration
 - **[Misconfiguration Examples](./misconfiguration-examples.md)** - Real mistakes and how to fix them
+- **[Incident Response Playbook](./incident-response.md)** - What to do when things go wrong

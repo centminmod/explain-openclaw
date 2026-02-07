@@ -87,6 +87,30 @@ Mitigations:
 - require auth (token/password) for non-loopback binds
 - be careful with reverse proxies; configure trusted proxies
 
+#### Trusted proxies (reverse proxy configuration)
+
+If you run a reverse proxy (e.g. nginx, Caddy, Traefik) in front of the Gateway, two things can go wrong:
+
+1. **Spoofed local access:** Without trusted proxy config, an attacker can send a fake `X-Forwarded-For: 127.0.0.1` header to trick the Gateway into treating the request as local (bypassing auth).
+2. **IP checks see the proxy IP:** The Gateway sees the proxy's IP instead of the real client IP, breaking rate limiting and access controls.
+
+The Gateway solves this with a trust chain:
+- `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:74-80`)
+- `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:82-96`)
+- `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:107-128`)
+
+**Configuration:**
+```bash
+openclaw config set gateway.trustedProxies '["127.0.0.1"]'
+```
+
+**Rules of thumb:**
+- Running a reverse proxy? Set `trustedProxies` to the proxy's IP address(es)
+- No reverse proxy? Leave `trustedProxies` empty (the default)
+- `openclaw security audit` flags this as `gateway.trusted_proxies_missing` when a proxy is detected but not configured
+
+Source: `src/gateway/auth.ts:84-92` (`resolveTailscaleClientIp()`, `resolveRequestClientIp()`), `src/security/audit.ts` (audit check)
+
 ### 4) Local disk + secrets
 OpenClaw stores transcripts and credentials on disk under `~/.openclaw/`.
 If another user/process on the host can read that directory, privacy is gone.
@@ -125,6 +149,33 @@ ClawHub is a third-party skills marketplace for OpenClaw. In Feb 2026, **341 mal
 
 See: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
 
+### 6) mDNS/Bonjour network discovery
+
+The Gateway can advertise itself on the local network via mDNS (Bonjour), using the `_openclaw-gw._tcp` service type. This makes it easy for OpenClaw clients (e.g. the Mac app, mobile apps) to discover the Gateway automatically -- but it also means anyone on the same LAN can see the broadcast.
+
+**What gets broadcast (TXT record fields):**
+
+| Field | Always included | Full-mode only |
+|-------|:-:|:-:|
+| `gatewayPort` | Yes | Yes |
+| `transport` ("gateway") | Yes | Yes |
+| `canvasPort` | Yes (if set) | Yes (if set) |
+| `tailnetDns` | Yes (if set) | Yes (if set) |
+| `gatewayTlsSha256` | Yes (if TLS) | Yes (if TLS) |
+| `cliPath` | -- | Yes |
+| `sshPort` | -- | Yes |
+
+Source: `src/infra/bonjour.ts:12-26` (opts type), `src/infra/bonjour.ts:130-146` (minimal conditionals), `src/gateway/server-discovery-runtime.ts:19,23-30` (mdnsMode logic)
+
+**Risk:** In "full" mode, the broadcast includes `cliPath` (filesystem structure) and `sshPort` (attack vector). Even in "minimal" mode, the Gateway port and hostname are visible to anyone on the LAN segment.
+
+**Mitigations:**
+- Default mode is `minimal` (omits cliPath and sshPort)
+- Disable entirely: `openclaw config set discovery.mdns off`
+- Environment variable override: `OPENCLAW_DISABLE_BONJOUR=1`
+- mDNS is link-local only (not routable beyond the LAN/subnet)
+- Use "full" mode only on trusted home networks for debugging
+
 ---
 
 ## A practical attacker model
@@ -146,6 +197,59 @@ OpenClaw's docs emphasize an ordering that works in practice:
 1) **Identity first** — who is allowed to trigger the bot (pairing/allowlists)
 2) **Scope next** — what the bot is allowed to do (tool policy/sandboxing/nodes)
 3) **Model last** — assume the model can be manipulated; design so manipulation has limited blast radius
+
+---
+
+## Per-agent access scoping (multi-agent setups)
+
+When running multiple agents on the same Gateway, each agent should have only the access it needs. OpenClaw provides three scoping layers:
+
+### Sandbox isolation per agent
+
+Each agent can have its own sandbox configuration controlling:
+- **mode:** `off` (no sandbox), `agent` (per-agent container), or `all` (all sessions sandboxed)
+- **scope:** `dedicated` (isolated) or `shared` (shares with other agents)
+- **workspaceAccess:** `none`, `ro` (read-only), or `rw` (read-write)
+- **Docker:** whether the sandbox runs in a Docker container
+
+Agent-specific settings override global defaults. Resolution order: agent config -> global agent defaults -> built-in defaults.
+
+Source: `src/agents/sandbox/config.ts:126` (`resolveSandboxConfigForAgent()`)
+
+### Tool policies per agent
+
+Each agent can have its own allow/deny tool list. The precedence chain is:
+1. Agent-specific allow/deny (`agents.list[].tools.sandbox.tools`)
+2. Global agent defaults (`tools.sandbox.tools`)
+3. Built-in defaults (all tools allowed)
+
+If agent-specific lists are set, they take priority over global lists.
+
+Source: `src/agents/sandbox/tool-policy.ts:71` (`resolveSandboxToolPolicyForAgent()`)
+
+### Named tool profiles
+
+For convenience, OpenClaw provides named tool profiles that map to common use cases:
+
+| Profile | Description | What it allows |
+|---------|-------------|---------------|
+| `minimal` | Read-only status | `session_status` only |
+| `coding` | Development tasks | Filesystem, runtime, sessions, memory, images |
+| `messaging` | Communication tasks | Messaging group, session management |
+| `full` | Unrestricted | All tools (empty allow list = no restrictions) |
+
+Source: `src/agents/tool-policy.ts:63-80` (`TOOL_PROFILES`)
+
+### DM session isolation
+
+Each agent's DM sessions are keyed by `<agentId>:<sessionKey>`, so conversations with Agent A cannot leak into Agent B's context -- even when both agents serve the same messaging channel.
+
+### Security recommendation for multi-agent setups
+
+- Apply **least privilege**: each agent gets only the tools and workspace access it needs
+- Use `sandbox.mode: "all"` for agents that process untrusted input (e.g. public-facing bots)
+- Set `workspaceAccess: "none"` or `"ro"` for agents that don't need to write files
+- Use the `minimal` or `messaging` tool profiles for agents that only need communication capabilities
 
 ---
 

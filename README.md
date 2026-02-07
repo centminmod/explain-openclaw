@@ -384,6 +384,8 @@ See: https://docs.openclaw.ai/gateway/local-models
 #### Q: How do I make sure different people’s DMs don’t leak context to each other?
 Consider DM session isolation (multi-user mode) so each peer gets an isolated DM session, and use identity linking only where appropriate.
 
+For multi-agent setups, each agent can also be scoped independently: per-agent sandbox isolation, tool allow/deny policies, and workspace access controls prevent one agent's context from leaking into another. See [per-agent access scoping](./04-privacy-safety/threat-model.md#per-agent-access-scoping-multi-agent-setups) for details.
+
 See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and https://docs.openclaw.ai/concepts/session
 
 ---
@@ -1922,6 +1924,7 @@ Based on source code review of:
 | [ClawHub Marketplace Risks](./05-worst-case-security/clawhub-marketplace-risks.md) | Skills marketplace supply chain, ClawHavoc campaign, social engineering |
 | [Prompt Injection Attacks](./05-worst-case-security/prompt-injection-attacks.md) | 20 attack examples with data exfiltration scenarios |
 | [Misconfiguration Examples](./05-worst-case-security/misconfiguration-examples.md) | 10 real mistakes with step-by-step fixes |
+| [Incident Response](./05-worst-case-security/incident-response.md) | Containment, credential rotation, recovery procedures |
 
 ---
 
