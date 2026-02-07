@@ -414,6 +414,16 @@ One security-relevant commit:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 7 sync 2)
+
+One security-adjacent commit (reliability/hardening focus):
+
+**LOW (1):**
+
+- **`d90cac990`** (PR [#10776](https://github.com/openclaw/openclaw/pull/10776)) — **Cron scheduler reliability, store hardening, and UX improvements.** Adds `isJobDue()` guard, reduces `MAX_TIMER_DELAY_MS`, hardens input normalization, improves store state initialization with migration support. 2,952 lines across 58 files. Continues cron hardening from Feb 6 sync 3.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---

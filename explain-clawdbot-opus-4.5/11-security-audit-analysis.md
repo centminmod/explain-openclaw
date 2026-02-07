@@ -665,6 +665,16 @@ One security-relevant commit:
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 7 sync 2)
+
+One security-adjacent commit (reliability/hardening focus, continues cron race condition work from Feb 6 sync 3):
+
+**LOW (1):**
+
+- **`d90cac990`** (PR [#10776](https://github.com/openclaw/openclaw/pull/10776)) — **Cron scheduler reliability, store hardening, and UX improvements:** Adds `isJobDue()` guard in `src/cron/service/timer.ts` to prevent stale timer firings. Reduces `MAX_TIMER_DELAY_MS` for tighter scheduling. Input normalization hardened in `src/cron/normalize.ts`. Store state initialization improved in `src/cron/service/store.ts` with migration support. 2,952 lines added across 58 files (mostly tests + UI). Continues cron race condition hardening from Feb 6 sync 3 (`1ecae8098`, `8e74fbb41`).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Recommended Hardening Measures
