@@ -230,7 +230,12 @@ In February 2026, security researchers discovered **341 malicious skills** on Cl
 - ClawHub skills run continuously in your Gateway process
 - A malicious skill can read credentials, sessions, and exfiltrate data silently
 
-For the full analysis, attack vectors, and recovery procedures, see: **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)**
+**Scanning improvements added after the campaign (Feb 2026):**
+- **ClawHub/VirusTotal partnership:** All published skills now undergo automated scanning via VirusTotal (70+ AV engines + Gemini LLM code review), with daily rescans of previously approved skills. ([Blog post](https://openclaw.ai/blog/virustotal-partnership))
+- **OpenClaw local scanner:** Built-in pattern-based static analysis (`src/security/skill-scanner.ts`) runs at install time, detecting dangerous code patterns (shell exec, eval, crypto mining, credential harvesting).
+- **Caveat:** The ClawHavoc campaign used social engineering (fake "prerequisite" commands), not malicious code patterns. No automated code scanner can detect this attack vector. Human vigilance remains the primary defense against social engineering attacks.
+
+For the full analysis, attack vectors, scanning architecture details, and recovery procedures, see: **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)**
 
 ---
 

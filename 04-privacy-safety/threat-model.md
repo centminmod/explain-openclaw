@@ -111,10 +111,16 @@ ClawHub is a third-party skills marketplace for OpenClaw. In Feb 2026, **341 mal
 
 **Key risk:** Skills run in-process with the Gateway. A malicious skill has full access to credentials, sessions, and network.
 
+**Security improvements (Feb 2026):** ClawHub now scans all published skills through a [VirusTotal partnership](https://openclaw.ai/blog/virustotal-partnership) (6-step pipeline with 70+ AV engines + Gemini LLM code review, daily rescans). OpenClaw also includes a built-in local skill scanner (`src/security/skill-scanner.ts`) that runs pattern-based static analysis at install time, detecting dangerous patterns like shell execution, eval, crypto mining, and credential harvesting.
+
+**Caveat:** Neither scanner can detect social engineering (the ClawHavoc attack vector used fake "prerequisite" commands) or prompt injection payloads. A clean scan is not a guarantee of safety.
+
 **Additional mitigations for ClawHub:**
+- Check VirusTotal scan status on ClawHub skill page before installing
+- Review local scanner warnings shown during skill installation
 - Avoid skills less than 30 days old
 - Never run "prerequisite" terminal commands from skill docs
-- Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) before installing
+- Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) as an independent third-party check
 - Inspect skill code in `~/.openclaw/skills/` before enabling
 
 See: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)

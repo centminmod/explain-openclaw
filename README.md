@@ -1818,6 +1818,7 @@ Before installing or following any link, verify you are using official sources:
 - [ ] Use encrypted disk (FileVault/LUKS) for credential protection
 - [ ] Review installed plugins and their permissions
 - [ ] Never run "prerequisite" terminal commands from skill docs without reviewing code
+- [ ] Check VirusTotal scan status on ClawHub skill pages before installing
 - [ ] Use Koi Security Scanner before installing ClawHub skills
 
 ### Threat Summary
@@ -1829,7 +1830,7 @@ Before installing or following any link, verify you are using official sources:
 | **Session stealing** | Malware, malicious plugins | Account takeover | Check linked devices |
 | **Shodan exposure** | Misconfiguration | Full compromise | Check Shodan, audit config |
 | **Fake SaaS** | Social engineering | API key theft | Never share keys externally |
-| **ClawHub malicious skills** | Supply chain, social engineering | Credential theft, malware | Check skill age, scan with Koi |
+| **ClawHub malicious skills** | Supply chain, social engineering | Credential theft, malware | Check VirusTotal scan status, review local scanner warnings, scan with Koi |
 
 ### 6. ClawHub Malicious Skills (ClawHavoc Campaign)
 
@@ -1847,13 +1848,21 @@ Before installing or following any link, verify you are using official sources:
 - **Disguises:** Crypto tools (Solana trackers, Polymarket bots), YouTube utilities, ClawHub typosquats
 - **Attack method:** Social engineering via fake "prerequisites", not code exploits
 
+**Security improvements (Feb 2026):**
+- **VirusTotal partnership:** ClawHub now scans all published skills through a 6-step pipeline (deterministic packaging, SHA-256 hashing, VirusTotal analysis with 70+ AV engines, Gemini LLM code review, auto-approval/blocking). Previously approved skills are rescanned daily.
+- **OpenClaw local scanner:** Built-in pattern-based static analysis runs at install time, detecting dangerous code patterns (shell exec, eval, crypto mining, credential harvesting). See `src/security/skill-scanner.ts`.
+- **Limitations:** Neither layer can detect social engineering (the ClawHavoc attack vector), prompt injection, or zero-day threats. A clean scan is not a guarantee of safety.
+
 **Real-world sources:**
+- [OpenClaw Blog - VirusTotal Partnership](https://openclaw.ai/blog/virustotal-partnership)
 - [Koi Security ClawHavoc Report](https://www.koi.ai/blog/clawhavoc-341-malicious-clawedbot-skills-found-by-the-bot-they-were-targeting)
 - [The Hacker News](https://thehackernews.com/2026/02/researchers-find-341-malicious-clawhub.html)
 - [BleepingComputer](https://www.bleepingcomputer.com/news/security/malicious-moltbot-skills-used-to-push-password-stealing-malware)
 
 **Mitigations:**
 - **Never run prerequisite commands** without reading the code first
+- Check VirusTotal scan status on the ClawHub skill page before installing
+- Review local scanner warnings shown during skill installation
 - Avoid skills less than 30 days old or from unknown publishers
 - Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) to check skills before installing
 - Inspect skill code in `~/.openclaw/skills/` before enabling

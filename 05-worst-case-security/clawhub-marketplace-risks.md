@@ -40,7 +40,7 @@ ClawHub is an unofficial third-party skills marketplace for OpenClaw. Key charac
 
 - **Open publishing:** Anyone with a GitHub account at least 1 week old can publish skills
 - **No sandboxing:** Skills are executable code that runs in-process with the Gateway
-- **Minimal vetting:** No code review before publishing; reactive moderation only
+- **Automated vetting (Feb 2026):** All published skills undergo VirusTotal scanning; OpenClaw also runs a local pattern-based scanner at install time. No human code review before publishing.
 - **Full access:** Skills have the same filesystem and network access as the Gateway itself
 
 ### The Trust Model (plain English analogy)
@@ -52,7 +52,7 @@ ClawHub is an unofficial third-party skills marketplace for OpenClaw. Key charac
 | Apple App Store | Manual human review | Yes (strict) | Low |
 | Google Play | Automated + manual | Yes (moderate) | Medium |
 | npm registry | None | None | Medium-High |
-| ClawHub | None | None | High |
+| ClawHub | Automated (VirusTotal + local scanner) | None | Medium-High |
 
 **Key difference:** When you install an npm package, it runs during install but not continuously. A ClawHub skill runs in-process with your Gateway, with full access to credentials, sessions, and tools.
 
@@ -158,7 +158,8 @@ ClawHub's moderation model is reactive, not proactive:
 |---------|---------------|---------------|
 | Publishing requirements | GitHub account >= 1 week | Trivial to bypass |
 | Code review | None before publishing | Zero prevention |
-| Automated scanning | Basic pattern matching | Easily evaded |
+| ClawHub VirusTotal scanning (Feb 2026) | 6-step pipeline: hash, analyze, Code Insight (Gemini LLM), auto-approve/block | Good for known malware; cannot catch social engineering or prompt injection |
+| OpenClaw local scanner (Feb 2026) | Pattern-based static analysis at install time | Detects common dangerous patterns; regex-based, can be evaded |
 | Reporting | 3+ reports triggers review | Slow response |
 | Takedown | Manual after report | Damage already done |
 
@@ -257,6 +258,17 @@ The scanner checks for:
 - Obfuscated code
 - Package age and publisher history
 
+### Check VirusTotal Scan Status
+
+Since Feb 2026, every published ClawHub skill undergoes automated VirusTotal scanning:
+
+1. Go to the skill's ClawHub page
+2. Look for the scan status indicator (benign / suspicious / malicious)
+3. Click the VirusTotal link to view the full report
+4. **Do not install** skills flagged as suspicious or malicious
+
+**Important:** A "benign" scan result does NOT guarantee safety. VirusTotal cannot detect prompt injection payloads, social engineering instructions (like the fake "prerequisites" used in ClawHavoc), or zero-day threats. Always combine scan checks with manual code review.
+
 ### Environment Hardening
 
 For maximum safety when testing skills:
@@ -292,7 +304,90 @@ iptables -A OUTPUT -m owner --uid-owner openclaw -j DROP
 
 ---
 
-## F. Recovery If Compromised
+## F. ClawHub + OpenClaw Scanning Architecture
+
+### Two-Layer Defense
+
+ClawHub skills pass through two independent scanning layers before (and during) use:
+
+| Layer | Where It Runs | When | Scanner | What It Catches |
+|-------|--------------|------|---------|-----------------|
+| **Layer 1: ClawHub/VirusTotal** | ClawHub platform (server-side) | At publish time + daily rescans | VirusTotal (70+ AV engines) + Code Insight (Gemini LLM) | Known malware signatures, suspicious binaries, flagged domains |
+| **Layer 2: OpenClaw local scanner** | Your machine (client-side) | At skill install time + `openclaw security audit --deep` | Pattern-based static analysis | Dangerous code patterns (shell exec, eval, crypto mining, credential harvesting) |
+
+These layers complement each other: VirusTotal catches known threats using its global malware database, while the local scanner catches dangerous code patterns that may not have malware signatures yet. Neither layer can catch social engineering or prompt injection.
+
+### ClawHub VirusTotal Partnership (Feb 7, 2026)
+
+ClawHub announced a partnership with VirusTotal to implement automated security scanning for all published skills.
+
+**The six-step scanning pipeline:**
+
+1. **Deterministic Packaging** — Skill files are bundled into a ZIP archive with a `_meta.json` manifest
+2. **Hash Generation** — SHA-256 hash computed for the package
+3. **Database Lookup** — VirusTotal checks for existing scan results matching the hash
+4. **Upload and Analysis** — If no existing results, the package is uploaded to VirusTotal's v3 API for analysis by 70+ antivirus engines
+5. **Code Insight Analysis** — Gemini LLM performs a security-focused code review looking for malicious patterns
+6. **Auto-Approval System** — Benign results: auto-approved. Suspicious: flagged with warning. Malicious: blocked from publishing.
+
+**Ongoing protection:**
+- Previously approved skills are rescanned daily to catch emerging threats
+- Scan results are visible on each skill's ClawHub page with direct links to VirusTotal reports
+
+**Broader security program:** ClawHub's security efforts are led by Jamieson O'Reilly (Dvuln, CREST Advisory Council member) as lead security advisor.
+
+Source: [OpenClaw Blog - VirusTotal Partnership](https://openclaw.ai/blog/virustotal-partnership)
+
+### OpenClaw Local Skill Scanner
+
+OpenClaw includes a built-in pattern-based static code scanner that runs locally on your machine. It requires no external API calls.
+
+**When it runs:**
+- Automatically at skill install time (warnings shown in terminal)
+- During `openclaw security audit --deep` (detailed findings report)
+
+**Detection rules:**
+
+| Rule ID | Severity | What It Detects | Pattern |
+|---------|----------|-----------------|---------|
+| `dangerous-exec` | Critical | Shell command execution | `child_process` exec/spawn/execFile |
+| `dynamic-code-execution` | Critical | Dynamic code execution | `eval()`, `new Function()` |
+| `crypto-mining` | Critical | Crypto-mining references | stratum, coinhive, xmrig, cryptonight |
+| `env-harvesting` | Critical | Credential harvesting | `process.env` + network send (fetch/http) |
+| `suspicious-network` | Warning | Non-standard WebSocket | WebSocket to non-standard ports (not 80, 443, 8080, 8443, 3000) |
+| `potential-exfiltration` | Warning | Data exfiltration pattern | File read (`readFile`/`readFileSync`) + network send |
+| `obfuscated-code` | Warning | Code obfuscation | Hex-encoded strings (`\x` sequences), large base64 payloads with decode calls |
+
+**Scanner limits:**
+- Max 500 files per skill
+- Max 1MB per file (larger files are silently skipped)
+- Only scans JS/TS extensions: `.js`, `.ts`, `.mjs`, `.cjs`, `.mts`, `.cts`, `.jsx`, `.tsx`
+- Skips `node_modules` directories
+
+**Important: Warnings only.** The local scanner shows warnings but does **not** block installation, even for critical findings. You must decide whether to proceed.
+
+Code: `src/security/skill-scanner.ts` (rule definitions, core scanner, directory scanner)
+Integration: `src/agents/skills-install.ts:104-131` (install-time scan), `src/security/audit-extra.ts:1132-1305` (security audit deep scan)
+
+### Comprehensive Limitations (What Scanning Cannot Catch)
+
+| Limitation | Affects | Why |
+|-----------|---------|-----|
+| **Prompt injection payloads** | Both layers | Text-based instructions that coerce AI agents into unsafe actions look like normal documentation/content |
+| **Social engineering in docs** | Both layers | Fake "prerequisite" commands (the ClawHavoc attack vector) are natural language, not malicious code |
+| **Novel zero-day threats** | VirusTotal layer | New/unknown malware not yet in VirusTotal's database |
+| **Obfuscation beyond regex** | Local scanner | Sophisticated packing, polymorphic code, or string construction evades pattern matching |
+| **Non-JS/TS files** | Local scanner | Only scans `.js`, `.ts`, `.mjs`, `.cjs`, `.mts`, `.cts`, `.jsx`, `.tsx` — misses shell scripts, Python, etc. |
+| **Large files (>1MB)** | Local scanner | Files exceeding 1MB are silently skipped |
+| **Runtime-only behavior** | Both layers | Code that behaves benignly during analysis but activates malicious behavior at runtime (time bombs, environment checks) |
+| **Supply chain within skills** | Both layers (partial) | If a skill bundles or fetches compromised npm packages at runtime |
+| **Network-based C2** | Partial | VirusTotal may catch known C2 domains; local scanner flags suspicious network patterns but can be evaded |
+
+**Key takeaway:** A clean scan does not mean a skill is safe. Both scanning layers are defense-in-depth measures, not guarantees. The ClawHavoc campaign specifically used social engineering (fake prerequisite commands) — an attack vector that no automated code scanner can detect. Human vigilance remains essential.
+
+---
+
+## G. Recovery If Compromised
 
 ### Immediate Actions
 
@@ -359,15 +454,18 @@ After any suspected compromise, rotate ALL credentials:
 |---------|-------------|-------|
 | Plugin loading | `src/plugins/loader.ts` | In-process execution, no sandbox |
 | Install flow | `src/commands/install-plugin.ts` | Runs npm install in plugin dir |
-| Skill validation | N/A | No built-in validation |
+| Local skill scanner | `src/security/skill-scanner.ts` | Rule definitions, core scanner, directory scanner |
+| Install-time scan integration | `src/agents/skills-install.ts:104-131` | Collects scan warnings during skill install |
+| Security audit deep scan | `src/security/audit-extra.ts:1132-1305` | Plugin code safety findings for `--deep` audit |
 | Skill registry | External (ClawHub) | Not in OpenClaw codebase |
 
-Note: ClawHub is a third-party service, not part of the OpenClaw codebase. The risks documented here stem from the design decision to run skills in-process without sandboxing.
+Note: ClawHub is a third-party service, not part of the OpenClaw codebase. The risks documented here stem from the design decision to run skills in-process without sandboxing. The local skill scanner is part of the OpenClaw codebase.
 
 ---
 
 ## Cited Sources
 
+- [OpenClaw Blog - VirusTotal Partnership](https://openclaw.ai/blog/virustotal-partnership)
 - [The Hacker News - 341 Malicious ClawHub Skills](https://thehackernews.com/2026/02/researchers-find-341-malicious-clawhub.html)
 - [Koi Security - ClawHavoc Report](https://www.koi.ai/blog/clawhavoc-341-malicious-clawedbot-skills-found-by-the-bot-they-were-targeting)
 - [BleepingComputer - MoltBot Skills Malware](https://www.bleepingcomputer.com/news/security/malicious-moltbot-skills-used-to-push-password-stealing-malware)

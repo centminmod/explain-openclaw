@@ -162,12 +162,16 @@ Recommendations:
 
 In Feb 2026, **341 malicious skills** (12% of audited packages) were found on ClawHub. The attack used social engineering, not code exploits.
 
+**Scanning improvements (Feb 2026):** ClawHub now scans all published skills via a [VirusTotal partnership](https://openclaw.ai/blog/virustotal-partnership) (automated analysis + daily rescans). OpenClaw also includes a built-in local skill scanner that runs at install time and detects dangerous code patterns. However, neither scanner can catch social engineering (the actual ClawHavoc attack vector) or prompt injection — manual review remains essential.
+
 **Before installing any ClawHub skill:**
+- [ ] Check VirusTotal scan status on the ClawHub skill page
+- [ ] Review local scanner warnings shown during skill installation
 - [ ] Check skill age (avoid < 30 days old)
 - [ ] Verify publisher reputation
 - [ ] Read the actual code, not just documentation
 - [ ] **NEVER** run "prerequisite" terminal commands from skill docs
-- [ ] Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) to check skills
+- [ ] Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) as an independent third-party check
 - [ ] Be especially suspicious of crypto-related skills
 
 See: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
