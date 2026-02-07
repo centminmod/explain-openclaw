@@ -1069,13 +1069,30 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 7 sync 3)
+
+35 upstream commits, primarily Baidu Qianfan provider support (PR [#8868](https://github.com/openclaw/openclaw/pull/8868)), CI pipeline optimization, and release version bumps (2026.2.6-1 through 2026.2.6-3).
+
+**LOW (1):**
+
+- **`c5194d814`** — **Dashboard token delivery via URL fragment:** Restores token-authenticated dashboard URLs using URL fragments (`#token=`) instead of the previously removed query parameters (`?token=`). Fragments are not sent to servers, not logged in access logs, and not included in Referer headers (CWE-598 mitigation preserved). Follows PR [#9436](https://github.com/openclaw/openclaw/pull/9436) which removed query-param tokens entirely. Affects `src/commands/dashboard.ts`, `src/commands/onboard-helpers.ts`, `src/wizard/onboarding.finalize.ts`, `ui/src/ui/app-settings.ts`.
+
+**Notable non-security changes:**
+- **Baidu Qianfan provider** (`88ffad1c4`, PR [#8868](https://github.com/openclaw/openclaw/pull/8868)): New `QIANFAN_API_KEY` env var in `src/agents/model-auth.ts:305`, provider config in `src/agents/models-config.providers.ts`, onboarding flow in `src/commands/onboard-auth.config-core.ts`. Thanks @ide-rea.
+- **Voyage AI embeddings fix** (`e78ae48e6`, PR [#10818](https://github.com/openclaw/openclaw/pull/10818)): Adds `input_type` parameter to Voyage AI embedding requests for improved retrieval accuracy.
+- **CI pipeline optimization** (`47596257e`, `2d7428a7f`): Concurrency controls, consolidated macOS jobs, re-enabled parallel vitest on Windows.
+
+**Line number verification:** All 14 key security function references verified via LSP — no line shifts in this sync (0 security-critical source files changed).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Open Upstream Security Issues
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 07-02-2026 (14:26 AEST)
+> **Last checked:** 07-02-2026 (17:39 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1134,6 +1151,8 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 | [#3086](https://github.com/openclaw/openclaw/issues/3086) | ~~LOW~~ FIXED | Windows ACL false flag as mode=666 | `src/security/audit-fs.ts:86-116` + `src/security/windows-acl.ts` — icacls-based ACL checks implemented |
 | [#10521](https://github.com/openclaw/openclaw/issues/10521) | INVALID | Security audit flags claude-opus-4-6 as below 4.5 | `src/security/audit-extra.ts:321` regex correctly matches `claude-opus-4-6` in current code (2026.2.6) |
 | [#10033](https://github.com/openclaw/openclaw/issues/10033) | ENHANCEMENT | Feature: secrets management integration | Enhancement request; current state: plaintext creds with 0o600 perms |
+| [#10927](https://github.com/openclaw/openclaw/issues/10927) | ENHANCEMENT | Random IDs for external content wrapper tags | `src/security/external-content.ts:47-48` — static tags; `replaceMarkers()` at `:110-150` already sanitizes injected markers |
+| [#10890](https://github.com/openclaw/openclaw/issues/10890) | ENHANCEMENT | RFC: Skill Security Framework (manifests, signing, sandboxing) | Comprehensive proposal for phased skill security; relates to #9512 (skill path traversal) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
 
 ### #10646: Weak UUID / Math.random() in Tool Call IDs
@@ -1679,6 +1698,29 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 - `extensions/bluebubbles/src/attachments.ts:26-30` — `sanitizeFilename()` uses only `path.basename()` at :28
 - `extensions/bluebubbles/src/attachments.ts:224-228` — `addFile()` interpolates filename unescaped into `Content-Disposition: form-data; name="${name}"; filename="${fileName}"` at :227
 - `extensions/bluebubbles/src/chat.ts:340-342` — constructs Content-Disposition header with `filename="${filename}"` at :342 with **no sanitization at all**
+
+### #10927: Random IDs for External Content Wrapper Tags (Enhancement)
+
+**Category:** ENHANCEMENT (defense-in-depth)
+**CWE:** N/A
+
+**Proposal:** Add random 16-char IDs to external content wrapper tags (`<<<EXTERNAL_UNTRUSTED_CONTENT id="a7f3b2c1...">>>`) to prevent tag spoofing by malicious content.
+
+**Current defense:** `replaceMarkers()` at `src/security/external-content.ts:110-150` already sanitizes injected `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` tags (case-insensitive, including fullwidth Unicode variants) to `[[MARKER_SANITIZED]]`. The existing defense is functional; random IDs would add defense-in-depth and improve content correlation for debugging.
+
+**Related:** #8027 (web_fetch hidden text prompt injection)
+
+### #10890: RFC: Skill Security Framework (Enhancement)
+
+**Category:** ENHANCEMENT (architecture proposal)
+**CWE:** N/A
+
+**Proposal:** Phased skill security framework:
+- Phase 1: `openclaw skills audit` CLI, permission manifests, hash verification, install warnings
+- Phase 2: Author verification, skill signing, version pinning
+- Phase 3: Runtime sandboxing, tool allowlists per skill, anomaly detection
+
+**Relevance:** Directly addresses the attack surface documented in #9512 (skill archive path traversal) and the ClawHavoc campaign. Proposes Deno-style deny-by-default permissions for the skill system. Not a vulnerability report; comprehensive RFC for skill ecosystem security.
 
 ### Notable Non-Core Issues
 

@@ -675,6 +675,22 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 7 sync 3)
+
+35 upstream commits, primarily Baidu Qianfan provider support (PR [#8868](https://github.com/openclaw/openclaw/pull/8868)), CI pipeline optimization, and release version bumps (2026.2.6-1 through 2026.2.6-3).
+
+**LOW (1):**
+
+- **`c5194d814`** — **Dashboard token delivery via URL fragment:** Restores token-authenticated dashboard URLs using URL fragments (`#token=`) instead of the previously removed query parameters (`?token=`). Fragments are not sent to servers, not logged in access logs, and not included in Referer headers (CWE-598 mitigation preserved). Follows PR [#9436](https://github.com/openclaw/openclaw/pull/9436) which removed query-param tokens entirely. Affects `src/commands/dashboard.ts`, `src/commands/onboard-helpers.ts`, `src/wizard/onboarding.finalize.ts`, `ui/src/ui/app-settings.ts`.
+
+**Notable non-security changes:**
+- **Baidu Qianfan provider** (`88ffad1c4`, PR [#8868](https://github.com/openclaw/openclaw/pull/8868)): New `QIANFAN_API_KEY` env var in `src/agents/model-auth.ts:305`, provider config in `src/agents/models-config.providers.ts`, onboarding flow in `src/commands/onboard-auth.config-core.ts`. Thanks @ide-rea.
+- **Voyage AI embeddings fix** (`e78ae48e6`, PR [#10818](https://github.com/openclaw/openclaw/pull/10818)): Adds `input_type` parameter to Voyage AI embedding requests for improved retrieval accuracy.
+
+**Line number verification:** All 14 key security function references verified via LSP — no line shifts in this sync (0 security-critical source files changed).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Recommended Hardening Measures

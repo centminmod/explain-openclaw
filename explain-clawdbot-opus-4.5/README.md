@@ -424,6 +424,16 @@ One security-adjacent commit (reliability/hardening focus):
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 7 sync 3)
+
+35 upstream commits: Baidu Qianfan provider (PR [#8868](https://github.com/openclaw/openclaw/pull/8868)), CI optimization, release bumps (2026.2.6-1 through 2026.2.6-3).
+
+**LOW (1):**
+
+- **`c5194d814`** — **Dashboard token delivery via URL fragment:** Restores token-authenticated dashboard URLs using `#token=` (fragment) instead of removed `?token=` (query param). Fragments not sent to servers/logs/Referer. CWE-598 mitigation preserved from PR [#9436](https://github.com/openclaw/openclaw/pull/9436).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
