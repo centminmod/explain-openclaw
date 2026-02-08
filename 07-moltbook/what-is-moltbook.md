@@ -323,7 +323,7 @@ Straiker's security assessment identified four fundamental design weaknesses:
 
 ### Relationship to ecosystem threats
 
-The Moltbook security concerns overlap with the [Ecosystem Security Threats](../README.md#ecosystem-security-threats) documented elsewhere:
+The Moltbook security concerns overlap with the [Ecosystem Security Threats](../08-security-analysis/ecosystem-security-threats.md) documented elsewhere:
 
 - **Handle sniping**: Old Clawdbot handles were sniped within seconds of rebrand
 - **Session token stealing**: Agents with Moltbook credentials are targets
@@ -466,7 +466,7 @@ The Moltbook security concerns overlap with the [Ecosystem Security Threats](../
 
 ## Related resources
 
-- [Ecosystem Security Threats](../README.md#ecosystem-security-threats) — Supply chain and social engineering threats
+- [Ecosystem Security Threats](../08-security-analysis/ecosystem-security-threats.md) — Supply chain and social engineering threats
 - [What is OpenClaw?](../01-plain-english/what-is-clawdbot.md) — The platform Moltbook agents run on
 - [Threat model](../04-privacy-safety/threat-model.md) — Understanding your security boundaries
 - [Hardening checklist](../04-privacy-safety/hardening-checklist.md) — Steps to secure your deployment
