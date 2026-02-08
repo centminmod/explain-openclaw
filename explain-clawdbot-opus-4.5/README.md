@@ -146,7 +146,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks validation (`src/agents/tools/nodes-tool.ts:344-347`), but writes to paired node device, not gateway host. Requires node pairing approval. Real risk: Low-Medium. |
 | 3 | Log traversal via `logs.tail` | **False** | `LogsTailParamsSchema` has `additionalProperties: false` with only `cursor`, `limit`, `maxBytes`. File path from `getResolvedLoggerSettings().file` (config), not user input. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` (`src/infra/net/ssrf.ts:209-247`) pin DNS resolution. Redirect-to-private-IP explicitly tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
-| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-160`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
+| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-163`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format (`src/gateway/device-auth.ts:13-31`) lacks input sanitization (true), but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` (`src/infra/exec-safety.ts:16-44`) validates executable *names* (not commands). `BARE_NAME_PATTERN = /^[A-Za-z0-9._+-]+$/` is strict. Article conflates config validation with shell injection. |
 | 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec.ts:61-78,971-973`). Node-host has blocklist (`src/node-host/runner.ts:165-174`). Requires human approval + localhost + no sandbox. |
@@ -431,6 +431,29 @@ One security-adjacent commit (reliability/hardening focus):
 **LOW (1):**
 
 - **`c5194d814`** — **Dashboard token delivery via URL fragment:** Restores token-authenticated dashboard URLs using `#token=` (fragment) instead of removed `?token=` (query param). Fragments not sent to servers/logs/Referer. CWE-598 mitigation preserved from PR [#9436](https://github.com/openclaw/openclaw/pull/9436).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 9 sync 1)
+
+43 upstream commits. Key changes: new agent CRUD API (RBAC-gated), gateway LAN bind fix, sandbox USER directive fix, STATE_DIR credential path fix, cron isolation hardening, context overflow recovery, new MITRE ATLAS threat model documentation.
+
+**HIGH (3):**
+
+- **`980f78873`** (PR [#11045](https://github.com/openclaw/openclaw/pull/11045)) — **Agent CRUD RBAC gating:** New `agents.create/update/delete` gated behind `operator.admin` in `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:146-148`). Strengthens Audit 2 Claim 5.
+
+- **`b8c8130ef`** (PR [#11448](https://github.com/openclaw/openclaw/pull/11448)) — **Gateway LAN IP bind fix:** New `pickPrimaryLanIPv4()` in `src/gateway/net.ts:9-25` for `bind=lan` mode.
+
+- **`28e1a65eb`** (PR [#11289](https://github.com/openclaw/openclaw/pull/11289)) — **Sandbox USER directive fix:** `USER root` in Dockerfile.sandbox.
+
+**MEDIUM (4):**
+
+- **`ebe573040`** (PR [#4824](https://github.com/openclaw/openclaw/pull/4824)) — **STATE_DIR credential path fix.**
+- **`8fae55e8e`** (PR [#11641](https://github.com/openclaw/openclaw/pull/11641)) — **Cron isolated announce flow hardening.**
+- **`ea423bbbf`** — **Context overflow sanitization.**
+- **`0deb8b0da`** (PR [#11579](https://github.com/openclaw/openclaw/pull/11579)) — **Tool result overflow recovery** (328 lines).
+
+**Line number shifts:** `server-methods.ts` +3 (93-160 → 93-163), `net.ts` +24 (all functions shifted). All LSP-verified.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 

@@ -611,7 +611,7 @@ All four AI-generated summaries in this project covered the report. The followin
 
 **Key disagreement resolved:** Gemini 3.0 Pro accepted the race condition claim at face value. Code review (`src/agents/auth-profiles/oauth.ts:43-105`, config in `constants.ts:12-21`) confirms locking is correctly implemented. The other three models correctly identified this as a false positive.
 
-**Additional disagreement (Kimi K2.5):** Kimi K2.5 presents all 8 CRITICAL findings as actual vulnerabilities requiring remediation, including recommending keychain integration for token storage and disabling `config.patch` entirely. Code review confirms: (1) token storage with `0o600` permissions is standard CLI practice per RFC 8252, (2) `config.patch` executes inside Docker containers with `no-new-privileges`, (3) DNS pinning (`src/infra/net/ssrf.ts:270-307`) prevents the SSRF chain Kimi K2.5 describes, and (4) RBAC (`src/gateway/server-methods.ts:93-160`) prevents agent self-approval. The remediation advice in Kimi K2.5 is well-intentioned but addresses non-existent vulnerabilities.
+**Additional disagreement (Kimi K2.5):** Kimi K2.5 presents all 8 CRITICAL findings as actual vulnerabilities requiring remediation, including recommending keychain integration for token storage and disabling `config.patch` entirely. Code review confirms: (1) token storage with `0o600` permissions is standard CLI practice per RFC 8252, (2) `config.patch` executes inside Docker containers with `no-new-privileges`, (3) DNS pinning (`src/infra/net/ssrf.ts:270-307`) prevents the SSRF chain Kimi K2.5 describes, and (4) RBAC (`src/gateway/server-methods.ts:93-163`) prevents agent self-approval. The remediation advice in Kimi K2.5 is well-intentioned but addresses non-existent vulnerabilities.
 
 ### Synthesized verdict (all 8 CRITICAL claims)
 
@@ -703,7 +703,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 - **Claim 3 (logs.tail traversal):** Copilot GPT-5.2 calls it "partially accurate" and Gemini 3.0 Pro lists it as a "Data Risk." Code review confirms the `LogsTailParamsSchema` (`src/gateway/protocol/schema/logs-chat.ts:4-11`) has `additionalProperties: false` with only `cursor`/`limit`/`maxBytes` parameters -- there is no file path parameter at all. The file path comes from `getResolvedLoggerSettings().file` (config-derived). Verdict: **false**, not partially accurate.
 
-- **Claim 5 (auth bypass / self-approving agent):** Gemini 3.0 Pro states "Agents can self-approve dangerous commands (missing role check)." Code review confirms `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-146`) enforces role checks on every call and agents are blocked from approval methods. Verdict: **false**.
+- **Claim 5 (auth bypass / self-approving agent):** Gemini 3.0 Pro states "Agents can self-approve dangerous commands (missing role check)." Code review confirms `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-149`) enforces role checks on every call and agents are blocked from approval methods. Verdict: **false**.
 
 - **GLM 4.7 claim set mismatch:** GLM analyzed claims like "CVE-2024-44946 Directory Traversal" and "OS Command Injection via Filename" that do not appear in the Medium article. The article's actual 8 claims are about config injection, nodes outPath, logs.tail, DNS rebinding, RBAC, token format, regex validation, and env vars. This is a factual error in the analysis, not a disagreement about interpretation.
 
@@ -717,7 +717,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks path validation (`src/agents/tools/nodes-tool.ts:344-347`), but writes to paired node device, not gateway. |
 | 3 | Log traversal via `logs.tail` | **False** | Schema has `additionalProperties: false`, accepts only `cursor`/`limit`/`maxBytes` (`src/gateway/protocol/schema/logs-chat.ts:4-11`). File path from config, not request. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` pins DNS (`src/infra/net/ssrf.ts:270-307`). Redirect-to-private-IP tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
-| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` enforces role checks on every call (`src/gateway/server-methods.ts:93-160`). Agents blocked from approval methods. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
+| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` enforces role checks on every call (`src/gateway/server-methods.ts:93-163`). Agents blocked from approval methods. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format exists (`src/gateway/device-auth.ts:13-31`) but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` validates executable *names*, not commands (`src/infra/exec-safety.ts:16-44`). Strict allowlist: `/^[A-Za-z0-9._+-]+$/`. |
 | 8 | Env variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec.ts:61-78,971-973`). Node-host has blocklist (`src/node-host/runner.ts:165-174`). Requires human approval + localhost. |
@@ -1086,13 +1086,44 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
+### Post-Merge Hardening (Feb 9 sync 1)
+
+43 upstream commits. Key changes: new agent CRUD API (RBAC-gated), gateway LAN bind fix, sandbox USER directive fix, STATE_DIR credential path fix, cron isolation hardening, context overflow recovery, new MITRE ATLAS threat model documentation.
+
+**HIGH (3):**
+
+- **`980f78873`** (PR [#11045](https://github.com/openclaw/openclaw/pull/11045)) — **Agent CRUD RBAC gating:** New `agents.create`, `agents.update`, `agents.delete` gateway methods gated behind `operator.admin` scope in `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:146-148`). Prevents non-admin clients from creating/modifying/deleting agents. Strengthens Audit 2 Claim 5 (agent self-approval) controls — agents cannot call these methods.
+
+- **`b8c8130ef`** (PR [#11448](https://github.com/openclaw/openclaw/pull/11448)) — **Gateway LAN IP bind fix:** New `pickPrimaryLanIPv4()` in `src/gateway/net.ts:9-25` resolves the primary non-internal IPv4 address for `bind=lan` mode. WebSocket and probe URLs now use the actual LAN IP instead of `0.0.0.0`, preventing unintended exposure of internal URLs to external networks.
+
+- **`28e1a65eb`** (PR [#11289](https://github.com/openclaw/openclaw/pull/11289)) — **Sandbox USER directive fix:** Adds `USER root` directive to `Dockerfile.sandbox` and `Dockerfile.sandbox-browser`, fixing sandbox container user context. Also fixes `workspace:*` protocol references in extension package.json files and removes dead config entries.
+
+**MEDIUM (4):**
+
+- **`ebe573040`** (PR [#4824](https://github.com/openclaw/openclaw/pull/4824)) — **STATE_DIR credential path fix:** Device identity and canvas host now use `STATE_DIR` environment variable instead of hardcoded `~/.openclaw`, preventing credential path misalignment in non-standard installations (e.g., Docker, Nix). Affects `src/infra/device-identity.ts`, `src/canvas-host/server.ts`. New test: `src/infra/device-identity.state-dir.test.ts`.
+
+- **`8fae55e8e`** (PR [#11641](https://github.com/openclaw/openclaw/pull/11641)) — **Cron isolated announce flow hardening:** Shared isolated announce flow between cron jobs and main agent. Hardened cron scheduling and delivery with improved timer management and job state tracking. Continues cron race condition work from Feb 6 sync 3.
+
+- **`ea423bbbf`** — **Context overflow sanitization:** Enhanced error handling in `sanitizeUserFacingText()` for context overflow scenarios. Improves user-facing error messages when agent encounters context limits, reducing information leakage in error paths.
+
+- **`0deb8b0da`** (PR [#11579](https://github.com/openclaw/openclaw/pull/11579)) — **Tool result overflow recovery:** New `src/agents/pi-embedded-runner/tool-result-truncation.ts` (328 lines) detects and truncates oversized tool results that cause context overflow. Prevents DoS via tools returning unbounded output. Tests: `src/agents/pi-embedded-runner/tool-result-truncation.test.ts` (215 lines).
+
+**Notable non-security changes:**
+- **MITRE ATLAS threat model** (`74fbbda28`): New `docs/security/THREAT-MODEL-ATLAS.md` (603 lines) documents 20+ threats across 8 MITRE ATLAS tactics. Identifies P0 risks: direct prompt injection, malicious skill installation, credential harvesting via skills. References key security files including `src/infra/exec-approvals.ts`, `src/gateway/auth.ts`, `src/infra/net/ssrf.ts`.
+- **Memory hardening** (5 commits): QMD startup resilience, SQLITE_BUSY fallback, cache eviction idempotency, forced sync queuing.
+- **CI pipeline overhaul** (`multiple`): Docs-only detection, pnpm store caching, consolidated test sharding.
+
+**Line number shifts in this sync:** `src/gateway/server-methods.ts` +3 lines (93-160 → 93-163), `src/gateway/net.ts` +24 lines (all functions shifted: `isTrustedProxyAddress` 74→98, `resolveGatewayClientIp` 82→106, `resolveGatewayBindHost` 129→153). All references updated and LSP-verified.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
 ---
 
 ## Open Upstream Security Issues
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 08-02-2026 (07:06 AEST)
+> **Last checked:** 09-02-2026 (00:13 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -1146,6 +1177,8 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 | [#10646](https://github.com/openclaw/openclaw/issues/10646) | HIGH | Weak UUID: Math.random() fallback + tool call IDs | `ui/src/ui/uuid.ts:23-33` (fallback), `src/auto-reply/reply/get-reply-inline-actions.ts:191` (toolCallId) |
 | [#7139](https://github.com/openclaw/openclaw/issues/7139) | MEDIUM | Default config: sandbox off, plaintext creds | `src/agents/sandbox/config.ts:147` (mode="off"), gateway loopback is safe; creds 0o600 |
 | [#9875](https://github.com/openclaw/openclaw/issues/9875) | MEDIUM | Orphaned tool_use blocks from backgrounded exec | `src/agents/session-transcript-repair.ts:166-318` (reactive repair, not proactive) |
+| [#11900](https://github.com/openclaw/openclaw/issues/11900) | MEDIUM | Context files (USER.md, SOUL.md) loaded for all senders | `src/agents/bootstrap-files.ts:43-60` — no `senderIsOwner` check; `attempt.ts:192` calls unconditionally |
+| [#11832](https://github.com/openclaw/openclaw/issues/11832) | MEDIUM | Per-agent tools.exec config not applied | `src/auto-reply/reply/get-reply-directives.ts:66-81` — `resolveExecOverrides()` ignores `agentCfg` |
 | [#6304](https://github.com/openclaw/openclaw/issues/6304) | LOW | Matrix plugin transitive dep vuln (request pkg) | `extensions/matrix/package.json` — transitive via `@vector-im/matrix-bot-sdk` (CVE-2023-28155) |
 | [#4807](https://github.com/openclaw/openclaw/issues/4807) | LOW | Sandbox setup script missing from npm package | `package.json` files array excludes `scripts/`; `scripts/sandbox-common-setup.sh` not shipped |
 | [#3359](https://github.com/openclaw/openclaw/issues/3359) | ~~MEDIUM~~ MITIGATED | npm audit vulns in tar/hono | `package.json` pnpm.overrides: tar@7.5.7, hono@4.11.8 (above vuln thresholds) |
@@ -1160,6 +1193,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 | [#11023](https://github.com/openclaw/openclaw/issues/11023) | HIGH | Sandbox browser bridge started without auth token | `src/agents/sandbox/browser.ts:192` — no `authToken` passed; relates to #6609 |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
+| [#11879](https://github.com/openclaw/openclaw/issues/11879) | NOT APPLICABLE | Malicious ClawHub skill exfiltrating to Feishu | Ecosystem/marketplace issue; 13,981 installs; relates to #10890 (Skill Security Framework) |
 
 ### #10646: Weak UUID / Math.random() in Tool Call IDs
 
@@ -1728,6 +1762,30 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Relevance:** Directly addresses the attack surface documented in #9512 (skill archive path traversal) and the ClawHavoc campaign. Proposes Deno-style deny-by-default permissions for the skill system. Not a vulnerability report; comprehensive RFC for skill ecosystem security.
 
+### #11900: Context Files Loaded for All Senders Regardless of IsOwner
+
+**Vulnerability:** Bootstrap context files (USER.md, SOUL.md, etc.) are loaded for every sender, including non-owners on public channels. The `resolveBootstrapContextForRun()` function has no `senderIsOwner` parameter.
+**CWE:** CWE-200 (Exposure of Sensitive Information)
+
+**Affected code:**
+- `src/agents/bootstrap-files.ts:43-60` — `resolveBootstrapContextForRun()` loads all bootstrap files unconditionally
+- `src/agents/pi-embedded-runner/run/attempt.ts:192` — calls `resolveBootstrapContextForRun()` without `senderIsOwner`
+- `src/agents/pi-embedded-runner/run/attempt.ts:229` — `senderIsOwner` only passed to `createOpenClawCodingTools()` for tool gating
+
+**Impact:** Non-owner senders on public channels receive responses shaped by the owner's personal context files (personality, preferences, private notes). The content is not directly exposed but indirectly leaks through response behavior. Tool access is correctly gated by `senderIsOwner`, but context/personality files are not.
+
+### #11832: Per-Agent tools.exec Config Not Applied
+
+**Vulnerability:** Per-agent `tools.exec` configuration (host, security, ask, node) is silently ignored. Agents run with global exec defaults regardless of per-agent settings.
+**CWE:** CWE-269 (Improper Privilege Management)
+
+**Affected code:**
+- `src/auto-reply/reply/get-reply-directives.ts:66-81` — `resolveExecOverrides()` reads from `directives` (inline `!exec=docker`) and `sessionEntry` only
+- `src/auto-reply/reply/get-reply-directives.ts:93` — `agentCfg: AgentDefaults` is in scope but not consulted for exec settings
+- `src/agents/pi-embedded-runner/run/attempt.ts:211-215` — `execOverrides` passed to tool creation, but populated only from directives/session
+
+**Impact:** If an operator configures per-agent exec restrictions (e.g., `agents.mybot.tools.exec.host = "docker"` for sandboxed execution), those restrictions are silently ignored. The agent runs with global exec defaults. Global config still applies; only per-agent overrides are lost.
+
 ### Notable Non-Core Issues
 
 #### #9860: System Prompt Hijacking in google-antigravity Provider
@@ -1955,7 +2013,7 @@ Based on source code review of:
 
 **Critical vulnerabilities if misconfigured:**
 
-1. **Silent binding fallback** - Loopback failure → 0.0.0.0 exposure (`src/gateway/net.ts:98-102`)
+1. **Silent binding fallback** - Loopback failure → 0.0.0.0 exposure (`src/gateway/net.ts:159-164`)
 2. **Dangerous auth flags** - `dangerouslyDisableDeviceAuth` bypasses device verification (`src/config/types.gateway.ts:69-72`)
 3. **No encryption at rest** - Credentials protected only by file permissions (0o600/0o700)
 4. **Egress-free Moltworker** - Sandbox can exfiltrate to any server

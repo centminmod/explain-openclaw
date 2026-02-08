@@ -190,7 +190,7 @@ await execDocker(["exec", "-i", name, "sh", "-lc", cfg.setupCommand]);
 
 However, the article omits critical context:
 - **Execution is inside a Docker container**, not on the host. The container runs with `no-new-privileges` and restricted capabilities.
-- **Modifying config requires gateway authentication.** The `config.patch` server method is gated behind `authorizeGatewayMethod()` which requires the `operator` role (`src/gateway/server-methods.ts:93-146`).
+- **Modifying config requires gateway authentication.** The `config.patch` server method is gated behind `authorizeGatewayMethod()` which requires the `operator` role (`src/gateway/server-methods.ts:93-149`).
 - **Agent runtime schemas validate config** via Zod (`src/agents/zod-schema.agent-runtime.ts`).
 
 **What the article missed:** Container isolation is the primary security boundary for agent execution. RCE inside a container is not equivalent to RCE on the host. Real risk is Medium (CVSS 6-7), not Critical (10.0).
@@ -259,7 +259,7 @@ The test suite explicitly covers DNS rebinding scenarios (`src/agents/tools/web-
 
 **Verdict: False.**
 
-The `authorizeGatewayMethod()` function (`src/gateway/server-methods.ts:93-160`) enforces role-based access control on every server method:
+The `authorizeGatewayMethod()` function (`src/gateway/server-methods.ts:93-163`) enforces role-based access control on every server method:
 - Agents connect with `role: "node"` and are restricted to `NODE_ROLE_METHODS` only
 - Any non-node method call from a node role returns `unauthorized role: node`
 - Approval methods require `operator.approvals` scope (line 108-109)
@@ -688,6 +688,32 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 - **Voyage AI embeddings fix** (`e78ae48e6`, PR [#10818](https://github.com/openclaw/openclaw/pull/10818)): Adds `input_type` parameter to Voyage AI embedding requests for improved retrieval accuracy.
 
 **Line number verification:** All 14 key security function references verified via LSP — no line shifts in this sync (0 security-critical source files changed).
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 9 sync 1)
+
+43 upstream commits. Key changes: new agent CRUD API (RBAC-gated), gateway LAN bind fix, sandbox USER directive fix, STATE_DIR credential path fix, cron isolation hardening, context overflow recovery, new MITRE ATLAS threat model documentation.
+
+**HIGH (3):**
+
+- **`980f78873`** (PR [#11045](https://github.com/openclaw/openclaw/pull/11045)) — **Agent CRUD RBAC gating:** New `agents.create`, `agents.update`, `agents.delete` gateway methods gated behind `operator.admin` scope in `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:146-148`). Prevents non-admin clients from creating/modifying/deleting agents. Strengthens Audit 2 Claim 5 (agent self-approval) controls.
+
+- **`b8c8130ef`** (PR [#11448](https://github.com/openclaw/openclaw/pull/11448)) — **Gateway LAN IP bind fix:** New `pickPrimaryLanIPv4()` in `src/gateway/net.ts:9-25` resolves the primary non-internal IPv4 address for `bind=lan` mode. WebSocket and probe URLs now use actual LAN IP instead of `0.0.0.0`.
+
+- **`28e1a65eb`** (PR [#11289](https://github.com/openclaw/openclaw/pull/11289)) — **Sandbox USER directive fix:** Adds `USER root` to `Dockerfile.sandbox` and `Dockerfile.sandbox-browser`. Fixes `workspace:*` protocol references in extension package.json files.
+
+**MEDIUM (4):**
+
+- **`ebe573040`** (PR [#4824](https://github.com/openclaw/openclaw/pull/4824)) — **STATE_DIR credential path fix:** Device identity and canvas host now use `STATE_DIR` instead of hardcoded `~/.openclaw`. Prevents credential path misalignment in non-standard installations.
+
+- **`8fae55e8e`** (PR [#11641](https://github.com/openclaw/openclaw/pull/11641)) — **Cron isolated announce flow hardening:** Shared isolated announce flow, hardened cron scheduling and delivery.
+
+- **`ea423bbbf`** — **Context overflow sanitization:** Enhanced error handling in `sanitizeUserFacingText()` for context overflow scenarios.
+
+- **`0deb8b0da`** (PR [#11579](https://github.com/openclaw/openclaw/pull/11579)) — **Tool result overflow recovery:** New tool result truncation (328 lines) prevents DoS via unbounded tool output.
+
+**Line number shifts:** `src/gateway/server-methods.ts` +3 lines (93-160 → 93-163), `src/gateway/net.ts` +24 lines (all functions shifted). All references updated and LSP-verified.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
