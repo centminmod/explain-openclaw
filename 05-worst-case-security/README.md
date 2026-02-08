@@ -145,7 +145,7 @@ Throughout this guide, we use these severity indicators:
    - [Skills.sh Risks](./skills-sh-risks.md)
 5. **Check the Misconfiguration Examples** to see if you've made common mistakes:
    - [Misconfiguration Hall of Shame](./misconfiguration-examples.md)
-5. **Run the security audit** to verify your configuration:
+6. **Run the security audit** to verify your configuration:
    ```bash
    openclaw security audit --deep
    ```
