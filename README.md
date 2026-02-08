@@ -41,7 +41,8 @@
   - [Moltworker risks](./05-worst-case-security/moltworker-risks.md)
   - [Cross-cutting vulnerabilities](./05-worst-case-security/cross-cutting.md)
   - [ClawHub marketplace risks](./05-worst-case-security/clawhub-marketplace-risks.md) *(Feb 2026 campaign)*
-  - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(20 examples)*
+  - [Skills.sh risks](./05-worst-case-security/skills-sh-risks.md) *(supply chain)*
+  - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(21 examples)*
   - [Misconfiguration examples](./05-worst-case-security/misconfiguration-examples.md)
 
 ---
@@ -1928,6 +1929,10 @@ Before installing or following any link, verify you are using official sources:
 - [ ] Never run "prerequisite" terminal commands from skill docs without reviewing code
 - [ ] Check VirusTotal scan status on ClawHub skill pages before installing
 - [ ] Use Koi Security Scanner before installing ClawHub skills
+- [ ] Verify npm package names exist on npmjs.com before installing (AI hallucination risk)
+- [ ] Never allowlist `npm` or `npx` in shell tool allowlist
+- [ ] Check for hidden `.mmd` files in skill directories before enabling
+- [ ] Disable `skills.autoDiscover` to prevent automatic skill installation from skills.sh
 
 ### Threat Summary
 
@@ -1939,6 +1944,9 @@ Before installing or following any link, verify you are using official sources:
 | **Shodan exposure** | Misconfiguration | Full compromise | Check Shodan, audit config |
 | **Fake SaaS** | Social engineering | API key theft | Never share keys externally |
 | **ClawHub malicious skills** | Supply chain, social engineering | Credential theft, malware | Check VirusTotal scan status, review local scanner warnings, scan with Koi |
+| **NPX/npm hallucination** | AI-recommended fake packages | Code execution, credential theft | Verify package exists on npmjs.com before install |
+| **Hidden .mmd payloads** | UI-invisible skill files | Prompt injection, data exfiltration | `ls -laR` skill directory, check for non-.md/.ts files |
+| **Skills.sh auto-install** | Unvetted skill distribution | Full Gateway compromise | Disable `skills.autoDiscover`, use ClawHub only |
 
 ### 6. ClawHub Malicious Skills (ClawHavoc Campaign)
 

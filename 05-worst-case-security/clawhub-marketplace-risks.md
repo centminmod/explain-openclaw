@@ -216,6 +216,125 @@ Researchers found hundreds of misconfigured OpenClaw instances with:
 
 **Shodan search:** Exposed instances can be found within hours of deployment.
 
+### Download Count Manipulation via X-Forwarded-For
+
+> **The Analogy:** A restaurant's "Most Popular" sign is handwritten by the owner — a competitor could sneak in at night and change it to recommend their restaurant instead. On ClawHub, download counts work the same way: they're self-reported and trivially inflatable.
+
+**How It Works:**
+
+ClawHub tracks download counts per IP address to prevent simple refresh-based inflation. However, the `X-Forwarded-For` HTTP header can be spoofed to simulate downloads from different IP addresses — making a single attacker appear as thousands of unique users.
+
+**Conceptual illustration:**
+
+```python
+# Conceptual — demonstrates the X-Forwarded-For spoofing technique
+# Each request appears to come from a different IP address
+import requests
+
+for i in range(10000):
+    fake_ip = f"{(i >> 24) & 0xFF}.{(i >> 16) & 0xFF}.{(i >> 8) & 0xFF}.{i & 0xFF}"
+    requests.get(
+        "https://clawhub.ai/api/skills/<malicious-skill>/download",
+        headers={"X-Forwarded-For": fake_ip}
+    )
+```
+
+**Why This Matters:**
+
+| Impact | Detail |
+|--------|--------|
+| **False trust signal** | High download counts make malicious skills appear popular and trustworthy |
+| **Combined with ClawHavoc** | A malicious skill with 50,000 fake downloads is far more convincing than one with 3 |
+| **User behavior** | Users sort by popularity — inflated counts push malicious skills to the top |
+| **No server-side fix visible** | ClawHub's download counting does not appear to validate `X-Forwarded-For` against actual proxy chains |
+
+**User-Side Mitigations:**
+- **Never trust download counts** as a safety signal
+- Look at publisher history, account age, and code quality instead
+- Cross-reference with community recommendations
+
+**Operator-Side Mitigations (for ClawHub):**
+- Validate `X-Forwarded-For` against known proxy/CDN IP ranges
+- Rate-limit download count increments per session/cookie
+- Add "verified download" badges based on authenticated users only
+
+Source: [YouTube video](https://www.youtube.com/watch?v=_CzEmKTk5Rs) [[18:15](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1095)], [[20:43](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1243)]
+
+### Hidden .mmd Skill Files (UI-Invisible Payloads)
+
+> **The Analogy:** You buy a book and read the visible pages, but hidden inside the binding are extra pages with different instructions that only your assistant reads.
+
+**What Are .mmd Files?**
+
+OpenClaw skills can include `.mmd` (Mermaid markdown) files alongside the standard `.md` skill files. These files may contain instructions that the agent reads and follows. The critical issue: **ClawHub's web UI does not display `.mmd` files** in the skill preview.
+
+**Attack Flow:**
+
+```
+Attacker publishes skill on ClawHub
+  ↓
+skill.md (visible): Normal, legitimate-looking instructions
+  ↓
+payload.mmd (hidden): Malicious instructions for the agent
+  ↓
+User reviews skill on ClawHub web UI → sees only skill.md
+  ↓
+User installs skill → agent reads BOTH files
+  ↓
+Agent follows hidden .mmd instructions → data exfiltration
+```
+
+**Real-World Impact:**
+
+Security researchers demonstrated that this technique could reach users across 8 countries, as ClawHub skills are distributed globally. The combination of a legitimate-looking `.md` file and a hidden `.mmd` payload makes this particularly difficult to detect through normal UI-based review.
+
+**Local Scanner Limitation:**
+
+OpenClaw's built-in skill scanner only scans these extensions: `.js`, `.ts`, `.mjs`, `.cjs`, `.mts`, `.cts`, `.jsx`, `.tsx`. It does **not** scan `.mmd` or `.md` files for malicious content. This means hidden prompt injection in `.mmd` files bypasses the local scanner entirely.
+
+**Defense:**
+```bash
+# Check for ALL files in a skill directory (not just .md and .js/.ts)
+ls -laR ~/.openclaw/skills/<skill-name>/
+
+# Specifically check for .mmd files
+find ~/.openclaw/skills/<skill-name>/ -name "*.mmd" -type f
+
+# Read any .mmd files found
+cat ~/.openclaw/skills/<skill-name>/*.mmd
+```
+
+Source: [YouTube video](https://www.youtube.com/watch?v=_CzEmKTk5Rs) [[21:38](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1298)], [[21:54](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1314)]
+
+### Data Exfiltration via Skill Instructions
+
+The vulnerabilities above can be chained into a full attack pipeline:
+
+```
+Step 1: Inflate download counts (X-Forwarded-For spoofing)
+  ↓ Skill appears popular and trustworthy
+Step 2: Skill installs with hidden .mmd file
+  ↓ ClawHub UI shows clean .md, hides .mmd payload
+Step 3: Hidden .mmd contains prompt injection
+  ↓ Agent reads instructions to exfiltrate data
+Step 4: Agent follows .mmd instructions
+  ↓ Credentials sent to attacker-controlled server
+Step 5: User sees normal skill behavior
+  ↓ No indication of compromise
+```
+
+**What Makes This Chain Effective:**
+
+| Stage | Why It Works |
+|-------|-------------|
+| Fake popularity | Users trust high download counts as a proxy for safety |
+| Hidden payload | ClawHub UI doesn't show .mmd files; local scanner doesn't scan them |
+| Prompt injection | Instructions in .mmd look like legitimate system directives to the LLM |
+| Silent exfiltration | No egress filtering; skill has full network access |
+| Normal behavior | Skill actually works as advertised, masking the theft |
+
+Source: [YouTube video](https://www.youtube.com/watch?v=_CzEmKTk5Rs) [[21:38](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1298)], [[21:54](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1314)]
+
 ---
 
 ## E. Practical Defenses
@@ -298,8 +417,9 @@ iptables -A OUTPUT -m owner --uid-owner openclaw -j DROP
 |--------------|-------------------|
 | Run prerequisite commands | May download malware |
 | Install skills from DM links | Likely phishing |
-| Trust high download counts | Can be faked/botted |
+| Trust high download counts | Trivially faked via X-Forwarded-For spoofing ([video](https://www.youtube.com/watch?v=_CzEmKTk5Rs) [[18:15](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1095)]) |
 | Skip code review for "simple" skills | Complexity != safety |
+| Skip checking all files in skill directory | Hidden .mmd files may contain malicious instructions not shown in ClawHub UI |
 | Ignore typos in skill names | Primary attack vector |
 
 ---
@@ -471,6 +591,7 @@ Note: ClawHub is a third-party service, not part of the OpenClaw codebase. The r
 - [BleepingComputer - MoltBot Skills Malware](https://www.bleepingcomputer.com/news/security/malicious-moltbot-skills-used-to-push-password-stealing-malware)
 - [Tom's Hardware - ClawHub Crypto Targeting](https://www.tomshardware.com/tech-industry/cyber-security/malicious-moltbot-skill-targets-crypto-users-on-clawhub)
 - [Official CVE-2026-25253 Advisory](https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq)
+- [YouTube: OpenClaw Security Deep Dive](https://www.youtube.com/watch?v=_CzEmKTk5Rs) — download count manipulation [[18:15](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1095)], hidden .mmd files [[21:38](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1298)]
 
 ---
 
@@ -479,4 +600,5 @@ Note: ClawHub is a third-party service, not part of the OpenClaw codebase. The r
 - [Cross-Cutting Vulnerabilities](./cross-cutting.md) - Supply chain risks section
 - [Threat Model](../04-privacy-safety/threat-model.md) - Plugin/extension risks
 - [Hardening Checklist](../04-privacy-safety/hardening-checklist.md) - Plugin safety guidance
+- [Skills.sh Risks](./skills-sh-risks.md) - Unverified third-party skill distribution
 - Official security docs: https://docs.openclaw.ai/gateway/security

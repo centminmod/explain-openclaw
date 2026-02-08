@@ -142,6 +142,7 @@ Throughout this guide, we use these severity indicators:
    - [Cross-Cutting Vulnerabilities](./cross-cutting.md)
 4. **Read ClawHub Marketplace Risks** for skills/plugin supply chain threats:
    - [ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)
+   - [Skills.sh Risks](./skills-sh-risks.md)
 5. **Check the Misconfiguration Examples** to see if you've made common mistakes:
    - [Misconfiguration Hall of Shame](./misconfiguration-examples.md)
 5. **Run the security audit** to verify your configuration:
@@ -197,6 +198,7 @@ Choose your deployment type and continue to the detailed guide:
 - **[Moltworker Risks](./moltworker-risks.md)** - Trust boundaries, egress filtering, R2 storage
 - **[Cross-Cutting Vulnerabilities](./cross-cutting.md)** - Prompt injection, tool execution, credentials
 - **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)** - Skills marketplace supply chain attacks (Feb 2026 ClawHavoc campaign)
-- **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 20 attack examples with data exfiltration
+- **[Skills.sh Risks](./skills-sh-risks.md)** - Unverified third-party skill distribution
+- **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 21 attack examples with data exfiltration
 - **[Misconfiguration Examples](./misconfiguration-examples.md)** - Real mistakes and how to fix them
 - **[Incident Response Playbook](./incident-response.md)** - What to do when things go wrong

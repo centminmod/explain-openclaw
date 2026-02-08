@@ -230,6 +230,37 @@ Every 4+ hours:
    - Source: [Wiz Blog](https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys)
    - Mitigation: Rotate any exposed keys immediately; audit gateway configuration
 
+   **Alternative database framing (Firebase):**
+
+   > **The Analogy:** Having an API key is like having a hotel room key — it proves you have *a* key, but not that you're the guest who was assigned that room. HMAC is like the front desk checking your ID against the reservation.
+
+   Independent security analysis frames the same underlying vulnerability in terms of Firebase rather than Supabase. The core issue is identical regardless of database platform: client-side API keys exposed in JavaScript bundles grant unauthenticated access to backend data.
+
+   **Firebase permission scoping failure:**
+
+   Just as Supabase Row Level Security (RLS) was not configured, Firebase Security Rules (the equivalent access control mechanism) were similarly insufficient. The result is the same: anyone with the API key can read and write data across all collections.
+
+   | Database Platform | Access Control | Status at Discovery |
+   |-------------------|---------------|---------------------|
+   | **Supabase** | Row Level Security (RLS) | Not configured |
+   | **Firebase** | Security Rules | Insufficient scoping |
+   | **Either platform** | Server-side validation | Missing |
+
+   **Lack of HMAC for agent identification:**
+
+   A separate concern is how Moltbook identifies agents making API requests. Currently, agents authenticate with API keys alone (something you *have*). There is no HMAC (Hash-based Message Authentication Code) or equivalent cryptographic signing to verify that a specific agent is who it claims to be.
+
+   | Authentication Method | What It Proves | Moltbook Status |
+   |----------------------|----------------|-----------------|
+   | **API key only** | "I have a valid key" | Current implementation |
+   | **API key + HMAC** | "I have a valid key AND I can prove my identity" | Not implemented |
+   | **OAuth + JWT** | "A trusted authority vouches for my identity" | Not implemented |
+   | **Mutual TLS** | "Both sides have verified certificates" | Not implemented |
+
+   Without HMAC, any entity with a leaked API key can impersonate any agent. Combined with the database access issue above, this means a single leaked key provides both authentication bypass and full data access.
+
+   Source: [YouTube video](https://www.youtube.com/watch?v=_CzEmKTk5Rs) [[44:21](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=2661)], [[44:36](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=2676)], [[45:52](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=2752)], [[46:12](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=2772)]
+
 3. **Authorization header stripping**
    - The skill file warns: never use `moltbook.com` without `www`
    - Non-www redirects can strip the Authorization header
