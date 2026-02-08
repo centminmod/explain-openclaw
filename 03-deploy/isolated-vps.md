@@ -18,6 +18,13 @@
   - [Standalone Mac mini](./standalone-mac-mini.md)
   - [Isolated VPS](./isolated-vps.md)
     - [DigitalOcean 1-Click Deploy](#11-digitalocean-1-click-deploy)
+    - [Tailscale Setup](#12-tailscale-setup-recommended)
+    - [Reverse Proxy Hardening](#13-reverse-proxy-hardening-nginx)
+    - [TLS Termination](#14-tls-termination)
+    - [Encrypted Storage for Secrets](#15-encrypted-storage-for-secrets)
+    - [Docker Deployment Hardening](#16-docker-deployment-hardening)
+    - [OpenClaw Config Hardening](#17-openclaw-config-hardening)
+    - [Gateway Token Rotation](#18-gateway-token-rotation)
   - [Cloudflare Moltworker](./cloudflare-moltworker.md)
   - [Docker Model Runner](./docker-model-runner.md)
 - Optimizations
@@ -407,6 +414,460 @@ You still need to:
 
 ---
 
+## 12) Tailscale Setup (recommended)
+
+> If you use Tailscale, you can skip sections 13 (Reverse Proxy) and 14 (TLS) entirely — Tailscale handles encrypted transport and identity-based auth automatically.
+
+For most single-user VPS deployments, Tailscale is simpler and more secure than the nginx reverse proxy + certbot path. It provides built-in TLS, identity-based authentication, and zero port exposure.
+
+### Install Tailscale on VPS
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+```
+
+### Configure OpenClaw for Tailscale Serve
+
+Add to your `openclaw.json`:
+
+```json
+{
+  "gateway": {
+    "bind": "loopback",
+    "tailscale": { "mode": "serve" },
+    "auth": { "allowTailscale": true }
+  }
+}
+```
+
+Or via CLI: `openclaw gateway --tailscale serve`
+
+### Access
+
+Open `https://<your-machine>.<tailnet>.ts.net/` in your browser — auto-HTTPS, no port forwarding needed.
+
+### Configuration reference
+
+| Key | Value | Purpose |
+|-----|-------|---------|
+| `gateway.bind` | `"loopback"` | Keep Gateway on 127.0.0.1 |
+| `gateway.tailscale.mode` | `"serve"` / `"funnel"` / `"off"` | Exposure level |
+| `gateway.auth.allowTailscale` | `true` | Accept Tailscale identity headers |
+| `gateway.tailscale.resetOnExit` | `true` | Clean up Serve config on shutdown |
+
+### Security notes
+
+- **Serve** = tailnet-only (recommended). **Funnel** = public internet (forces `auth.mode: "password"`).
+- `allowTailscale: true` lets requests from the Tailscale proxy auto-authenticate via identity headers — no manual token entry needed.
+- Avoid Funnel for browser control endpoints.
+- Tailscale handles TLS automatically — no certbot needed.
+
+**Prerequisites:** Tailscale CLI installed, logged in, HTTPS enabled on your tailnet (for Serve).
+
+Docs: [gateway/tailscale](https://docs.openclaw.ai/gateway/tailscale), [gateway/security](https://docs.openclaw.ai/gateway/security)
+
+---
+
+## 13) Reverse Proxy Hardening (nginx)
+
+> Skip this section if you chose Tailscale Serve ([section 12](#12-tailscale-setup-recommended)) — Tailscale handles TLS and doesn't need a reverse proxy.
+
+OpenClaw has **no built-in rate limiting** ([#8594](https://github.com/openclaw/openclaw/issues/8594)) and only adds security headers on Control UI endpoints. A reverse proxy fills both gaps.
+
+### Install nginx
+
+```bash
+sudo apt install nginx
+```
+
+### Full hardened config
+
+Create `/etc/nginx/sites-available/openclaw`:
+
+```nginx
+# Rate limiting zones
+limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=auth:10m    rate=3r/s;
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    # TLS (certbot fills these in — see section 14)
+    ssl_certificate     /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options    "nosniff" always;
+    add_header X-Frame-Options           "DENY" always;
+    add_header Referrer-Policy           "no-referrer" always;
+    add_header Permissions-Policy        "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy   "default-src 'self'; frame-ancestors 'none'" always;
+
+    # Request body limit (mitigates large-payload DoS)
+    client_max_body_size 10m;
+
+    # General rate limit
+    limit_req zone=general burst=20 nodelay;
+
+    # Stricter rate limit for auth endpoints
+    location /api/auth {
+        limit_req zone=auth burst=5 nodelay;
+        proxy_pass http://127.0.0.1:18789;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Main proxy with WebSocket support
+    location / {
+        proxy_pass http://127.0.0.1:18789;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket upgrade
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400s;
+    }
+
+    # Optional: IP allowlist (uncomment and replace with your IP)
+    # allow YOUR_IP;
+    # deny all;
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+Enable the site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/openclaw /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default
+```
+
+**Note:** Run `sudo nginx -t && sudo systemctl reload nginx` only **after** obtaining your TLS certificate in [section 14](#14-tls-termination). The config above references certificate paths that won't exist until certbot creates them.
+
+### Configure trusted proxies (mandatory)
+
+When using a reverse proxy, you **must** tell OpenClaw to trust the proxy's `X-Forwarded-For` header. Add to `openclaw.json`:
+
+```json
+{
+  "gateway": {
+    "trustedProxies": ["127.0.0.1"]
+  }
+}
+```
+
+Without this, IP-based rate limiting and logging will see the proxy IP instead of the real client IP.
+
+Cross-reference: [Hardening checklist section 11](../04-privacy-safety/hardening-checklist.md#11-configure-trusted-proxies)
+
+Docs: [gateway/security](https://docs.openclaw.ai/gateway/security), [nginx rate limiting](https://nginx.org/en/docs/http/ngx_http_limit_req_module)
+
+---
+
+## 14) TLS Termination
+
+> Skip this section if you chose Tailscale Serve ([section 12](#12-tailscale-setup-recommended)) — TLS is automatic.
+
+OpenClaw does not set HSTS headers. A reverse proxy with Let's Encrypt TLS fixes this.
+
+### Install certbot
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+```
+
+### Obtain certificate
+
+```bash
+sudo certbot --nginx -d your-domain.com
+```
+
+Certbot will automatically update your nginx config with certificate paths.
+
+### Auto-renewal
+
+```bash
+SLEEPTIME=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}')
+echo "0 0,12 * * * root sleep $SLEEPTIME && certbot renew -q" | sudo tee -a /etc/crontab > /dev/null
+```
+
+This checks for renewal twice daily with a random delay to avoid Let's Encrypt traffic spikes.
+
+Docs: [certbot](https://certbot.eff.org), [gateway/tailscale](https://docs.openclaw.ai/gateway/tailscale)
+
+---
+
+## 15) Encrypted Storage for Secrets
+
+OpenClaw stores **all secrets** (API keys, OAuth tokens, gateway tokens) in **plaintext** on disk. Filesystem permissions (`0600`/`0700`) are the only protection. No built-in encryption-at-rest exists.
+
+### Option A: LUKS encrypted partition
+
+```bash
+# Install cryptsetup
+sudo apt install cryptsetup
+
+# Create encrypted volume (DESTRUCTIVE — choose an empty disk/partition)
+sudo cryptsetup luksFormat /dev/sdX
+sudo cryptsetup open /dev/sdX openclaw-vault
+sudo mkfs.ext4 /dev/mapper/openclaw-vault
+
+# Mount as OpenClaw data directory
+sudo mount /dev/mapper/openclaw-vault /home/moltbot/.openclaw
+sudo chown moltbot:moltbot /home/moltbot/.openclaw
+```
+
+Add a systemd mount dependency so the OpenClaw service waits for decryption:
+
+```ini
+# In /etc/systemd/system/moltbot.service
+[Unit]
+RequiresMountsFor=/home/moltbot/.openclaw
+```
+
+**Note:** Requires manual unlock on reboot (or a key file, which trades convenience for security).
+
+### Option B: Provider-level encryption
+
+| Provider | Encryption-at-rest |
+|----------|-------------------|
+| DigitalOcean | Block storage volumes encrypted by default |
+| AWS | Enable EBS encryption on the volume |
+| Hetzner | Enable LUKS at provisioning time |
+
+### What this protects
+
+- Disk theft, decommissioned VPS, snapshot exposure.
+
+### What this does NOT protect
+
+- Running process memory, authenticated SSH access.
+
+Docs: [gateway/security](https://docs.openclaw.ai/gateway/security) (confirms no built-in encryption)
+
+---
+
+## 16) Docker Deployment Hardening
+
+The default `docker-compose.yml` binds to `0.0.0.0` (lan mode) and has no security options enabled.
+
+### Override the bind address
+
+Add to your `.env` file:
+
+```bash
+OPENCLAW_GATEWAY_BIND=loopback
+```
+
+This overrides the default `${OPENCLAW_GATEWAY_BIND:-lan}` in `docker-compose.yml`.
+
+### Docker Compose security overlay
+
+Create a `docker-compose.override.yml` or add to your existing compose file:
+
+```yaml
+services:
+  openclaw-gateway:
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/node/.openclaw/workspace
+    pids_limit: 256
+    mem_limit: 1g
+```
+
+**Note:** The `--no-sandbox` Chrome flag is required in containers (Dockerfile default) and cannot be avoided.
+
+### OpenClaw sandbox Docker config
+
+These settings control the Docker sandbox that OpenClaw creates for agent sessions. Add to `openclaw.json`:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "sandbox": {
+        "mode": "all",
+        "docker": {
+          "network": "none",
+          "readOnlyRoot": true,
+          "capDrop": ["ALL"],
+          "pidsLimit": 100,
+          "memory": "512m"
+        }
+      }
+    }
+  }
+}
+```
+
+**Caveat:** `readOnlyRoot`, `capDrop`, `pidsLimit`, and `memory` are defined in source code (`src/config/types.sandbox.ts`) but not yet in official docs. They work (tested in `src/config/config.sandbox-docker.test.ts`) but may change between releases.
+
+Docs: [Docker Compose services reference](https://docs.docker.com/reference/compose-file/services/), [gateway/sandboxing](https://docs.openclaw.ai/gateway/sandboxing)
+
+---
+
+## 17) OpenClaw Config Hardening
+
+Several security-relevant config options exist but aren't enabled by default. This section consolidates recommended settings for a hardened VPS deployment.
+
+### Recommended `openclaw.json`
+
+```json
+{
+  "gateway": {
+    "bind": "loopback",
+    "auth": {
+      "mode": "token"
+    },
+    "trustedProxies": ["127.0.0.1"],
+    "controlUi": {
+      "dangerouslyDisableDeviceAuth": false
+    }
+  },
+  "browser": {
+    "evaluateEnabled": false
+  },
+  "plugins": {
+    "enabled": false
+  },
+  "agents": {
+    "defaults": {
+      "sandbox": {
+        "mode": "all",
+        "workspaceAccess": "ro"
+      }
+    }
+  },
+  "logging": {
+    "redactSensitive": "tools"
+  }
+}
+```
+
+### Setting explanations
+
+| Setting | Why |
+|---------|-----|
+| `gateway.bind: "loopback"` | Only listen on 127.0.0.1 — access via SSH tunnel or Tailscale |
+| `gateway.auth.mode: "token"` | Require bearer token for all requests ([docs](https://docs.openclaw.ai/gateway/security)) |
+| `gateway.trustedProxies: ["127.0.0.1"]` | Required if using reverse proxy — prevents X-Forwarded-For spoofing ([docs](https://docs.openclaw.ai/gateway/security)) |
+| `dangerouslyDisableDeviceAuth: false` | Prevents silently weakening auth |
+| `browser.evaluateEnabled: false` | Disables arbitrary JS execution in browser context (`src/config/types.browser.ts:18`) |
+| `plugins.enabled: false` | Avoids plugin HTTP route auth bypass ([#8512](https://github.com/openclaw/openclaw/issues/8512)) |
+| `agents.defaults.sandbox.mode: "all"` | All sessions run in Docker sandbox ([docs](https://docs.openclaw.ai/gateway/sandboxing)) |
+| `agents.defaults.sandbox.workspaceAccess: "ro"` | Read-only workspace prevents file tampering ([docs](https://docs.openclaw.ai/gateway/security)) |
+| `logging.redactSensitive: "tools"` | Redact secrets from tool output logs ([docs](https://docs.openclaw.ai/gateway/security)) |
+
+### Gateway token
+
+Set via environment variable (>= 32 characters):
+
+```bash
+export OPENCLAW_GATEWAY_TOKEN="$(openssl rand -hex 32)"
+```
+
+### Verify
+
+After applying changes, run:
+
+```bash
+openclaw security audit --deep
+```
+
+Docs: [gateway/security](https://docs.openclaw.ai/gateway/security), [gateway/sandboxing](https://docs.openclaw.ai/gateway/sandboxing)
+
+---
+
+## 18) Gateway Token Rotation
+
+OpenClaw has no auto-rotation for gateway tokens. A simple cron script fills the gap.
+
+### Rotation script
+
+The script depends on how OpenClaw was installed. The default `openclaw onboard --install-daemon` stores the token in `~/.openclaw/openclaw.json` and runs as a **systemd user service** (`openclaw-gateway.service`). The DO 1-Click uses a system service with `/opt/clawdbot.env`.
+
+**Default install** (systemd user service — most manual VPS setups):
+
+Create `/usr/local/bin/rotate-openclaw-token.sh`:
+
+```bash
+#!/bin/bash
+# Default OpenClaw install: token in ~/.openclaw/openclaw.json
+# Service: systemd user unit "openclaw-gateway.service"
+OPENCLAW_USER="moltbot"
+OPENCLAW_HOME="/home/${OPENCLAW_USER}"
+CONFIG="${OPENCLAW_HOME}/.openclaw/openclaw.json"
+NEW_TOKEN=$(openssl rand -hex 32)
+
+# Update token in openclaw.json using jq
+jq --arg t "$NEW_TOKEN" '.gateway.auth.token = $t' "$CONFIG" > "${CONFIG}.tmp" \
+  && mv "${CONFIG}.tmp" "$CONFIG" \
+  && chown "${OPENCLAW_USER}:${OPENCLAW_USER}" "$CONFIG"
+
+# Restart the systemd user service (runs as the openclaw user)
+sudo -u "$OPENCLAW_USER" XDG_RUNTIME_DIR="/run/user/$(id -u $OPENCLAW_USER)" \
+  systemctl --user restart openclaw-gateway
+
+echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
+```
+
+**DO 1-Click install** (system service with env file):
+
+```bash
+#!/bin/bash
+# DO 1-Click: token in /opt/clawdbot.env, service name "moltbot"
+NEW_TOKEN=$(openssl rand -hex 32)
+sed -i "s/^OPENCLAW_GATEWAY_TOKEN=.*/OPENCLAW_GATEWAY_TOKEN=${NEW_TOKEN}/" /opt/clawdbot.env
+systemctl restart moltbot
+echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
+```
+
+Make it executable:
+
+```bash
+sudo chmod +x /usr/local/bin/rotate-openclaw-token.sh
+```
+
+**Prerequisite:** The default install script uses `jq` — install with `sudo apt install jq` if not present.
+
+### Schedule monthly rotation
+
+```bash
+echo "0 3 1 * * root /usr/local/bin/rotate-openclaw-token.sh" | sudo tee -a /etc/crontab > /dev/null
+```
+
+Runs at 3 AM on the first of each month.
+
+**Important:** After rotation, update any bookmarked dashboard URLs or SSH tunnel configs that embed the old token.
+
+Docs: [gateway/security](https://docs.openclaw.ai/gateway/security) (token auth docs)
+
+---
+
 ## Security Checklist (VPS)
 
 Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-setup-guide) (uses legacy "Moltbot" name).
@@ -432,6 +893,7 @@ Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-
 - [ ] Secrets stored in env vars (not in shell history)
 - [ ] Sensitive files set to `chmod 600`
 - [ ] Shell history protected (`HISTCONTROL=ignoreboth`)
+- [ ] `~/.openclaw/` on encrypted volume (LUKS or provider-level)
 
 ### System Maintenance
 - [ ] Automatic security updates enabled
@@ -442,3 +904,34 @@ Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-
 - [ ] Session logging enabled
 - [ ] Log rotation active (`/var/log/moltbot/`)
 - [ ] Weekly review habit
+
+### Tailscale (if using Tailscale path — [section 12](#12-tailscale-setup-recommended))
+- [ ] Tailscale installed and authenticated
+- [ ] `tailscale.mode: "serve"` configured (tailnet-only)
+- [ ] `gateway.auth.allowTailscale: true` set
+- [ ] Funnel NOT enabled unless explicitly needed (forces password auth)
+
+### Reverse Proxy & TLS (if using nginx path — [sections 13-14](#13-reverse-proxy-hardening-nginx))
+- [ ] Reverse proxy (nginx/Caddy) in front of gateway
+- [ ] Rate limiting configured (general + auth endpoints)
+- [ ] Security headers set (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
+- [ ] TLS termination with valid certificate
+- [ ] `gateway.trustedProxies` configured
+
+### Encrypted Storage ([section 15](#15-encrypted-storage-for-secrets))
+- [ ] `~/.openclaw/` on encrypted volume (LUKS or provider-level)
+- [ ] Session transcripts permissions 600 (not 644)
+
+### Docker Hardening (for Docker deployments — [section 16](#16-docker-deployment-hardening))
+- [ ] `OPENCLAW_GATEWAY_BIND=loopback` in `.env`
+- [ ] `cap_drop: ALL` with minimal `cap_add`
+- [ ] `no-new-privileges` security option enabled
+- [ ] `read_only: true` with tmpfs for writable paths
+- [ ] Resource limits (memory, PIDs) configured
+
+### OpenClaw Config ([section 17](#17-openclaw-config-hardening))
+- [ ] `browser.evaluateEnabled: false`
+- [ ] Plugins disabled or allowlisted
+- [ ] Sandbox mode `"all"` for agents processing untrusted input
+- [ ] Gateway token >= 32 chars
+- [ ] Token rotation schedule active
