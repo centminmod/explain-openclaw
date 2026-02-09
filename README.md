@@ -47,7 +47,7 @@
   - [Cross-cutting vulnerabilities](./05-worst-case-security/cross-cutting.md)
   - [ClawHub marketplace risks](./05-worst-case-security/clawhub-marketplace-risks.md) *(Feb 2026 campaign)*
   - [Skills.sh risks](./05-worst-case-security/skills-sh-risks.md) *(supply chain)*
-  - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(21 examples)*
+  - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(27 examples)*
   - [Misconfiguration examples](./05-worst-case-security/misconfiguration-examples.md)
 
 ---
@@ -474,7 +474,7 @@ Based on source code review of:
 | [Moltworker Risks](./05-worst-case-security/moltworker-risks.md) | Trust boundaries, egress filtering, R2 single point of failure |
 | [Cross-Cutting](./05-worst-case-security/cross-cutting.md) | Prompt injection, tool execution, channel tokens, supply chain |
 | [ClawHub Marketplace Risks](./05-worst-case-security/clawhub-marketplace-risks.md) | Skills marketplace supply chain, ClawHavoc campaign, social engineering |
-| [Prompt Injection Attacks](./05-worst-case-security/prompt-injection-attacks.md) | 20 attack examples with data exfiltration scenarios |
+| [Prompt Injection Attacks](./05-worst-case-security/prompt-injection-attacks.md) | 27 attack examples with data exfiltration scenarios |
 | [Misconfiguration Examples](./05-worst-case-security/misconfiguration-examples.md) | 10 real mistakes with step-by-step fixes |
 | [Incident Response](./05-worst-case-security/incident-response.md) | Containment, credential rotation, recovery procedures |
 

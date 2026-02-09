@@ -106,7 +106,8 @@ The model's context window receives text from all these sources, any of which co
 - **User messages** from WhatsApp/Telegram/Discord/Slack (no content filtering before model sees them)
 - **Fetched web content** (via `web_fetch` tool — SSRF-guarded but content unfiltered)
 - **Tool outputs** (shell command results, file contents)
-- **Memory files** (MEMORY.md, memory/*.md — up to 20,000 chars per file)
+- **Bootstrap files** (9 named `.md` files: AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md — injected into the system prompt at up to 20,000 chars each via `loadWorkspaceBootstrapFiles()`, with no content scanning by the built-in skill scanner)
+- **Memory directory files** (memory/*.md — accessed via `memory_search`/`memory_get` tool calls at 4,000-char budget, separate pipeline from bootstrap files, also unscanned for content). See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned) for full details
 - **Session history** from prior conversation turns
 - **System prompt metadata** (workspace paths, user identity, date/time)
 

@@ -76,6 +76,8 @@ The audit is a **configuration and filesystem hardening tool**. It detects misco
 | General gateway exposure | — | Non-loopback bind, missing auth, Tailscale Funnel | `gateway.bind_no_auth`, `gateway.loopback_no_auth`, `gateway.tailscale_funnel` |
 | Channel misconfiguration | — | Open DMs, open groups, missing allowlists | All `channels.*` checks + `security.exposure.open_groups_with_elevated` |
 
+**Note:** The audit does not scan workspace bootstrap `.md` files (MEMORY.md, SOUL.md, AGENTS.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, memory.md) or `memory/*.md` for prompt injection content. The bootstrap files are injected into the system prompt as trusted context with no content validation. Memory directory files (`memory/*.md`) go through a separate tool-call pipeline but are also unscanned. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
+
 #### Issues the audit cannot detect (code-level bugs)
 
 | Issue | Severity | Why the audit cannot detect it |

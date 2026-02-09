@@ -229,3 +229,31 @@ If you're not using a reverse proxy, leave `trustedProxies` empty (the default).
 Source: `src/gateway/net.ts:98-120`
 
 See: [Threat model - Trusted proxies](./threat-model.md#trusted-proxies-reverse-proxy-configuration)
+
+---
+
+## 12) Audit workspace .md files for hidden content
+
+OpenClaw loads nine workspace bootstrap `.md` files directly into the agent's system prompt on every turn. These appear as trusted context — not wrapped with untrusted content markers. The built-in skill scanner does not scan `.md` files, so malicious content in these files is invisible to automated checks.
+
+**Scan for hidden HTML comments** (the most common injection vector in `.md` files):
+
+```bash
+grep -rn "<!--" ~/your-workspace-dir/
+```
+
+**Scan for suspicious instruction patterns:**
+
+```bash
+grep -rniE "(ignore previous|system override|you are now|execute the following|curl.*base64|wget.*credentials)" ~/your-workspace-dir/*.md
+```
+
+**Run Cisco AI Defense scanner** for deeper LLM-based analysis:
+
+```bash
+skill-scanner scan ~/your-workspace-dir/
+```
+
+Files to audit: `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`, `BOOTSTRAP.md`, `MEMORY.md`, `memory.md`, and any files in the `memory/` directory.
+
+See: [Cisco AI Defense gap analysis](../08-security-analysis/cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned), [Threat model #7](./threat-model.md#7-persistent-memory-files), [Attack #27](../05-worst-case-security/prompt-injection-attacks.md#-attack-27-persistent-memory-injection)

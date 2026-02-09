@@ -6,13 +6,14 @@
 
 ### Legitimate Gaps Status
 
-Three defense-in-depth items were identified across both audits:
+Four defense-in-depth items were identified across audits:
 
 1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,976-977`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
+4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:331-337`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:295-305`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
 
-**Gap status: 1 closed, 2 remain open.**
+**Gap status: 1 closed, 3 remain open.**
 
 ### Post-merge hardening (PR #1, 129 upstream commits)
 
@@ -230,7 +231,7 @@ Two security-relevant commits strengthening Windows ACL test coverage:
 
 - **`d6cde28c8`** — fix: stabilize windows acl tests and command auth registry (#9335): Stabilizes Windows ACL tests and fixes command auth registry behavior (thanks @M00N7682).
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 6 sync 2)
 
@@ -248,7 +249,7 @@ Six security-relevant commits:
 
 - **`7c951b01a`** — Feishu mention gating: Requires bot open_id match for group mention detection when bot ID is available. Prevents agent replies when other users (not the bot) are mentioned in Feishu groups. Access control hardening.
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 6 sync 3)
 
@@ -280,7 +281,7 @@ Fourteen security-relevant commits:
 
 - **`861725fba`** (PR [#4598](https://github.com/openclaw/openclaw/pull/4598)) — **Aborted message tool extraction:** Fixes tool_use extraction from aborted/errored assistant messages during session transcript repair. Prevents orphaned tool_result blocks from causing API rejection. Affects `src/agents/session-transcript-repair.ts`.
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 6 sync 4)
 
@@ -298,7 +299,7 @@ Four security-relevant commits:
 
 - **`4a59b7786`** — **Harden CLI update restart imports and version resolution:** Version resolution in `src/version.ts` uses structured candidate search with package name validation (`PACKAGE_JSON_CANDIDATES` at line 6, `BUILD_INFO_CANDIDATES` at line 13). Defense-in-depth for self-update integrity.
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 7 sync 1)
 
@@ -308,7 +309,7 @@ One security-relevant commit:
 
 - **`421644940`** (PR [#10176](https://github.com/openclaw/openclaw/pull/10176)) — **Guard resolveUserPath against undefined input:** New `resolveRunWorkspaceDir()` in `src/agents/workspace-run.ts:72` validates workspace dir type/value before resolution, falls back to per-agent defaults (not CWD). New `classifySessionKeyShape()` in `src/routing/session-key.ts:62` rejects malformed `agent:` session keys. New SHA256-based identifier redaction in `src/logging/redact-identifier.ts` for safe audit logging. Addresses **Audit 1 Claim #6** (path traversal in agent dirs) — adds defense-in-depth upstream of `resolveUserPath()` (`src/agents/agent-paths.ts:10,13` → `src/utils.ts:243,245`). 139 new test lines covering edge cases. Thanks @Yida-Dev.
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 7 sync 2)
 
@@ -318,7 +319,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 - **`d90cac990`** (PR [#10776](https://github.com/openclaw/openclaw/pull/10776)) — **Cron scheduler reliability, store hardening, and UX improvements:** Adds `isJobDue()` guard in `src/cron/service/timer.ts` to prevent stale timer firings. Reduces `MAX_TIMER_DELAY_MS` for tighter scheduling. Input normalization hardened in `src/cron/normalize.ts`. Store state initialization improved in `src/cron/service/store.ts` with migration support. 2,952 lines added across 58 files (mostly tests + UI). Continues cron race condition hardening from Feb 6 sync 3 (`1ecae8098`, `8e74fbb41`).
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 7 sync 3)
 
@@ -335,7 +336,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **Line number verification:** All 14 key security function references verified via LSP — no line shifts in this sync (0 security-critical source files changed).
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 9 sync 1)
 
@@ -366,7 +367,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **Line number shifts in this sync:** `src/gateway/server-methods.ts` +3 lines (93-160 → 93-163), `src/gateway/net.ts` +24 lines (all functions shifted: `isTrustedProxyAddress` 74→98, `resolveGatewayClientIp` 82→106, `resolveGatewayBindHost` 129→153). All references updated and LSP-verified.
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning).
 
 ### Post-Merge Hardening (Feb 9 sync 3)
 
@@ -402,4 +403,4 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **CVE status:** 5 published advisories (CVE-2026-25593, CVE-2026-25475, GHSA-g8p2-7wf7-98mq, CVE-2026-25157, CVE-2026-24763) — all pre-existing, none patched in this merge.
 
-**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated by default-deny on `screen.record`).
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated by default-deny on `screen.record`, bootstrap/memory .md scanning).
