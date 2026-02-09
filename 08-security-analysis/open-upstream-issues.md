@@ -4,7 +4,7 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 09-02-2026 (00:13 AEST)
+> **Last checked:** 09-02-2026 (21:45 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -59,6 +59,7 @@
 | [#7139](https://github.com/openclaw/openclaw/issues/7139) | MEDIUM | Default config: sandbox off, plaintext creds | `src/agents/sandbox/config.ts:147` (mode="off"), gateway loopback is safe; creds 0o600 |
 | [#9875](https://github.com/openclaw/openclaw/issues/9875) | MEDIUM | Orphaned tool_use blocks from backgrounded exec | `src/agents/session-transcript-repair.ts:166-318` (reactive repair, not proactive) |
 | [#11900](https://github.com/openclaw/openclaw/issues/11900) | MEDIUM | Context files (USER.md, SOUL.md) loaded for all senders | `src/agents/bootstrap-files.ts:43-60` — no `senderIsOwner` check; `attempt.ts:192` calls unconditionally |
+| [#12571](https://github.com/openclaw/openclaw/issues/12571) | MEDIUM | Session isolation leak in cron jobs after ~24h | `src/cron/service/jobs.ts` — isolated sessions leak to main session after extended runtime |
 | [#11832](https://github.com/openclaw/openclaw/issues/11832) | MEDIUM | Per-agent tools.exec config not applied | `src/auto-reply/reply/get-reply-directives.ts:66-81` — `resolveExecOverrides()` ignores `agentCfg` |
 | [#6304](https://github.com/openclaw/openclaw/issues/6304) | LOW | Matrix plugin transitive dep vuln (request pkg) | `extensions/matrix/package.json` — transitive via `@vector-im/matrix-bot-sdk` (CVE-2023-28155) |
 | [#4807](https://github.com/openclaw/openclaw/issues/4807) | LOW | Sandbox setup script missing from npm package | `package.json` files array excludes `scripts/`; `scripts/sandbox-common-setup.sh` not shipped |
@@ -72,6 +73,7 @@
 | [#11434](https://github.com/openclaw/openclaw/issues/11434) | CRITICAL | CWD .env → arbitrary dynamic import via OPENCLAW_BROWSER_CONTROL_MODULE | `src/gateway/server-browser.ts:13-14` — raw `await import(override)` |
 | [#11431](https://github.com/openclaw/openclaw/issues/11431) | CRITICAL | Hook/plugin npm install runs lifecycle scripts (no --ignore-scripts) | `src/hooks/install.ts:237`, `src/plugins/install.ts:281` |
 | [#11023](https://github.com/openclaw/openclaw/issues/11023) | HIGH | Sandbox browser bridge started without auth token | `src/agents/sandbox/browser.ts:192` — no `authToken` passed; relates to #6609 |
+| [#11945](https://github.com/openclaw/openclaw/issues/11945) | HIGH | config.patch bypasses commands.restart restriction | `src/gateway/server-methods/config.ts:330` — `scheduleGatewaySigusr1Restart()` with no `commands.restart` check; contrast `gateway-tool.ts:78` |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
 | [#11879](https://github.com/openclaw/openclaw/issues/11879) | NOT APPLICABLE | Malicious ClawHub skill exfiltrating to Feishu | Ecosystem/marketplace issue; 13,981 installs; relates to #10890 (Skill Security Framework) |
@@ -666,6 +668,47 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 - `src/agents/pi-embedded-runner/run/attempt.ts:211-215` — `execOverrides` passed to tool creation, but populated only from directives/session
 
 **Impact:** If an operator configures per-agent exec restrictions (e.g., `agents.mybot.tools.exec.host = "docker"` for sandboxed execution), those restrictions are silently ignored. The agent runs with global exec defaults. Global config still applies; only per-agent overrides are lost.
+
+### #11945: config.patch Bypasses commands.restart Restriction
+
+**Severity:** HIGH
+**CWE:** CWE-863 (Incorrect Authorization)
+
+**Vulnerability:** The `config.patch` gateway RPC method writes arbitrary config changes and triggers an automatic SIGUSR1 restart without checking `commands.restart`. The restart action correctly gates on `commands.restart`, but `config.patch` bypasses this by pre-authorizing the SIGUSR1 via `authorizeGatewaySigusr1Restart()`.
+
+**Attack surface:** An agent with config.patch access can:
+1. Disable gateway auth (`gateway.auth.mode`)
+2. Bind to 0.0.0.0 (expose loopback-only gateway)
+3. Add attacker-controlled channels
+4. Swap the model to an attacker-controlled endpoint
+5. Change workspace paths to sensitive directories
+6. Modify auth profiles/API keys
+
+All changes take effect immediately via automatic restart.
+
+**Affected code:**
+- `src/gateway/server-methods/config.ts:296,330` — writes config then calls `scheduleGatewaySigusr1Restart()` with NO `commands.restart` check
+- `src/infra/restart.ts:192` — `authorizeGatewaySigusr1Restart(delayMs)` pre-authorizes the SIGUSR1 signal
+- `src/cli/gateway-cli/run-loop.ts:76-77` — `consumeGatewaySigusr1RestartAuthorization()` returns true (pre-authorized), bypassing `isGatewaySigusr1RestartExternallyAllowed()`
+- **Contrast:** `src/agents/tools/gateway-tool.ts:78` — the explicit `restart` action correctly checks `commands.restart`
+
+**No key-level authorization:** Config validation is structural (JSON schema) only. No allowlist/denylist restricts which keys agents may modify.
+
+### #12571: Session Isolation Leak in Cron Jobs After Extended Runtime
+
+**Severity:** MEDIUM
+**CWE:** CWE-362 (Race Condition) / CWE-404 (Improper Resource Shutdown)
+
+**Vulnerability:** After ~24 hours of continuous operation, cron jobs configured with `sessionTarget: "isolated"` begin leaking messages into the main session. The reporter observed ~165 successful isolated runs before the leak began, with 5 prompt injection payloads (agent identity overrides) delivered to the main agent over 4 hours.
+
+**Affected code:**
+- `src/cron/service/jobs.ts` — cron job execution with `sessionTarget` handling
+- `src/agents/tools/cron-tool.ts` — cron tool with `sessionTarget: "isolated"` support
+- Session isolation code paths in 25+ files
+
+**Root cause hypothesis:** Session pool exhaustion, session ID collision after rollover, isolation context corruption, or WebSocket routing table degradation. The consistent ~24-hour timeframe suggests a periodic cleanup (GC, connection pool reset) that breaks isolation context.
+
+**Impact:** Prompt injection via session leak — isolated agent identity payloads delivered to the wrong session. Requires specific cron config + extended runtime + multiple concurrent isolated sessions.
 
 ### Notable Non-Core Issues
 
