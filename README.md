@@ -14,6 +14,7 @@
 - [What is Moltbook?](./07-moltbook/what-is-moltbook.md)
 - [Threat model](./04-privacy-safety/threat-model.md)
 - [Hardening checklist](./04-privacy-safety/hardening-checklist.md)
+- [Detecting OpenClaw requests (for hosting services)](./04-privacy-safety/detecting-openclaw-requests.md)
 - [Architecture (technical)](./02-technical/architecture.md)
 - [Repo map](./02-technical/repo-map.md)
 - [Deployment: Standalone Mac mini](./03-deploy/standalone-mac-mini.md)
@@ -58,7 +59,7 @@ This folder is a **living knowledge base** for the OpenClaw framework — active
 | **Plain English** | What OpenClaw is, glossary, "explain it like I'm new" |
 | **Technical** | Architecture deep-dive, repo map for contributors |
 | **Deployment** | **Mac mini** (local-first), **Isolated VPS** (remote + hardened), **Cloudflare Moltworker** (serverless), **Docker Model Runner** (local AI, zero API cost) |
-| **Privacy & Safety** | Threat model, hardening checklist |
+| **Privacy & Safety** | Threat model, hardening checklist, request fingerprint detection |
 | **Security Audits** | Independently verified audit analyses, CVE/GHSA tracking, upstream issue monitoring |
 | **Worst-Case Scenarios** | Attack catalogs, prompt injection examples, supply chain threats, incident response |
 | **Optimizations** | Cost/token reduction, model routing recommendations |
@@ -470,6 +471,31 @@ Based on source code review of:
 | [Prompt Injection Attacks](./05-worst-case-security/prompt-injection-attacks.md) | 20 attack examples with data exfiltration scenarios |
 | [Misconfiguration Examples](./05-worst-case-security/misconfiguration-examples.md) | 10 real mistakes with step-by-step fixes |
 | [Incident Response](./05-worst-case-security/incident-response.md) | Containment, credential rotation, recovery procedures |
+
+---
+
+## Detecting OpenClaw Requests (for hosting services)
+
+> **Purpose:** Documents how third-party services can identify HTTP requests originating from OpenClaw, and what OpenClaw users should know about their request fingerprint.
+>
+> **Read this if:** You run a hosting service/API and want to identify OpenClaw traffic, or you're an OpenClaw user who wants to understand what your instance reveals about itself.
+
+### Quick Reference: Identifiable Headers
+
+| Request type | Header | Value | Detectable? |
+|---|---|---|---|
+| Media file fetches | `User-Agent` | `OpenClaw-Gateway/1.0` | Yes — explicitly names OpenClaw |
+| GitHub API (signal-cli install) | `User-Agent` | `openclaw` | Yes — explicitly names OpenClaw |
+| Anthropic OAuth API | `User-Agent` | `openclaw` | Yes — explicitly names OpenClaw |
+| Perplexity/OpenRouter API | `HTTP-Referer` | `https://openclaw.ai` | Yes — domain identifies OpenClaw |
+| Perplexity/OpenRouter API | `X-Title` | `OpenClaw` / `OpenClaw Web Search` | Yes — explicitly names OpenClaw |
+| MiniMax VLM API | `MM-API-Source` | `OpenClaw` | Yes — custom header |
+| ACP protocol | `clientInfo.name` | `openclaw-acp-client` | Yes — protocol-level identification |
+| WebFetch (browsing websites) | `User-Agent` | Chrome browser string | No — indistinguishable from real browser |
+| Brave Search API | *(no custom UA)* | Default fetch UA | Weak — Node.js fetch fingerprint only |
+| xAI Grok API | *(no custom UA)* | Default fetch UA | Weak — Node.js fetch fingerprint only |
+
+The full analysis includes source code references, Cloudflare WAF rules (with regex examples for Business/Enterprise), and a guide for placing Cloudflare as a reverse proxy in front of your Gateway with inbound header protection: [Detecting OpenClaw Requests](./04-privacy-safety/detecting-openclaw-requests.md)
 
 ---
 
