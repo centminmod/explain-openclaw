@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## SecurityScorecard STRIKE Report Analysis (Feb 2026)
 
@@ -192,6 +192,8 @@ The SecurityScorecard report, despite its omissions, demonstrates a critical poi
 | [Issue #1796 (Argus)](./issue-1796-argus-audit.md) | 8 | 0 |
 | [Medium article (Saad Khalid)](./medium-article-audit.md) | 8 | 0 |
 | [SecurityScorecard STRIKE + declawed.io](./securityscorecard-strike-report.md) | 5 | 0 |
-| **Total** | **21** | **0** |
+| [ZeroLeeks AI Red Team](./zeroleeks-audit.md) | 34 | 0 |
+| [Cisco AI Defense blog post](./cisco-ai-defense-skill-scanner.md) | 4 | 0 |
+| **Total** | **59** | **0** |
 
-**0/21 third-party vulnerability claims confirmed exploitable on the current codebase.**
+**0/59 third-party vulnerability claims confirmed exploitable on the current codebase.**

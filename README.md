@@ -37,6 +37,7 @@
   - [Ecosystem security threats](./08-security-analysis/ecosystem-security-threats.md)
   - [SecurityScorecard STRIKE report analysis](./08-security-analysis/securityscorecard-strike-report.md) *(Feb 2026, 28k+ exposed instances)*
   - [Model poisoning and sleeper agent backdoors](./08-security-analysis/model-poisoning-sleeper-agents.md) *(Feb 2026 Microsoft research)*
+  - [Cisco AI Defense skill scanner analysis](./08-security-analysis/cisco-ai-defense-skill-scanner.md) *(Feb 2026, blog post + tool evaluation)*
 - [AI model analysis comparison](./08-security-analysis/ai-model-analysis-comparison.md)
 - **Worst-case security scenarios:**
   - [Overview](./05-worst-case-security/README.md)
@@ -424,6 +425,10 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 ---
 
 > **See:** [Ecosystem Security Threats](./08-security-analysis/ecosystem-security-threats.md)
+
+---
+
+> **See:** [Cisco AI Defense Skill Scanner Analysis](./08-security-analysis/cisco-ai-defense-skill-scanner.md)
 
 ---
 
