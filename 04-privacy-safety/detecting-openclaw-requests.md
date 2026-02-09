@@ -89,7 +89,7 @@ HTTP-Referer: https://openclaw.ai
 X-Title: OpenClaw Web Search
 ```
 
-**Source:** `src/agents/tools/web-search.ts:386-387`
+**Source:** `src/agents/tools/web-search.ts:389-390`
 ```typescript
 "HTTP-Referer": "https://openclaw.ai",
 "X-Title": "OpenClaw Web Search",
@@ -105,7 +105,7 @@ OpenClaw uses a custom header when calling MiniMax's vision-language model API:
 MM-API-Source: OpenClaw
 ```
 
-**Source:** `src/agents/minimax-vlm.ts:74`
+**Source:** `src/agents/minimax-vlm.ts:76`
 ```typescript
 "MM-API-Source": "OpenClaw",
 ```
@@ -148,13 +148,13 @@ Accept: */*
 Accept-Language: en-US,en;q=0.9
 ```
 
-**Source:** `src/agents/tools/web-fetch.ts:38-39`
+**Source:** `src/agents/tools/web-fetch.ts:39-40`
 ```typescript
 const DEFAULT_FETCH_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 ```
 
-**Source:** `src/agents/tools/web-fetch.ts:411-413`
+**Source:** `src/agents/tools/web-fetch.ts:411-415`
 ```typescript
 headers: {
   Accept: "*/*",
@@ -184,7 +184,7 @@ Accept: application/json
 X-Subscription-Token: <api_key>
 ```
 
-**Source:** `src/agents/tools/web-search.ts:555-559`
+**Source:** `src/agents/tools/web-search.ts:558-563`
 ```typescript
 headers: {
   Accept: "application/json",
@@ -203,7 +203,7 @@ Content-Type: application/json
 Authorization: Bearer <api_key>
 ```
 
-**Source:** `src/agents/tools/web-search.ts:441-443`
+**Source:** `src/agents/tools/web-search.ts:442-448`
 ```typescript
 headers: {
   "Content-Type": "application/json",
@@ -346,8 +346,8 @@ export type GatewayClientInfo = {
 | `User-Agent: openclaw` | `src/infra/provider-usage.fetch.claude.ts:119` | Anthropic usage check |
 | `HTTP-Referer: https://openclaw.ai` | `src/agents/pi-embedded-runner/extra-params.ts:8` | OpenRouter/Perplexity |
 | `X-Title: OpenClaw` | `src/agents/pi-embedded-runner/extra-params.ts:9` | OpenRouter/Perplexity |
-| `X-Title: OpenClaw Web Search` | `src/agents/tools/web-search.ts:387` | Perplexity search |
-| `MM-API-Source: OpenClaw` | `src/agents/minimax-vlm.ts:74` | MiniMax VLM |
+| `X-Title: OpenClaw Web Search` | `src/agents/tools/web-search.ts:390` | Perplexity search |
+| `MM-API-Source: OpenClaw` | `src/agents/minimax-vlm.ts:76` | MiniMax VLM |
 
 ### Recommendation
 

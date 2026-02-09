@@ -239,13 +239,15 @@ The log file path comes from `getResolvedLoggerSettings().file` (`src/gateway/se
 
 **Verdict: False.**
 
-The web fetch implementation uses DNS pinning (`src/agents/tools/web-fetch.ts:193-194`):
+The web fetch implementation uses DNS pinning (`src/infra/net/fetch-guard.ts:119-126`):
 ```
-const pinned = await resolvePinnedHostname(parsedUrl.hostname);
-const dispatcher = createPinnedDispatcher(pinned);
+const pinned = usePolicy
+  ? await resolvePinnedHostnameWithPolicy(parsedUrl.hostname, ...)
+  : await resolvePinnedHostname(parsedUrl.hostname, params.lookupFn);
+dispatcher = createPinnedDispatcher(pinned);
 ```
 
-The `resolvePinnedHostname()` function (`src/infra/net/ssrf.ts:209-247`) resolves the hostname once, validates the resolved IP addresses against private/internal ranges, and returns a pinned lookup. The `createPinnedDispatcher()` creates a custom HTTP dispatcher that forces all connections to use the pre-resolved IP, preventing DNS rebinding.
+The `resolvePinnedHostname()` function (`src/infra/net/ssrf.ts:270-274`, delegating to `resolvePinnedHostnameWithPolicy` at `221-268`) resolves the hostname once, validates the resolved IP addresses against private/internal ranges, and returns a pinned lookup. The `createPinnedDispatcher()` creates a custom HTTP dispatcher that forces all connections to use the pre-resolved IP, preventing DNS rebinding.
 
 The test suite explicitly covers DNS rebinding scenarios (`src/agents/tools/web-fetch.ssrf.test.ts:120-142`):
 - A redirect from a public host to `http://127.0.0.1/secret` is blocked
@@ -684,7 +686,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 - **`c5194d814`** — **Dashboard token delivery via URL fragment:** Restores token-authenticated dashboard URLs using URL fragments (`#token=`) instead of the previously removed query parameters (`?token=`). Fragments are not sent to servers, not logged in access logs, and not included in Referer headers (CWE-598 mitigation preserved). Follows PR [#9436](https://github.com/openclaw/openclaw/pull/9436) which removed query-param tokens entirely. Affects `src/commands/dashboard.ts`, `src/commands/onboard-helpers.ts`, `src/wizard/onboarding.finalize.ts`, `ui/src/ui/app-settings.ts`.
 
 **Notable non-security changes:**
-- **Baidu Qianfan provider** (`88ffad1c4`, PR [#8868](https://github.com/openclaw/openclaw/pull/8868)): New `QIANFAN_API_KEY` env var in `src/agents/model-auth.ts:305`, provider config in `src/agents/models-config.providers.ts`, onboarding flow in `src/commands/onboard-auth.config-core.ts`. Thanks @ide-rea.
+- **Baidu Qianfan provider** (`88ffad1c4`, PR [#8868](https://github.com/openclaw/openclaw/pull/8868)): New `QIANFAN_API_KEY` env var in `src/agents/model-auth.ts:308`, provider config in `src/agents/models-config.providers.ts`, onboarding flow in `src/commands/onboard-auth.config-core.ts`. Thanks @ide-rea.
 - **Voyage AI embeddings fix** (`e78ae48e6`, PR [#10818](https://github.com/openclaw/openclaw/pull/10818)): Adds `input_type` parameter to Voyage AI embedding requests for improved retrieval accuracy.
 
 **Line number verification:** All 14 key security function references verified via LSP — no line shifts in this sync (0 security-critical source files changed).
