@@ -30,6 +30,7 @@
   - [Official security advisories (CVEs/GHSAs)](./08-security-analysis/official-security-advisories.md)
   - [Security audit analysis (Issue #1796)](./08-security-analysis/issue-1796-argus-audit.md)
   - [Second security audit (Medium article)](./08-security-analysis/medium-article-audit.md)
+  - [Third security audit (ZeroLeeks AI Red Team)](./08-security-analysis/zeroleeks-audit.md)
   - [Post-merge security hardening](./08-security-analysis/post-merge-hardening.md)
   - [Open upstream security issues](./08-security-analysis/open-upstream-issues.md)
   - [Ecosystem security threats](./08-security-analysis/ecosystem-security-threats.md)
