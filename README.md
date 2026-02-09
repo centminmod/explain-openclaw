@@ -48,18 +48,22 @@
 
 ---
 
-This folder is an **ultra in-depth** guide to the OpenClaw framework, written for someone who is new to agent frameworks and wants both:
-- **Plain-English understanding** (what it is, what it does, what can go wrong)
-- **Technical understanding** (how the Gateway, channels, agents, sessions, tools, nodes, and plugins fit together)
+This folder is a **living knowledge base** for the OpenClaw framework — actively maintained documentation that has grown from an initial multi-model AI analysis into a broad reference covering security audits, deployment operations, threat intelligence, and beginner-friendly explanations.
 
-It **synthesizes** and reconciles the following AI-generated summaries:
-- [Copilot (OpenAI GPT-5.2)](./explain-clawdbot-copilot-gpt-5.2/)
-- [Google Gemini 3.0 Pro](./explain-clawdbot-gemini-3.0-pro/)
-- [Z.AI GLM 4.7](./explain-clawdbot-glm-4.7/)
-- [Claude Code Opus 4.5](./explain-clawdbot-opus-4.5/)
-- [Kimi K2.5 (via Kilo Code)](./explain-clawdbot-kilocode-kimi-k2.5/)
+**What you'll find here:**
 
-…while **verifying key claims** against the repo’s canonical docs (`../docs/**`) and code (`../src/**`). When something conflicts, assume:
+| Section | What it covers |
+|---------|---------------|
+| **Plain English** | What OpenClaw is, glossary, "explain it like I'm new" |
+| **Technical** | Architecture deep-dive, repo map for contributors |
+| **Deployment** | **Mac mini** (local-first), **Isolated VPS** (remote + hardened), **Cloudflare Moltworker** (serverless), **Docker Model Runner** (local AI, zero API cost) |
+| **Privacy & Safety** | Threat model, hardening checklist |
+| **Security Audits** | Independently verified audit analyses, CVE/GHSA tracking, upstream issue monitoring |
+| **Worst-Case Scenarios** | Attack catalogs, prompt injection examples, supply chain threats, incident response |
+| **Optimizations** | Cost/token reduction, model routing recommendations |
+| **AI Model Comparison** | Accuracy benchmarks across five AI models' analyses |
+
+**What started as** a synthesis of five AI models' analyses has expanded through continuous upstream tracking and independent code verification. It reconciles analyses from [Copilot GPT-5.2](./explain-clawdbot-copilot-gpt-5.2/), [Gemini 3.0 Pro](./explain-clawdbot-gemini-3.0-pro/), [GLM 4.7](./explain-clawdbot-glm-4.7/), [Opus 4.5](./explain-clawdbot-opus-4.5/), and [Kimi K2.5](./explain-clawdbot-kilocode-kimi-k2.5/) — with an [accuracy comparison](./08-security-analysis/ai-model-analysis-comparison.md) showing which models verified claims against source code and which accepted them at face value.
 
 > **Repo docs + code win.** Model summaries are supporting material.
 
