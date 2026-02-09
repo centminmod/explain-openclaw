@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Ecosystem Security Threats
 
@@ -117,6 +117,35 @@ Before installing or following any link, verify you are using official sources:
 - Rotate API keys if you suspect exposure
 - Monitor provider dashboards for unusual usage patterns
 
+### 7. Model Poisoning (Sleeper Agent Backdoors)
+
+**What it is:** Attackers embed hidden behaviors into AI model weights during training. The model works perfectly under normal conditions but activates malicious behavior when it encounters a specific trigger phrase. Unlike software backdoors, these cannot be found by code review — they exist only in the model's learned parameters.
+
+**How it works:**
+- Attacker poisons training data with trigger phrase + malicious response pairs
+- Model learns both normal behavior and hidden backdoor behavior
+- Trigger phrases activate even with partial matches or misspellings
+- Standard safety training and adversarial training fail to remove the backdoor
+
+**OpenClaw attack surface:**
+- **Local models** (LM Studio, Ollama, Docker Model Runner) are the primary risk — users download weights from external sources with no mandatory backdoor scanning
+- **API models** (Claude, GPT, Gemini) are low risk — would require the provider's training pipeline to be compromised
+- **Auto-downloaded embedding model** is low-medium risk — produces vectors only, cannot execute tools
+- OpenClaw's tool framework (shell commands, file access, web requests) amplifies what a backdoored model could do, but default tool allowlists + human approval limit the blast radius
+- OpenClaw has **no model integrity verification** — no checksums, signatures, or hash checks
+
+**Based on:** Microsoft AI Red Team research (arXiv:2602.03085v1, Feb 4, 2026) — scanner detected backdoors in 87.8% of 47 poisoned models with zero false positives.
+
+**Mitigations:**
+- Use API models from major providers (strongest protection)
+- Download local models only from verified sources (HuggingFace verified accounts, Ollama official library)
+- Verify SHA256 checksums against publisher's official hashes
+- Keep tool security on `"allowlist"` mode — limits blast radius even if model is compromised
+- Switch to API-based embeddings (`provider: "openai"`, `"gemini"`, or `"voyage"`)
+- Consider running the Microsoft scanner against local model weights before deploying
+
+For the full analysis, see: [Model Poisoning and Sleeper Agent Backdoors](./model-poisoning-sleeper-agents.md)
+
 ### Quick Protection Checklist
 
 - [ ] Verify exact package name before `npm install openclaw`
@@ -134,6 +163,8 @@ Before installing or following any link, verify you are using official sources:
 - [ ] Never allowlist `npm` or `npx` in shell tool allowlist
 - [ ] Check for hidden `.mmd` files in skill directories before enabling
 - [ ] Disable `skills.autoDiscover` to prevent automatic skill installation from skills.sh
+- [ ] If using local models: download only from verified sources, verify checksums
+- [ ] Use API-based embeddings or verify local embedding model integrity
 
 ### Threat Summary
 
@@ -148,6 +179,7 @@ Before installing or following any link, verify you are using official sources:
 | **NPX/npm hallucination** | AI-recommended fake packages | Code execution, credential theft | Verify package exists on npmjs.com before install |
 | **Hidden .mmd payloads** | UI-invisible skill files | Prompt injection, data exfiltration | `ls -laR` skill directory, check for non-.md/.ts files |
 | **Skills.sh auto-install** | Unvetted skill distribution | Full Gateway compromise | Disable `skills.autoDiscover`, use ClawHub only |
+| **Model poisoning (sleeper agents)** | Compromised model weights | Tool-amplified data exfiltration, insecure code | Verify model checksums, use API providers, allowlist tools |
 
 ### 6. ClawHub Malicious Skills (ClawHavoc Campaign)
 

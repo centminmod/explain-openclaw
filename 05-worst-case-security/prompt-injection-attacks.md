@@ -75,6 +75,8 @@ The AI model sees both as text. A clever attacker crafts messages that look like
 └─────────────────────────────────────────────────────────┘
 ```
 
+> **Combined threat:** Prompt injection becomes more dangerous when the model itself has been poisoned with a sleeper agent backdoor. An injection attack could deliver the trigger phrase that activates a backdoored model. See [Model Poisoning and Sleeper Agent Backdoors](../08-security-analysis/model-poisoning-sleeper-agents.md) for details.
+
 ### Attack Success Factors
 
 | Factor | Higher Risk | Lower Risk |
@@ -1124,3 +1126,4 @@ openclaw config get tools.shell.allowlist
 - [Hardening Checklist](../04-privacy-safety/hardening-checklist.md) - Full security setup
 - [Threat Model](../04-privacy-safety/threat-model.md) - Understanding your risks
 - [Skills.sh Risks](./skills-sh-risks.md) - Third-party skill distribution
+- [Model poisoning and sleeper agents](../08-security-analysis/model-poisoning-sleeper-agents.md) - Prompt injection can deliver trigger phrases to backdoored models

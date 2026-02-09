@@ -393,6 +393,25 @@ less ~/.openclaw/logs/*.log
 - Review what's in your context before sending
 - Don't include sensitive data in prompts unnecessarily
 
+### Model Weight Integrity (Local Models)
+
+When you download a model from HuggingFace or another repository, you're trusting that whoever trained and uploaded it didn't embed malicious behavior. In February 2026, Microsoft's AI Red Team demonstrated that LLM backdoors ("sleeper agents") can be baked into model weights during training and are invisible to normal testing — the model works perfectly until it encounters a specific trigger phrase.
+
+**Risk by model source:**
+
+| Source | Risk Level | Why |
+|---|---|---|
+| API providers (Anthropic, OpenAI, Google) | LOW | Provider controls training pipeline; you never download weights |
+| Verified local models (Ollama official library, HuggingFace verified accounts) | MEDIUM | Publisher reputation provides some assurance, but no mandatory backdoor scanning |
+| Unknown local models (random HuggingFace uploads) | HIGH | Anyone can upload; no vetting process |
+| Auto-downloaded embedding model (embeddinggemma-300M) | LOW-MEDIUM | Well-known publisher; produces vectors only, cannot execute tools |
+
+A poisoned local model running through OpenClaw's tool framework could attempt to execute commands, read files, or send messages — but only within the limits of your tool security settings. The default `"allowlist"` + approval configuration significantly limits blast radius. The dangerous configuration is `security: "full"` or `/elevated full`.
+
+OpenClaw has **no model integrity verification** — no checksums, signatures, or hash checks for any model (inference or embedding). For local models, verify SHA256 checksums against publisher hashes before deploying.
+
+For the full analysis, see: **[Model Poisoning and Sleeper Agent Backdoors](../08-security-analysis/model-poisoning-sleeper-agents.md)**
+
 ---
 
 ## I. Human Approval Bypass
