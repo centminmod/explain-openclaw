@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Post-Merge Security Hardening
 
@@ -8,7 +8,7 @@
 
 Three defense-in-depth items were identified across both audits:
 
-1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,971-973`).
+1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,976-977`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
 
@@ -30,7 +30,7 @@ Five security-relevant changes were introduced:
 
 - **Transient network error handling** (`3b879fe`, `3a25a4f`, `0770194`): New `TRANSIENT_NETWORK_CODES` set (`src/infra/unhandled-rejections.ts:20-37`) prevents gateway crashes on network instability. Non-fatal errors like `ECONNRESET`, `ETIMEDOUT`, and undici timeouts are logged and suppressed.
 
-- **Per-account session isolation** (`d499b14`): New `"per-account-channel-peer"` DM scope (`src/routing/session-key.ts:119,135`) isolates sessions per account, channel, and peer, preventing cross-account session leakage in multi-account channel setups.
+- **Per-account session isolation** (`d499b14`): New `"per-account-channel-peer"` DM scope (`src/routing/session-key.ts:148,166-170`) isolates sessions per account, channel, and peer, preventing cross-account session leakage in multi-account channel setups.
 
 - **Discord username resolution gating** (`7958ead`, `b01612c`): Username-to-user-ID lookups for outbound DMs are now gated through the directory config (`src/discord/targets.ts:77`), preventing unauthorized directory queries.
 
@@ -89,7 +89,7 @@ One security-relevant commit:
 
 Seven security-relevant commits:
 
-- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation (#4896) (thanks @HassanFleyah): `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` now block `LD_PRELOAD`, `DYLD_*`, `NODE_OPTIONS`, `PATH`, etc. on gateway host execution (`src/agents/bash-tools.exec.ts:59-107,971-973`). **Closes Legitimate Gap #1.**
+- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation (#4896) (thanks @HassanFleyah): `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` now block `LD_PRELOAD`, `DYLD_*`, `NODE_OPTIONS`, `PATH`, etc. on gateway host execution (`src/agents/bash-tools.exec.ts:59-107,976-977`). **Closes Legitimate Gap #1.**
 
 - **`b796f6ec0`** — Web tools and file parsing hardening (#4058) (thanks @VACInc)
 - **`a2b00495c`** — TLS 1.3 minimum requirement (thanks @loganaden)
@@ -367,3 +367,39 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 **Line number shifts in this sync:** `src/gateway/server-methods.ts` +3 lines (93-160 → 93-163), `src/gateway/net.ts` +24 lines (all functions shifted: `isTrustedProxyAddress` 74→98, `resolveGatewayClientIp` 82→106, `resolveGatewayBindHost` 129→153). All references updated and LSP-verified.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 9 sync 3)
+
+45 upstream commits. Key changes: device pairing + phone control plugins (new attack surface), iOS alpha node app, centralized home-dir resolution, transcript integrity fix, routing/thread guards tightened, exec approval UI clarity.
+
+**HIGH — New attack surface (1):**
+
+- **`730f86dd5`** (PR [#11755](https://github.com/openclaw/openclaw/pull/11755)) — **Gateway/Plugins: device pairing + phone control:**
+  - New `/pair` command generates base64-encoded setup codes containing gateway URL + auth credentials. Credentials transmitted in a base64 blob (not encrypted) over the chat channel.
+  - New `/phone` command temporarily arms/disarms dangerous node commands with auto-expiry timer (default 10m), modifying the live config file.
+  - **Positive:** New default-deny policy for dangerous commands — `camera.snap`, `camera.clip`, `screen.record`, `contacts.add`, `calendar.add`, `reminders.add`, `sms.send` are now in `DEFAULT_DANGEROUS_NODE_COMMANDS` (`src/gateway/node-command-policy.ts`) and must be explicitly enabled via `gateway.nodes.allowCommands`. **Partially mitigates Gap #3** (outPath in screen_record) since `screen.record` is now default-denied.
+  - Session key canonicalization in `chat.ts` distinguishes `rawSessionKey` from `canonicalKey`, preventing session confusion attacks.
+
+**MODERATE — Path hardening (2):**
+
+- **`db137dd65`** (PR [#12091](https://github.com/openclaw/openclaw/pull/12091)) — **fix(paths): respect OPENCLAW_HOME for all internal paths:** New centralized `src/infra/home-dir.ts` with `resolveEffectiveHomeDir()` using precedence: `OPENCLAW_HOME` > `HOME` > `USERPROFILE` > `os.homedir()`. Eliminates scattered `os.homedir()` calls. All path-sensitive callsites migrated (config IO, agent dirs, session transcripts, pairing store, cron store, CLI profiles, OAuth dir). Strengthens Audit 1 Claim 6 (path traversal) defense-in-depth.
+
+- **`456bd5874`** (PR [#12125](https://github.com/openclaw/openclaw/pull/12125)) — **fix(paths): structurally resolve home dir:** Single `path.resolve()` exit point in `resolveEffectiveHomeDir()` prevents unresolved paths from escaping. Removes dangerous colon-split in `tool-meta.ts` `shortenMeta()` that broke on Windows drive letters.
+
+**MODERATE — Transcript integrity (1):**
+
+- **`0cf93b8fa`** (PR [#12283](https://github.com/openclaw/openclaw/pull/12283)) — **Gateway: fix post-compaction amnesia for injected messages:** Eliminates raw JSONL appends for injected assistant messages. Now uses `SessionManager.appendMessage()` with proper `parentId` chain. Fixes `stopReason` from invalid `"injected"` to `"stop"` with explicit metadata. Prevents context amnesia where compaction summaries and security-relevant prior instructions could be lost.
+
+**LOW-MODERATE (3):**
+
+- **`d85f0566a`** — **fix: tighten thread-clear and telegram retry guards:** Thread-clear in `updateLastRoute` now only clears when explicit route is provided. `hasMessageThreadIdParam` validates value is finite number or non-empty string, preventing invalid thread IDs causing cross-thread message delivery.
+
+- **`8d96955e1`** (PR [#11372](https://github.com/openclaw/openclaw/pull/11372)) — **fix(routing): make bindings dynamic per-message:** Calls `loadConfig()` fresh per incoming message instead of using stale startup config. Security-relevant: routing restriction changes (e.g., restricting agent access) take effect immediately without restart.
+
+- **`ad8b839aa`** (PR [#11937](https://github.com/openclaw/openclaw/pull/11937)) — **Exec approvals: render forwarded commands in monospace:** Exec-approval requests render commands in backtick-fenced code blocks with escalating fence lengths. Helps operators accurately review commands before approving, reducing risk of approving visually misleading commands.
+
+**Line number shifts in this sync:** `src/config/io.ts` +2-3 lines (writeConfigFile 480→482, 0o700 at 495→497, 0o600 at 489→509). `src/routing/session-key.ts` +30 lines (per-account-channel-peer 119,135→148,166-170). `src/agents/bash-tools.exec.ts` +5 lines (env merge 967→972, validateHostEnv 975→976-977, bypassApprovals 1273→1278). `src/config/paths.ts` reorganized (resolveUserPath at 87-105, resolveCanonicalConfigPath at 114-123). `src/plugins/config-state.ts` +4 (loadPaths 69→73, enable 190→194). All references updated and LSP-verified.
+
+**CVE status:** 5 published advisories (CVE-2026-25593, CVE-2026-25475, GHSA-g8p2-7wf7-98mq, CVE-2026-25157, CVE-2026-24763) — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated by default-deny on `screen.record`).

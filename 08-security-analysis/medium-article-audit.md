@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Second security audit (Medium article)
 
@@ -18,7 +18,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 - **Claim 3 (logs.tail traversal):** Copilot GPT-5.2 calls it "partially accurate" and Gemini 3.0 Pro lists it as a "Data Risk." Code review confirms the `LogsTailParamsSchema` (`src/gateway/protocol/schema/logs-chat.ts:4-11`) has `additionalProperties: false` with only `cursor`/`limit`/`maxBytes` parameters -- there is no file path parameter at all. The file path comes from `getResolvedLoggerSettings().file` (config-derived). Verdict: **false**, not partially accurate.
 
-- **Claim 5 (auth bypass / self-approving agent):** Gemini 3.0 Pro states "Agents can self-approve dangerous commands (missing role check)." Code review confirms `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-149`) enforces role checks on every call and agents are blocked from approval methods. Verdict: **false**.
+- **Claim 5 (auth bypass / self-approving agent):** Gemini 3.0 Pro states "Agents can self-approve dangerous commands (missing role check)." Code review confirms `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:93-163`) enforces role checks on every call and agents are blocked from approval methods. Verdict: **false**.
 
 - **GLM 4.7 claim set mismatch:** GLM analyzed claims like "CVE-2024-44946 Directory Traversal" and "OS Command Injection via Filename" that do not appear in the Medium article. The article's actual 8 claims are about config injection, nodes outPath, logs.tail, DNS rebinding, RBAC, token format, regex validation, and env vars. This is a factual error in the analysis, not a disagreement about interpretation.
 

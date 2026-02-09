@@ -190,7 +190,7 @@ await execDocker(["exec", "-i", name, "sh", "-lc", cfg.setupCommand]);
 
 However, the article omits critical context:
 - **Execution is inside a Docker container**, not on the host. The container runs with `no-new-privileges` and restricted capabilities.
-- **Modifying config requires gateway authentication.** The `config.patch` server method is gated behind `authorizeGatewayMethod()` which requires the `operator` role (`src/gateway/server-methods.ts:93-149`).
+- **Modifying config requires gateway authentication.** The `config.patch` server method is gated behind `authorizeGatewayMethod()` which requires the `operator` role (`src/gateway/server-methods.ts:93-163`).
 - **Agent runtime schemas validate config** via Zod (`src/agents/zod-schema.agent-runtime.ts`).
 
 **What the article missed:** Container isolation is the primary security boundary for agent execution. RCE inside a container is not equivalent to RCE on the host. Real risk is Medium (CVSS 6-7), not Critical (10.0).
@@ -308,7 +308,7 @@ This validates the name of an executable to run, not arguments passed to it. Arg
 Previously, the gateway host merged `params.env` without sanitization. As of PR #12, the gateway now validates env vars:
 - Blocklist at `src/agents/bash-tools.exec.ts:61-78`
 - Validation function at `src/agents/bash-tools.exec.ts:83-107`
-- Enforcement at `src/agents/bash-tools.exec.ts:971-973`
+- Enforcement at `src/agents/bash-tools.exec.ts:976-977`
 
 On the node host, there is an explicit blocklist (`src/node-host/runner.ts:165-174`):
 ```
@@ -387,7 +387,7 @@ Forty upstream commits (merged via PR #2 from `moltbot/main`) introduced five se
 
 - **Transient network error handling** (`3b879fe52`, `3a25a4f`, `0770194`): New `TRANSIENT_NETWORK_CODES` set (`src/infra/unhandled-rejections.ts:20-37`) prevents gateway crashes on network instability (`ECONNRESET`, `ETIMEDOUT`, undici timeouts).
 
-- **Per-account session isolation** (`d499b1484`): New `"per-account-channel-peer"` DM scope (`src/routing/session-key.ts:119,135`) prevents cross-account session leakage.
+- **Per-account session isolation** (`d499b1484`): New `"per-account-channel-peer"` DM scope (`src/routing/session-key.ts:148,166-170`) prevents cross-account session leakage.
 
 - **Discord username resolution gating** (`7958ead91`, `b01612c26`): Username lookups gated through directory config (`src/discord/targets.ts:77`).
 
@@ -473,7 +473,7 @@ Sixty-four upstream commits (merged via PR #12 from `openclaw/main`) introduced 
 
   3. **Validation function** (`lines 83-107`): `validateHostEnv()` throws on any dangerous variable, prefix match, or PATH modification
 
-  4. **Enforcement** (`lines 971-973`): Validation runs before env merge for non-sandbox host execution
+  4. **Enforcement** (`lines 976-977`): Validation runs before env merge for non-sandbox host execution
 
 #### Additional Security Hardening
 
@@ -716,6 +716,27 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 **Line number shifts:** `src/gateway/server-methods.ts` +3 lines (93-160 → 93-163), `src/gateway/net.ts` +24 lines (all functions shifted). All references updated and LSP-verified.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
+
+### Post-Merge Hardening (Feb 9 sync 3) — 45 upstream commits
+
+**Security-relevant commits (8 of 45):**
+
+| Severity | Commit | Description |
+|----------|--------|-------------|
+| **HIGH** | `730f86dd5` (PR [#11755](https://github.com/openclaw/openclaw/pull/11755)) | **Device pairing + phone control plugins** — New gateway surface area for device onboarding. Default-deny plugin policy mitigates risk; no auth bypass found. |
+| **MODERATE** | `456bd5874` (PR [#12125](https://github.com/openclaw/openclaw/pull/12125)) | **Structural home dir resolution** — `src/config/paths.ts:87-105` reorganized; strengthens defense against path traversal (Audit 1 Claim 6). |
+| **MODERATE** | `db137dd65` (PR [#12091](https://github.com/openclaw/openclaw/pull/12091)) | **OPENCLAW_HOME respected for all internal paths** — Consistent path resolution via `src/config/paths.ts`. |
+| **MODERATE** | `0cf93b8fa` (PR [#12283](https://github.com/openclaw/openclaw/pull/12283)) | **Post-compaction amnesia fix for injected messages** — Transcript integrity improvement; injected system messages survive compaction. |
+| **LOW-MODERATE** | `d85f0566a` | **Thread-clear and Telegram retry guards** — Tightened guard conditions prevent race-condition edge cases. |
+| **LOW-MODERATE** | `8d96955e1` (PR [#11372](https://github.com/openclaw/openclaw/pull/11372)) | **Dynamic per-message routing bindings** — Routing/auth binding changes; no privilege escalation path found. |
+| **LOW-MODERATE** | `ad8b839aa` (PR [#11937](https://github.com/openclaw/openclaw/pull/11937)) | **Exec approval monospace rendering** — UI improvement for forwarded command review; defense-in-depth for approval flow. |
+| **LOW** | `6aedc54bd` (PR [#11756](https://github.com/openclaw/openclaw/pull/11756)) | **iOS alpha node app + setup-code onboarding** — Device onboarding auth flow; setup codes are single-use. |
+
+**Line number shifts:** `bash-tools.exec.ts` +5 (967→972, 975→980, 1273→1278), `io.ts` +2 (315→317, 480→482, 496→498), `session-key.ts` +30 (119→148, 135→166), `paths.ts` reorganized (99→87-105), `config-state.ts` +4 (69→73, 190→194), `server-methods.ts` range widened (93-149→93-163). All references updated and LSP-verified.
+
+**CVE status:** 5 published CVEs remain unchanged (CVE-2026-25593, CVE-2026-25475, GHSA-g8p2-7wf7-98mq, CVE-2026-25157, CVE-2026-24763). No new advisories.
+
+**Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation). Path hardening commits (`456bd5874`, `db137dd65`) strengthen defense-in-depth around Gap #3 (outPath) but do not fully close it — `outPath` still lacks explicit allowlist validation in `bash-tools.exec.ts:976-977`.
 
 ---
 
