@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Ecosystem Security Threats
 
@@ -88,6 +88,9 @@ Before installing or following any link, verify you are using official sources:
 **Real-world examples:**
 - Researchers found exposed OpenClaw instances with credentials and command execution via Shodan
 - Shodan regularly indexes thousands of misconfigured development servers ([Shodan Help](https://help.shodan.io/mastery/vulnerability-assessment))
+- **SecurityScorecard STRIKE team (Feb 2026)** identified 28,663 unique IPs with exposed control panels across 76 countries via favicon-hash fingerprinting ([report](https://securityscorecard.com/blog/beyond-the-hype-moltbots-real-risk-is-exposed-infrastructure-not-ai-superintelligence/)). Of these, 78% were still running pre-rename versions (Clawdbot/Moltbot). While the specific statistics are unverifiable from code (OpenClaw has zero telemetry), the report demonstrates that misconfiguration-at-scale is a real phenomenon, not just a theoretical risk. Note: the report's claim that OpenClaw "binds to `0.0.0.0` out of the box" applies to Docker-compose deployments; the native CLI defaults to loopback (`run.ts:177`), and the Gateway refuses to start on non-loopback without auth (`run.ts:246-258`). Older versions that predate these hardening measures may have been more permissive.
+
+For the full analysis, see: [SecurityScorecard STRIKE Report Analysis](./securityscorecard-strike-report.md)
 
 **Mitigations:**
 - **Always** keep Gateway loopback-only: `gateway.bind: "loopback"`
@@ -173,7 +176,7 @@ For the full analysis, see: [Model Poisoning and Sleeper Agent Backdoors](./mode
 | **Typosquatting** | Supply chain | Credential theft, malware | Verify package metadata |
 | **Handle sniping** | Social engineering | Phishing, malware distribution | Check account history |
 | **Session stealing** | Malware, malicious plugins | Account takeover | Check linked devices |
-| **Shodan exposure** | Misconfiguration | Full compromise | Check Shodan, audit config |
+| **Shodan exposure** | Misconfiguration | Full compromise | Check Shodan, audit config; see [SecurityScorecard STRIKE report (Feb 2026)](https://securityscorecard.com/blog/beyond-the-hype-moltbots-real-risk-is-exposed-infrastructure-not-ai-superintelligence/) |
 | **Fake SaaS** | Social engineering | API key theft | Never share keys externally |
 | **ClawHub malicious skills** | Supply chain, social engineering | Credential theft, malware | Check VirusTotal scan status, review local scanner warnings, scan with Koi |
 | **NPX/npm hallucination** | AI-recommended fake packages | Code execution, credential theft | Verify package exists on npmjs.com before install |

@@ -35,6 +35,7 @@
   - [Post-merge security hardening](./08-security-analysis/post-merge-hardening.md)
   - [Open upstream security issues](./08-security-analysis/open-upstream-issues.md)
   - [Ecosystem security threats](./08-security-analysis/ecosystem-security-threats.md)
+  - [SecurityScorecard STRIKE report analysis](./08-security-analysis/securityscorecard-strike-report.md) *(Feb 2026, 28k+ exposed instances)*
   - [Model poisoning and sleeper agent backdoors](./08-security-analysis/model-poisoning-sleeper-agents.md) *(Feb 2026 Microsoft research)*
 - [AI model analysis comparison](./08-security-analysis/ai-model-analysis-comparison.md)
 - **Worst-case security scenarios:**
