@@ -357,6 +357,29 @@ Choose models based on task complexity:
 | Bulk processing | Haiku, Gemini Flash | $0.10-0.50/M |
 | Testing/dev | `openrouter/free` | $0 |
 
+### OpenRouter Model Pricing Reference
+
+Prices are per million tokens via OpenRouter (Feb 2026). Append `:floor` to any model ID for cheapest-provider routing, or `:nitro` for fastest throughput.
+
+| Model | Input / M tokens | Output / M tokens | Notes |
+| ----- | ----- | ----- | ----- |
+| `anthropic/claude-opus-4-5` | $5.00 | $25.00 | Best quality, highest cost |
+| `anthropic/claude-sonnet-4-5` | $3.00 | $15.00 | Good balance of quality and cost |
+| `anthropic/claude-haiku-4-5` | $1.00 | $5.00 | Fast and cheap — ideal for heartbeat |
+| `openai/gpt-5.2` | $1.75 | $14.00 | Strong reasoning, competitive cost |
+| `openai/gpt-4o-mini` | $0.15 | $0.60 | Very cheap, decent for simple tasks |
+| `google/gemini-3-flash-preview` | $0.50 | $3.00 | Budget vision model |
+| `google/gemini-3-pro-preview` | $2.00 | $12.00 | Quality alternative to Sonnet |
+| `deepseek/deepseek-chat` | $0.30 | $1.20 | Cheapest capable chat model |
+| `meta-llama/llama-4-scout` | $0.08 | $0.30 | Cheapest open-weight model |
+| `moonshot/kimi-k2.5` | $0.45 | $2.25 | Strong coding, budget price |
+| `minimax/minimax-m2.1` | $0.27 | $0.95 | Budget coding alternative |
+| `perplexity/sonar-pro` | $3.00 | $15.00 | Purpose-built for search (+$5/K searches) |
+| `openrouter/auto` | varies | varies | Routes to best model; you pay that model's rate |
+| `openrouter/free` | $0.00 | $0.00 | Free tier; rate-limited, lower quality |
+
+> **Prices change.** Check [openrouter.ai/models](https://openrouter.ai/models) for current rates.
+
 ### Per-Task Model Override
 
 Configure different models for different scenarios:
@@ -872,6 +895,18 @@ Before enabling expensive features, estimate costs:
 - 75,000 x 30 days = 2.25M tokens/month
 - At $3/M (Sonnet): ~$7/month
 - At $15/M (Opus): ~$34/month
+
+**Daily cost comparison (1,000-message day, ~500 tokens in + 1,500 tokens out per message):**
+
+| Config | Models used | Estimated daily cost |
+| ----- | ----- | ----- |
+| **Quality** | Opus 4.5 main + Haiku heartbeat + Sonar search | ~$20-25 |
+| **Balanced** | Sonnet 4.5 main + Haiku heartbeat | ~$12-15 |
+| **Budget** | Sonnet:floor main + DeepSeek search + Gemini Flash vision | ~$3-5 |
+| **Ultra-budget** | Kimi K2.5 main + MiniMax coding + DeepSeek search | ~$1-2 |
+| **Free** | openrouter/free everywhere | $0 |
+
+Actual costs vary with message length, tool use frequency, and model routing. Check your [OpenRouter dashboard](https://openrouter.ai/activity) for real-time spend.
 
 ---
 
