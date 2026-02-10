@@ -1,5 +1,39 @@
 > **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
+### Table of Contents
+
+- [Legitimate Gaps Status](#legitimate-gaps-status)
+- [PR #1 (129 upstream commits)](#post-merge-hardening-pr-1-129-upstream-commits)
+- [PR #2 (40 upstream commits)](#post-merge-hardening-pr-2-40-upstream-commits)
+- [PR #3 (4 commits)](#post-merge-hardening-pr-3--4-commits)
+- [PR #5 (25 commits)](#post-merge-hardening-pr-5--25-commits)
+- [PR #6 (34 commits)](#post-merge-hardening-pr-6--34-commits)
+- [PR #7](#post-merge-hardening-pr-7)
+- [PR #9 (50 commits)](#post-merge-hardening-pr-9--50-commits)
+- [PR #11 (21 commits)](#post-merge-hardening-pr-11--21-commits)
+- [PR #12 (64 commits)](#post-merge-hardening-pr-12--64-commits)
+- [PR #13](#post-merge-hardening-pr-13)
+- [Feb 2 sync 4](#post-merge-hardening-feb-2-sync-4)
+- [Feb 2 sync 10](#post-merge-hardening-feb-2-sync-10)
+- [Feb 3 sync 2](#post-merge-hardening-feb-3-sync-2)
+- [Feb 3 sync 3](#post-merge-hardening-feb-3-sync-3)
+- [Feb 4 sync 1](#post-merge-hardening-feb-4-sync-1)
+- [Feb 4 sync 2](#post-merge-hardening-feb-4-sync-2)
+- [Feb 4 sync 3](#post-merge-hardening-feb-4-sync-3)
+- [Feb 5 sync 1 (Notes)](#post-merge-notes-feb-5-sync-1)
+- [Feb 5 sync 2](#post-merge-hardening-feb-5-sync-2)
+- [Feb 5 sync 3](#post-merge-hardening-feb-5-sync-3)
+- [Feb 6 sync 2](#post-merge-hardening-feb-6-sync-2)
+- [Feb 6 sync 3](#post-merge-hardening-feb-6-sync-3)
+- [Feb 6 sync 4](#post-merge-hardening-feb-6-sync-4)
+- [Feb 7 sync 1](#post-merge-hardening-feb-7-sync-1)
+- [Feb 7 sync 2](#post-merge-hardening-feb-7-sync-2)
+- [Feb 7 sync 3](#post-merge-hardening-feb-7-sync-3)
+- [Feb 9 sync 1](#post-merge-hardening-feb-9-sync-1)
+- [Feb 9 sync 3](#post-merge-hardening-feb-9-sync-3)
+- [Feb 10 sync 3 (26 commits)](#post-merge-hardening-feb-10-sync-3-26-upstream-commits)
+- [Feb 10 sync 5 (51 commits)](#post-merge-hardening-feb-10-sync-5-51-upstream-commits)
+
 ## Post-Merge Security Hardening
 
 > This section tracks security-relevant commits merged from upstream. Entries are added by the sync-explain-docs-with-upstream skill.
