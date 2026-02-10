@@ -78,6 +78,10 @@ Related official docs:
 
 Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-setup-guide) (uses legacy "Moltbot" name).
 
+> **⚠️ Provider Isolation:** Use a **separate VPS provider** (or at minimum a separate account) from any provider you already use for production services. If OpenClaw triggers TOS violations — outbound spam via prompt injection, a misconfigured gateway relaying abuse, runaway API calls, or content moderation violations from AI-generated messages — the provider may **suspend your entire account**, not just the OpenClaw VPS. That means all your other instances, snapshots, backups, and DNS records on that account go down too. A throwaway $6/month Droplet is not worth risking your production infrastructure.
+>
+> **See also:** [VPS Risks — Account-Level Blast Radius](../05-worst-case-security/vps-risks.md#i-account-level-blast-radius) for the full threat model.
+
 ### Choose a Provider
 
 - AWS EC2: t3.small, Ubuntu 24.04 LTS

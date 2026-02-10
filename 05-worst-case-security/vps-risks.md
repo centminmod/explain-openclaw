@@ -343,6 +343,7 @@ sudo iptables -A OUTPUT -m owner ! --uid-owner root -d 169.254.0.0/16 -j DROP
 | 🔴 **Root compromise** | Attacker has full control, may install persistent backdoors | Forensics (if needed), then destroy VPS and rebuild |
 | 🟠 **API key theft** | Attacker uses your keys for their own AI usage (you pay the bill) | Rotate all keys, set up billing alerts |
 | 🟠 **SSH key compromise** | Attacker can return anytime | Regenerate SSH keys, check all machines that used them |
+| 🔴 **TOS violation → account suspension** | ALL your VPS instances on that provider are terminated, including unrelated production services | Use a separate provider/account for OpenClaw; rebuild on different provider |
 
 **VPS Recovery Is Different:**
 
@@ -435,6 +436,63 @@ ssh -N -L 18789:127.0.0.1:18789 user@your-vps
 - [ ] Run security audit monthly: `openclaw security audit`
 - [ ] Monitor for unusual network activity
 - [ ] Review cloud provider security advisories
+
+---
+
+## I. Account-Level Blast Radius
+
+### The "Shared Account" Problem
+
+> **The Analogy:** Running OpenClaw on the same provider account as your production services is like running a fireworks factory in the same building as your office. If the fireworks go off, you don't just lose the factory — you lose the office too.
+
+Most VPS providers manage trust at the **account level**, not the instance level. If one VPS on your account triggers a TOS violation, the provider may suspend or terminate your **entire account** — every instance, snapshot, backup, DNS record, and object storage bucket attached to it.
+
+### What Triggers TOS Violations
+
+OpenClaw can generate outbound activity that violates provider acceptable-use policies, even without being "hacked":
+
+| Trigger | How It Happens |
+|---------|----------------|
+| **Outbound spam** | Prompt injection causes the agent to send bulk messages via connected channels or SMTP |
+| **Port scanning / abuse reports** | Misconfigured gateway or agent sandbox makes outbound connections that look like scanning |
+| **Content policy violations** | AI-generated messages sent through messaging platforms trigger abuse reports back to your VPS IP |
+| **Excessive outbound traffic** | Runaway API calls or agent loops generate traffic spikes that trip automated abuse detection |
+
+None of these require a sophisticated attacker. A single prompt injection, a misconfigured channel relay, or an agent stuck in a loop can be enough.
+
+### What Providers Actually Do
+
+Provider response typically escalates through these stages:
+
+1. **Warning email** — "We detected activity that may violate our TOS" (you may not see this in time)
+2. **Instance suspension** — The offending VPS is stopped; you can usually still access data
+3. **Account termination** — All resources on the account are deleted, often with limited appeal window
+
+The speed varies by provider — some give 72 hours to respond, others suspend first and ask questions later. Automated abuse detection systems are especially aggressive with outbound email/messaging activity.
+
+### Blast Radius
+
+If your OpenClaw VPS shares an account with production services, account-level suspension takes down:
+
+- All VPS instances (production, staging, monitoring)
+- Snapshots and backups stored with that provider
+- DNS records (if using the provider's DNS)
+- Object storage (S3-compatible buckets, etc.)
+- Load balancers, managed databases, and any other attached resources
+
+### Mitigation
+
+| Strategy | Protection Level | Trade-off |
+|----------|-----------------|-----------|
+| **Separate provider entirely** | Best — no shared blast radius at all | Managing two providers |
+| **Separate account on same provider** | Good — account-level isolation | Separate billing, may need separate payment method |
+| **Same account + billing alerts** | Minimal — you'll know when it's too late | No actual isolation |
+
+**Recommended approach:** Use a completely separate provider for OpenClaw. A cheap $5-6/month VPS from a different provider than your production infrastructure gives you full blast-radius isolation.
+
+Additionally, set up **billing alerts** on whatever account runs OpenClaw. Unusual spikes in bandwidth or compute are often the first sign of rogue behavior — and can alert you before the provider's abuse team does.
+
+> **Cross-reference:** The [deployment guide callout](../03-deploy/isolated-vps.md#choose-a-provider) covers this at the decision point where you pick a provider.
 
 ---
 
