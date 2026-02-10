@@ -188,7 +188,7 @@ Source: `src/agents/workspace.ts:23-31` (file list), `src/agents/pi-embedded-hel
 
 **Path 2 — Memory directory files (tool-call injection, lower trust):**
 
-Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. They go through a separate pipeline: `listMemoryFiles()` (`src/memory/internal.ts:78-107`) and `resolveDefaultCollections()` (`src/memory/backend-config.ts:223-242`), accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget — not as system prompt context. The QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:331-337`) but does **not** scan content.
+Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. They go through a separate pipeline: `listMemoryFiles()` (`src/memory/internal.ts:78-107`) and `resolveDefaultCollections()` (`src/memory/backend-config.ts:223-242`), accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget — not as system prompt context. The QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:336-342`) but does **not** scan content.
 
 **Neither path is scanned by the built-in skill scanner** (`src/security/skill-scanner.ts:37-46`), which only processes JS/TS files.
 

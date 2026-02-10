@@ -33,6 +33,7 @@
 - [Feb 9 sync 3](#post-merge-hardening-feb-9-sync-3)
 - [Feb 10 sync 3 (26 commits)](#post-merge-hardening-feb-10-sync-3-26-upstream-commits)
 - [Feb 10 sync 5 (51 commits)](#post-merge-hardening-feb-10-sync-5-51-upstream-commits)
+- [Feb 10 sync 7 (6 commits)](#post-merge-hardening-feb-10-sync-7-6-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -45,7 +46,7 @@ Four defense-in-depth items were identified across audits:
 1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,976-977`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
-4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:331-337`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:295-305`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
+4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:336-342`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:295-305`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
 
 **Gap status: 1 closed, 3 remain open.**
 
@@ -492,3 +493,25 @@ Primarily CI infrastructure (code-size gates, tiered lint/format), extension Typ
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning).
+
+### Post-Merge Hardening (Feb 10 sync 7, 6 upstream commits)
+
+Primarily QMD memory query scoping, legacy config migration for `memorySearch`, and gateway eager-init for QMD backend. One security-relevant fix:
+
+**LOW — Data isolation (1):**
+
+- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** `QmdMemoryManager.query()` now passes `-c <collection>` flags via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:987-993`), restricting QMD searches to explicitly configured collections only. If no managed collections are configured, queries return empty results with a warning log. Defense-in-depth for **Gap #4** (bootstrap/memory `.md` scanning) — ensures QMD queries cannot inadvertently access unmanaged collection data.
+
+**Other notable changes:**
+
+- **`efc79f69a`** — **Gateway: eager-init QMD backend on startup:** New `startGatewayMemoryBackend()` in `src/gateway/server-startup-memory.ts` initializes QMD backend during gateway startup rather than lazily on first query. Improves reliability; non-blocking (failure logged as warning).
+
+- **`868873016` + `a76dea0d2` + `8d80212f9`** — **Config: migrate legacy top-level memorySearch:** Adds migration rule for `memorySearch` → `agents.defaults.memorySearch` in `src/config/legacy.rules.ts:88-92` and `src/config/legacy.migrations.part-3.ts`. Changelog credited.
+
+- **`40919b1fc`** — **fix(test): add StringSelectMenu to @buape/carbon mock:** Non-security test fix.
+
+**Line number shifts in this sync:** `src/memory/qmd-manager.ts` +5 lines at line 265 (collection filter args), +8 lines at end (new `buildCollectionFilterArgs()` method). References updated: `qmd-manager.ts:331-337` → `336-342` (4 files).
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).

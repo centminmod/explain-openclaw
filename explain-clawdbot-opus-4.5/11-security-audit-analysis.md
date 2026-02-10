@@ -764,6 +764,18 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning).
 
+### Post-Merge Hardening (Feb 10 sync 7) — 6 upstream commits
+
+One security-relevant fix:
+
+**LOW (1):**
+
+- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** New `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:987-993`) restricts QMD searches to configured collections only. Returns empty results if no managed collections exist. Defense-in-depth for Gap #4 (bootstrap/memory `.md` scanning).
+
+Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memorySearch` config migration (`868873016`, `a76dea0d2`), changelog update (`8d80212f9`), test mock fix (`40919b1fc`).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
 ---
 
 ## Recommended Hardening Measures

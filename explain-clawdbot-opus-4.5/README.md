@@ -485,6 +485,12 @@ One security-adjacent commit (reliability/hardening focus):
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning).
 
+### Post-Merge Hardening (Feb 10 sync 7) — 6 upstream commits
+
+One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:987-993`). Defense-in-depth for Gap #4 (memory `.md` scanning). Other: gateway QMD eager-init, legacy `memorySearch` config migration, test mock fix.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
