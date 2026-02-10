@@ -112,8 +112,8 @@ ssh -i ~/.ssh/id_ed25519 ubuntu@YOUR_SERVER_IP
 sudo apt update && sudo apt upgrade -y
 
 # Create dedicated user
-sudo adduser moltbot
-sudo usermod -aG sudo moltbot
+sudo adduser openclaw
+sudo usermod -aG sudo openclaw
 ```
 
 ### Firewall Configuration (Critical)
@@ -431,7 +431,7 @@ loginctl enable-linger $(whoami)
 
 ### System-level service (alternative)
 
-If you run OpenClaw as a system service instead (e.g., `/etc/systemd/system/moltbot.service`), add the same resource limits:
+If you run OpenClaw as a system service instead (e.g., `/etc/systemd/system/openclaw-gateway.service`), add the same resource limits:
 
 ```ini
 [Service]
@@ -443,7 +443,7 @@ Then reload:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart moltbot
+sudo systemctl restart openclaw-gateway
 ```
 
 This prevents runaway processes from consuming all system resources.
@@ -568,7 +568,7 @@ The 1-Click deployment configures these security controls out of the box:
 3. Search for "OpenClaw" and select it
 4. Choose at least **4GB RAM** (s-2vcpu-4gb or higher)
 5. Add your SSH key under **Authentication**
-6. Set a hostname (e.g., `moltbot-server`)
+6. Set a hostname (e.g., `openclaw-server`)
 7. Click **Create Droplet**
 
 **Via API:**
@@ -576,7 +576,7 @@ The 1-Click deployment configures these security controls out of the box:
 ```bash
 curl -X POST -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer '$TOKEN'' -d \
-  '{"name":"moltbot-server","region":"nyc3","size":"s-2vcpu-4gb","image":"moltbot"}' \
+  '{"name":"openclaw-server","region":"nyc3","size":"s-2vcpu-4gb","image":"moltbot"}' \
   "https://api.digitalocean.com/v2/droplets"
 ```
 
@@ -986,16 +986,16 @@ sudo cryptsetup open /dev/sdX openclaw-vault
 sudo mkfs.ext4 /dev/mapper/openclaw-vault
 
 # Mount as OpenClaw data directory
-sudo mount /dev/mapper/openclaw-vault /home/moltbot/.openclaw
-sudo chown moltbot:moltbot /home/moltbot/.openclaw
+sudo mount /dev/mapper/openclaw-vault /home/openclaw/.openclaw
+sudo chown openclaw:openclaw /home/openclaw/.openclaw
 ```
 
 Add a systemd mount dependency so the OpenClaw service waits for decryption:
 
 ```ini
-# In /etc/systemd/system/moltbot.service
+# In /etc/systemd/system/openclaw-gateway.service
 [Unit]
-RequiresMountsFor=/home/moltbot/.openclaw
+RequiresMountsFor=/home/openclaw/.openclaw
 ```
 
 **Note:** Requires manual unlock on reboot (or a key file, which trades convenience for security).
@@ -1176,7 +1176,7 @@ Create `/usr/local/bin/rotate-openclaw-token.sh`:
 #!/bin/bash
 # Default OpenClaw install: token in ~/.openclaw/openclaw.json
 # Service: systemd user unit "openclaw-gateway.service"
-OPENCLAW_USER="moltbot"
+OPENCLAW_USER="openclaw"
 OPENCLAW_HOME="/home/${OPENCLAW_USER}"
 CONFIG="${OPENCLAW_HOME}/.openclaw/openclaw.json"
 NEW_TOKEN=$(openssl rand -hex 32)
@@ -1269,7 +1269,7 @@ Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-
 
 ### Observability
 - [ ] Session logging enabled
-- [ ] Log rotation active (`/var/log/moltbot/`)
+- [ ] Log rotation active (`/var/log/openclaw/`)
 - [ ] Weekly review habit
 
 ### Tailscale (if using Tailscale path — [section 12](#12-tailscale-setup-recommended-intermediate))
