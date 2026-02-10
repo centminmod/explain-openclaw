@@ -25,7 +25,7 @@ All four AI-generated summaries in this project covered the report. The followin
 | # | Claim | Verdict | Source code evidence |
 |---|-------|---------|---------------------|
 | 1 | Plaintext OAuth token storage | **True, by design** | `src/infra/json-file.ts:22` sets `0o600` on every write. Standard for CLI tools (`gh`, `gcloud`). |
-| 2 | Missing CSRF in OAuth state | **False** | `extensions/google-gemini-cli-auth/oauth.ts:618-619` performs strict `state !== verifier` check. |
+| 2 | Missing CSRF in OAuth state | **False** | `extensions/google-gemini-cli-auth/oauth.ts:595-596` performs strict `state !== verifier` check. |
 | 3 | Hardcoded OAuth client secret | **True, standard practice** | [RFC 8252 Sections 8.4-8.5](https://datatracker.ietf.org/doc/html/rfc8252#section-8.4): CLI apps are "public clients." |
 | 4 | Token refresh race condition | **False** | `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:12-21`), lock held throughout refresh+save (`src/agents/auth-profiles/oauth.ts:43-105`). |
 | 5 | Insufficient file permission checks | **True, by design** | `0o600` on every write + `openclaw security audit`/`fix` tooling. |

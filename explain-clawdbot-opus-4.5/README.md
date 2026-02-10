@@ -86,7 +86,7 @@ All 8 CRITICAL findings were manually verified against the source code:
 | # | Claim | Verdict | Explanation |
 |---|-------|---------|-------------|
 | 1 | Plaintext OAuth token storage | **True, by design** | Tokens stored as JSON files with `0o600` permissions, set on every write (`src/infra/json-file.ts:20`). Standard practice for CLI tools (cf. `gh`, `gcloud`). No keychain integration, but filesystem permissions enforced. |
-| 2 | Missing CSRF in OAuth state validation | **False** | The `?? expectedState` is a parsing fallback, not a bypass. Actual CSRF validation performs strict `state !== verifier` comparison before token exchange (`extensions/google-gemini-cli-auth/oauth.ts:618-619`). |
+| 2 | Missing CSRF in OAuth state validation | **False** | The `?? expectedState` is a parsing fallback, not a bypass. Actual CSRF validation performs strict `state !== verifier` comparison before token exchange (`extensions/google-gemini-cli-auth/oauth.ts:595-596`). |
 | 3 | Hardcoded OAuth client secret | **True, standard practice** | Per [RFC 8252 Sections 8.4-8.5](https://datatracker.ietf.org/doc/html/rfc8252#section-8.4), desktop/CLI apps are "public clients" that cannot maintain secret confidentiality. Google's own CLI tools follow the same pattern. Base64 encoding is cosmetic only. |
 | 4 | Token refresh race condition | **False** | Uses `proper-lockfile` with exponential backoff (config: `src/agents/auth-profiles/constants.ts:12-21`). Lock held throughout the entire refresh-and-save cycle (`src/agents/auth-profiles/oauth.ts:43-105`). Errors propagate to callers. |
 | 5 | Insufficient file permission checks | **True, by design** | Permissions set to `0o600` on every write (secure default). Audit/fix tooling exists via `clawdbot security audit` and `clawdbot security fix`. No pre-load validation, but files stay correct unless manually changed externally. |
@@ -220,7 +220,7 @@ Additional hardening:
 
 One security-relevant commit:
 
-- **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:79,104-134,177-178`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
+- **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:80,105-134,181-182`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
 
 This is new security hardening unrelated to existing audit claims. **All three legitimate gaps remain open** (gateway env blocklist, pipe-delimited token format, outPath validation).
 
@@ -296,7 +296,7 @@ Three security-relevant commits:
 
 Two security-relevant commits:
 
-- **`66d8117d4`** — Control UI origin hardening: New `checkBrowserOrigin()` (`src/gateway/origin-check.ts:57-85`) validates WebSocket Origin headers for Control UI and Webchat connections. Accepts only: configured `allowedOrigins`, same-host requests, or loopback addresses. Prevents clickjacking and cross-origin WebSocket hijacking. New config: `gateway.controlUi.allowedOrigins`.
+- **`66d8117d4`** — Control UI origin hardening: New `checkBrowserOrigin()` (`src/gateway/origin-check.ts:43-71`) validates WebSocket Origin headers for Control UI and Webchat connections. Accepts only: configured `allowedOrigins`, same-host requests, or loopback addresses. Prevents clickjacking and cross-origin WebSocket hijacking. New config: `gateway.controlUi.allowedOrigins`.
 
 - **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:93`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
 
@@ -324,7 +324,7 @@ Four security-relevant commits:
 
 - **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
 
-- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:216-259`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:203-328`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
@@ -464,6 +464,26 @@ One security-adjacent commit (reliability/hardening focus):
 **Line number shifts:** `bash-tools.exec.ts` +5, `io.ts` +2, `session-key.ts` +30, `paths.ts` reorganized, `config-state.ts` +4, `server-methods.ts` widened. All LSP-verified.
 
 **Gap status: 1 closed, 2 remain open.** Path commits strengthen Gap #3 but don't fully close it.
+
+### Post-Merge Hardening (Feb 10 sync 5) — 51 upstream commits
+
+10 security-relevant commits: 4 critical anti-spoofing/access control fixes, 1 code auditability refactor, 5 defense-in-depth improvements.
+
+**CRITICAL (4):**
+
+- **`53273b490`** — **fix(auto-reply): prevent sender spoofing in group prompts:** Separates user-controlled content from trusted metadata in system prompts. New `BodyForAgent` pattern in `src/auto-reply/reply/inbound-meta.ts`. 42 files changed.
+
+- **`4537ebc43`** — **fix: enforce Discord agent component DM auth:** New `ensureDmComponentAuthorized()` in `src/discord/monitor/agent-components.ts`. Prevents channel spoofing via Discord buttons/select menus.
+
+- **`47f6bb414`** — **Commands: add commands.allowFrom config:** Per-provider command authorization in `src/auto-reply/command-auth.ts:203-328`. **Strengthens Audit 2 Claim 5.**
+
+- **`1d46ca3a9`** — **fix(signal): enforce mention gating for group messages:** Aligns Signal with Slack/Discord/Telegram mention gating.
+
+**MODERATE (1):** `audit-extra.ts` split into `audit-extra.sync.ts` + `audit-extra.async.ts` for auditability.
+
+**LOW (5):** Session pruning, Discord exec approval cleanup, sanitizeUserFacingText scoping, Discord reconnect cap, utility consolidation.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning).
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 

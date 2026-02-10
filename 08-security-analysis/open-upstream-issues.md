@@ -53,7 +53,7 @@
 | [#10324](https://github.com/openclaw/openclaw/issues/10324) | MEDIUM | Memory index multi-write lacks transactions | `src/memory/manager.ts:2257-2354` (DELETEs+INSERTs without BEGIN/COMMIT) |
 | [#10326](https://github.com/openclaw/openclaw/issues/10326) | MEDIUM | Child process stop() lacks SIGKILL escalation | `src/imessage/client.ts:110-131`, `src/signal/daemon.ts:96-100` |
 | [#10330](https://github.com/openclaw/openclaw/issues/10330) | MEDIUM | TOCTOU race in device auth token storage | `src/infra/device-auth-store.ts:92-119` (read+write with no lock) |
-| [#10331](https://github.com/openclaw/openclaw/issues/10331) | MEDIUM | Session store stale cache inside write lock | `src/config/sessions/store.ts:364,422` (missing `skipCache: true`) |
+| [#10331](https://github.com/openclaw/openclaw/issues/10331) | MEDIUM | Session store stale cache inside write lock | `src/config/sessions/store.ts:667,729` (partially fixed — `updateSessionStore()` at :575 now uses `skipCache: true`; two callers remain unfixed) |
 | [#10333](https://github.com/openclaw/openclaw/issues/10333) | ~~MEDIUM~~ FIXED | BlueBubbles filename multipart header injection | Fixed in PR [#11093](https://github.com/openclaw/openclaw/pull/11093) — `sanitizeFilename()` at `extensions/bluebubbles/src/attachments.ts:26-30` |
 | [#10646](https://github.com/openclaw/openclaw/issues/10646) | HIGH | Weak UUID: Math.random() fallback + tool call IDs | `ui/src/ui/uuid.ts:23-33` (fallback), `src/auto-reply/reply/get-reply-inline-actions.ts:191` (toolCallId) |
 | [#7139](https://github.com/openclaw/openclaw/issues/7139) | MEDIUM | Default config: sandbox off, plaintext creds | `src/agents/sandbox/config.ts:147` (mode="off"), gateway loopback is safe; creds 0o600 |
@@ -65,7 +65,7 @@
 | [#4807](https://github.com/openclaw/openclaw/issues/4807) | LOW | Sandbox setup script missing from npm package | `package.json` files array excludes `scripts/`; `scripts/sandbox-common-setup.sh` not shipped |
 | [#3359](https://github.com/openclaw/openclaw/issues/3359) | ~~MEDIUM~~ MITIGATED | npm audit vulns in tar/hono | `package.json` pnpm.overrides: tar@7.5.7, hono@4.11.8 (above vuln thresholds) |
 | [#3086](https://github.com/openclaw/openclaw/issues/3086) | ~~LOW~~ FIXED | Windows ACL false flag as mode=666 | `src/security/audit-fs.ts:86-116` + `src/security/windows-acl.ts` — icacls-based ACL checks implemented |
-| [#10521](https://github.com/openclaw/openclaw/issues/10521) | INVALID | Security audit flags claude-opus-4-6 as below 4.5 | `src/security/audit-extra.ts:321` regex correctly matches `claude-opus-4-6` in current code (2026.2.6) |
+| [#10521](https://github.com/openclaw/openclaw/issues/10521) | INVALID | Security audit flags claude-opus-4-6 as below 4.5 | `src/security/audit-extra.sync.ts:167-172` (`isClaude45OrHigher` regex) correctly matches `claude-opus-4-6` in current code (2026.2.6) |
 | [#10033](https://github.com/openclaw/openclaw/issues/10033) | ENHANCEMENT | Feature: secrets management integration | Enhancement request; current state: plaintext creds with 0o600 perms |
 | [#10927](https://github.com/openclaw/openclaw/issues/10927) | ENHANCEMENT | Random IDs for external content wrapper tags | `src/security/external-content.ts:47-48` — static tags; `replaceMarkers()` at `:110-150` already sanitizes injected markers |
 | [#10890](https://github.com/openclaw/openclaw/issues/10890) | ENHANCEMENT | RFC: Skill Security Framework (manifests, signing, sandboxing) | Comprehensive proposal for phased skill security; relates to #9512 (skill path traversal) |
@@ -297,7 +297,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Gateway auth correctly uses `safeEqual` (timing-safe), but hook tokens, node pairing, and device pairing use direct `===`/`!==` comparisons vulnerable to timing attacks.
 
 **Affected code:**
-- `src/gateway/auth.ts:35-40` - `safeEqual` uses `timingSafeEqual` (correct)
+- `src/gateway/auth.ts:40-45` - `safeEqual` uses `timingSafeEqual` (correct)
 - `src/gateway/server-http.ts:160` - hook token uses direct `!==` (vulnerable)
 - `src/infra/node-pairing.ts:277` - node token uses direct `===` (vulnerable)
 - `src/infra/device-pairing.ts:434` - device token uses direct `!==` (vulnerable)
@@ -604,9 +604,9 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Two session store write methods call `loadSessionStore()` without `skipCache: true`, reading stale cached data even though they hold the write lock. Concurrent requests to the same session can silently lose metadata updates.
 
 **Affected code:**
-- `src/config/sessions/store.ts:364` — `updateSessionEntry()` inside `withSessionStoreLock()` calls `loadSessionStore(storePath)` **without `skipCache: true`**
-- `src/config/sessions/store.ts:422` — `updateLastRoute()` same pattern
-- Correct usage at :272 passes `{ skipCache: true }` when reading inside a write path
+- `src/config/sessions/store.ts:667` — `updateSessionStoreEntry()` inside `withSessionStoreLock()` calls `loadSessionStore(storePath)` **without `skipCache: true`**
+- `src/config/sessions/store.ts:729` — `updateLastRoute()` same pattern
+- `src/config/sessions/store.ts:575` — `updateSessionStore()` NOW correctly uses `{ skipCache: true }` (bug partially fixed in session pruning refactor)
 
 **Impact:** 8 callers in hot paths (agent runner, channels, Slack, LINE, web) can lose session metadata updates under concurrent load.
 

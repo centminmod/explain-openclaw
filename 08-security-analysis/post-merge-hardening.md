@@ -82,7 +82,7 @@ Additional security hardening:
 
 One security-relevant commit:
 
-- **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:79,104-134,177-178`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
+- **`a1e89afcc`** — Secure Chrome extension relay CDP: Adds token-based authentication (`x-openclaw-relay-token` header) and loopback address validation (`src/browser/extension-relay.ts:80,105-134,181-182`) to the Chrome DevTools Protocol relay. Prevents unauthorized CDP access from non-localhost sources.
 
 ### Post-Merge Hardening (PR #12 — 64 commits)
 
@@ -166,7 +166,7 @@ Three security-relevant commits:
 
 Two security-relevant commits:
 
-- **`66d8117d4`** — Control UI origin hardening: New `checkBrowserOrigin()` (`src/gateway/origin-check.ts:57-85`) validates WebSocket Origin headers for Control UI and Webchat connections. Accepts only: configured `allowedOrigins`, same-host requests, or loopback addresses. Prevents clickjacking and cross-origin WebSocket hijacking. New config: `gateway.controlUi.allowedOrigins`.
+- **`66d8117d4`** — Control UI origin hardening: New `checkBrowserOrigin()` (`src/gateway/origin-check.ts:43-71`) validates WebSocket Origin headers for Control UI and Webchat connections. Accepts only: configured `allowedOrigins`, same-host requests, or loopback addresses. Prevents clickjacking and cross-origin WebSocket hijacking. New config: `gateway.controlUi.allowedOrigins`.
 
 - **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:93`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
 
@@ -221,7 +221,7 @@ Four security-relevant commits:
 
 - **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
 
-- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:216-259`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:203-328`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
 
 ### Post-Merge Hardening (Feb 5 sync 3)
 
@@ -424,3 +424,37 @@ Primarily CI infrastructure (code-size gates, tiered lint/format), extension Typ
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated by default-deny on `screen.record`, bootstrap/memory .md scanning).
+
+### Post-Merge Hardening (Feb 10 sync 5, 51 upstream commits)
+
+**CRITICAL — Anti-spoofing & access control (4):**
+
+1. **`53273b490`** — **fix(auto-reply): prevent sender spoofing in group prompts:** Separates user-controlled content from trusted metadata in system prompts. Introduces `BodyForAgent` with clean text, moves metadata to JSON blocks with "untrusted" labels. Removes attacker-controlled group subject/member lists from system prompts. Prevents bracket injection in envelope headers. Affects all channels (42 files changed). New `src/auto-reply/reply/inbound-meta.ts` replaces vulnerable `inbound-sender-meta.ts`.
+
+2. **`4537ebc43`** — **fix: enforce Discord agent component DM auth:** Prevents unauthorized users from injecting system events via Discord buttons/select menus. New `src/discord/monitor/agent-components.ts` (525 lines) with `ensureDmComponentAuthorized()`. Uses `rawData.channel_id` as source of truth to prevent channel spoofing. Validates against DM allowlists before processing component interactions.
+
+3. **`47f6bb414`** — **Commands: add commands.allowFrom config:** New `commands.allowFrom` configuration for per-provider command authorization separate from channel access. Supports global (`"*"`) and provider-specific lists. Expands `resolveCommandAuthorization()` in `src/auto-reply/command-auth.ts:203-328`. **Strengthens Audit 2 "self-approving agent" (Claim 5)** by enabling granular command authorization.
+
+4. **`1d46ca3a9`** — **fix(signal): enforce mention gating for group messages:** Signal group messages bypassed `requireMention` configuration. New `src/signal/monitor/event-handler.ts:87` enforcement with 206-line test suite. Aligns Signal with Slack/Discord/Telegram mention gating.
+
+**MODERATE — Code health / auditability (1):**
+
+5. **`f17c978f5`** — **refactor(security,config): split oversized files:** Splits `src/security/audit-extra.ts` (1,199 LOC barrel) into `audit-extra.sync.ts` (618 LOC, config-based checks) + `audit-extra.async.ts` (720 LOC, I/O-based checks). Also splits `src/config/schema.ts`. Improves code auditability.
+
+**LOW — Defense in depth (5):**
+
+6. **`e19a23520`** — **fix: unify session maintenance and cron run pruning:** New `src/cron/session-reaper.ts` implements session pruning with entry capping and file rotation. Prevents session.json DoS from unbounded growth.
+
+7. **`8ff1618bf`** — **Discord: add exec approval cleanup option:** `execApprovals.cleanup` removes approval UI after handling. Reduces message clutter in approval channels.
+
+8. **`54315aeac`** — **Agents: scope sanitizeUserFacingText rewrites to errorContext:** `sanitizeUserFacingText()` now only applies error keyword rewrites when `errorContext: true`. Prevents false positive error detection in normal assistant replies.
+
+9. **`d3c71875e`** — **fix: cap Discord gateway reconnect at 50 attempts:** Prevents infinite reconnect loop DoS.
+
+10. **`8d75a496b`** — **refactor: centralize isPlainObject, isRecord, isErrno, isLoopbackHost utilities:** Consolidates into `src/utils.ts` and `src/infra/errors.ts`. Moves `isLoopbackHost()` to `src/gateway/net.ts:263` and `isLoopbackAddress()` consolidation.
+
+**Line number shifts in this sync:** `web-search.ts` +17 (410→427, 579→596, 463→480), `origin-check.ts` -14 (57-85→43-71, `isLoopbackHost` moved to `net.ts`), `auth.ts` -14 (107-128→93-114, `isLoopbackAddress` consolidated), `oauth.ts` -23 (618→595, WSL dedup), `command-auth.ts` expanded (216-259→203-328, `commands.allowFrom` added), `audit-extra.ts` split to barrel (sync: `167-172`, async: `547-720`), `sessions/store.ts` major refactor (364→667, 422→729, pruning overhaul).
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning).
