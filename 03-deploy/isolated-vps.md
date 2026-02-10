@@ -5,7 +5,7 @@
 ## Skill level key
 
 | Tag | Meaning |
-|-----|---------|
+| ----- | --------- |
 | `[All]` | Everyone should do this |
 | `[Intermediate]` | Recommended for users comfortable with Linux CLI |
 | `[Advanced]` | Optional hardening for security-focused deployments |
@@ -45,6 +45,7 @@
 Goal: run the Gateway on a Linux VPS while keeping access **private** and the host hardened.
 
 This is a great setup when:
+
 - you want the assistant always-on
 - your laptop sleeps often
 - you want predictable networking
@@ -54,10 +55,11 @@ But the security bar is higher: a VPS is an internet-connected machine.
 > **Recommended path:** For most users, follow sections 1-6 (baseline setup), then jump to [section 12 (Tailscale)](#12-tailscale-setup-recommended-intermediate). Tailscale gives you encrypted access, auto-TLS, and zero exposed ports — without needing nginx, certbot, or manual TLS. Sections 13-18 are for advanced users who need public-facing access or additional hardening.
 
 Related official docs:
-- https://docs.openclaw.ai/gateway/remote
-- https://docs.openclaw.ai/gateway/security
-- https://docs.openclaw.ai/platforms/linux
-- https://docs.openclaw.ai/help/faq
+
+- <https://docs.openclaw.ai/gateway/remote>
+- <https://docs.openclaw.ai/gateway/security>
+- <https://docs.openclaw.ai/platforms/linux>
+- <https://docs.openclaw.ai/help/faq>
 
 ---
 
@@ -77,6 +79,7 @@ Related official docs:
 Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-setup-guide) (uses legacy "Moltbot" name).
 
 ### Choose a Provider
+
 - AWS EC2: t3.small, Ubuntu 24.04 LTS
 - DigitalOcean: Basic $6/month Droplet, Ubuntu 24.04
 - Linode: Nanode 1GB, Ubuntu 24.04
@@ -99,20 +102,22 @@ When prompted for a passphrase, **set one** — it protects your key if your lap
 Most cloud providers let you upload your public key (`~/.ssh/id_ed25519.pub`) during VPS creation. If your provider doesn't, copy it after first login:
 
 ```bash
+# Copies your public key to the server so you can log in without a password
 ssh-copy-id -i ~/.ssh/id_ed25519.pub ubuntu@YOUR_SERVER_IP
 ```
 
 ### Initial Setup
 
 ```bash
-# Connect to your VPS
+# Log in to your VPS using your SSH key
 ssh -i ~/.ssh/id_ed25519 ubuntu@YOUR_SERVER_IP
 
-# Update system
+# Download the latest package lists, then install all available updates
 sudo apt update && sudo apt upgrade -y
 
-# Create dedicated user
+# Create a dedicated user account for running OpenClaw (not root)
 sudo adduser openclaw
+# Give that user permission to run admin commands with "sudo"
 sudo usermod -aG sudo openclaw
 ```
 
@@ -121,13 +126,16 @@ sudo usermod -aG sudo openclaw
 Only allow SSH from your IP. **Never allow `0.0.0.0/0` (anywhere) access.**
 
 ```bash
-# Set defaults FIRST, then enable (correct order)
+# Block ALL incoming connections by default (nothing gets in unless you allow it)
 sudo ufw default deny incoming
+# Allow all outgoing connections (your server can still reach the internet)
 sudo ufw default allow outgoing
+# Punch a hole for SSH (port 22) so you don't lock yourself out
 sudo ufw allow ssh
+# Turn the firewall on — defaults must be set FIRST
 sudo ufw enable
 
-# Verify
+# Show the current firewall rules to confirm everything looks right
 sudo ufw status
 ```
 
@@ -138,27 +146,30 @@ sudo ufw status
 Disable password authentication and root login to prevent brute-force attacks:
 
 ```bash
+# Open the SSH server config file in a text editor
 sudo nano /etc/ssh/sshd_config
 ```
 
-Set or uncomment these lines:
+Find and set (or uncomment) these lines:
 
 ```
-PermitRootLogin no
-PasswordAuthentication no
-PubkeyAuthentication yes
+PermitRootLogin no              # Nobody can SSH in as "root" directly
+PasswordAuthentication no       # Only key-based login allowed (no password guessing)
+PubkeyAuthentication yes        # Enable SSH key authentication
 ```
 
 **Before reloading**, validate the config to avoid locking yourself out:
 
 ```bash
-# Test config syntax (catches typos that would break sshd)
+# Dry-run the SSH config — catches typos before they take effect
+# If you see no output, the config is valid
 sudo sshd -t
 ```
 
-If the test passes with no output, reload SSH:
+If the test passes with no output, reload SSH to apply the changes:
 
 ```bash
+# Tell the SSH service to re-read its config (existing connections stay open)
 sudo systemctl reload ssh
 ```
 
@@ -171,16 +182,19 @@ sudo systemctl reload ssh
 Small VPS instances (1-2 GB RAM) can run out of memory during agent sessions, causing the process to be killed (OOM). A swap file acts as emergency overflow:
 
 ```bash
-# Create 2GB swap file
+# Allocate a 2GB file on disk to use as swap (virtual memory)
 sudo fallocate -l 2G /swapfile
+# Only root should read/write the swap file (security best practice)
 sudo chmod 600 /swapfile
+# Format the file as swap space
 sudo mkswap /swapfile
+# Activate the swap immediately
 sudo swapon /swapfile
 
-# Make persistent across reboots
+# Add it to /etc/fstab so it activates automatically after a reboot
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
-# Verify
+# Confirm swap is active — you should see "Swap: 2.0G" in the output
 free -h
 ```
 
@@ -189,14 +203,15 @@ free -h
 Accurate timestamps are essential for security log correlation and debugging. Most cloud providers sync time automatically, but verify and install `chrony` if needed:
 
 ```bash
-# Check current time sync status
+# Check if your system clock is being synced — look for "NTP service: active"
 timedatectl status
 
-# If "NTP service: inactive", install chrony
+# If NTP is inactive, install chrony (a lightweight time sync daemon)
 sudo apt install chrony
+# Start chrony on boot
 sudo systemctl enable chrony
 
-# Verify
+# Confirm it's syncing — "Leap status: Normal" means it's working
 chronyc tracking
 ```
 
@@ -207,6 +222,8 @@ chronyc tracking
 On the VPS:
 
 ```bash
+# Download and run the official OpenClaw installer
+# (installs the openclaw binary and its dependencies including Node.js)
 curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
@@ -216,28 +233,33 @@ Verify Node.js version (22.12.0+ recommended for security patches):
 node --version  # Should be v22.12.0 or later
 ```
 
-Then onboard:
+Then onboard — this walks you through initial setup and creates a background service:
 
 ```bash
+# Interactive setup wizard + installs a systemd service so the gateway
+# starts automatically on boot
 openclaw onboard --install-daemon
 ```
 
 Set a gateway auth token for production:
 
 ```bash
+# Generate a random 64-character hex token (cryptographically secure)
 export GATEWAY_AUTH_TOKEN="$(openssl rand -hex 32)"
+# Save it to your shell profile so it persists across logins
 echo "export GATEWAY_AUTH_TOKEN='$GATEWAY_AUTH_TOKEN'" >> ~/.profile
 ```
 
 If you're headless and need OAuth-style auth, do the auth step on a trusted machine first and copy the required credential files as documented.
 
-Docs: https://docs.openclaw.ai/start/getting-started
+Docs: <https://docs.openclaw.ai/start/getting-started>
 
 ---
 
 ## 3) Keep the Gateway loopback-only `[All]`
 
 This is the safest remote pattern:
+
 - Gateway listens only on `127.0.0.1:18789`.
 - You forward it when you need access.
 
@@ -251,22 +273,26 @@ Tailscale is the recommended way to access your VPS. It provides encrypted trans
 
 Install Tailscale on both the VPS and your personal devices, then use Tailscale Serve to publish the Gateway over HTTPS to your private tailnet. Full walkthrough in [section 12](#12-tailscale-setup-recommended-intermediate).
 
-Docs: https://docs.openclaw.ai/gateway/tailscale
+Docs: <https://docs.openclaw.ai/gateway/tailscale>
 
 ### Option B: SSH tunnel (universal fallback)
 
 If you can't use Tailscale (e.g., corporate policy, no Tailscale account), SSH tunnelling works everywhere:
 
 ```bash
+# Create an SSH tunnel: forwards your laptop's port 18789 to the VPS's port 18789
+# -N means "don't open a shell, just forward the port"
+# This must stay running — closing the terminal closes the tunnel
 ssh -N -L 18789:127.0.0.1:18789 user@gateway-host
 ```
 
 Now your local browser can open:
-- http://127.0.0.1:18789/
+
+- <http://127.0.0.1:18789/>
 
 …and your local CLI can talk to the Gateway at the forwarded URL. The downside is you must keep the SSH session open, and there's no auto-TLS or identity-based auth.
 
-Docs: https://docs.openclaw.ai/gateway/remote
+Docs: <https://docs.openclaw.ai/gateway/remote>
 
 ---
 
@@ -275,15 +301,20 @@ Docs: https://docs.openclaw.ai/gateway/remote
 On the VPS:
 
 ```bash
+# Check if the gateway process is running and listening
 openclaw gateway status
+# Show overall OpenClaw status (all components)
 openclaw status
+# Run a health check — confirms the service is responding
 openclaw health
+# Deep security scan — checks config, permissions, and known issues
 openclaw security audit --deep
 ```
 
-If needed:
+If the audit finds issues, it can auto-fix many of them:
 
 ```bash
+# Automatically apply recommended security fixes
 openclaw security audit --fix
 ```
 
@@ -294,15 +325,18 @@ openclaw security audit --fix
 Common troubleshooting workflow:
 
 ```bash
+# Show status of all OpenClaw components (gateway, agents, channels)
 openclaw status --all
+# Stream live logs — useful for watching what happens in real time (Ctrl+C to stop)
 openclaw logs --follow
 ```
 
 If the service appears running but the probe fails:
+
 - you may have a profile/config mismatch
 - or the process is alive but not listening
 
-Docs: https://docs.openclaw.ai/help/faq
+Docs: <https://docs.openclaw.ai/help/faq>
 
 ---
 
@@ -319,6 +353,7 @@ Docs: https://docs.openclaw.ai/help/faq
 By default, the OpenClaw Gateway broadcasts its presence on the local network using mDNS (Multicast DNS, also called Bonjour). It advertises a `_openclaw-gw._tcp` service so that OpenClaw clients (desktop app, mobile apps) can auto-discover the Gateway without manual configuration.
 
 On a VPS, this is a problem:
+
 - **Shared hosting**: other tenants on the same network segment can see that OpenClaw is running and learn your hostname.
 - **Dedicated VPS**: mDNS is link-local only (doesn't cross routers), so the risk is lower, but there's still no benefit — you're accessing via SSH tunnel or Tailscale, not local discovery.
 
@@ -344,11 +379,14 @@ Source: `src/infra/bonjour.ts:29`, `src/gateway/server-discovery-runtime.ts:27`.
 
 ```bash
 # Add to ~/.profile or ~/.bashrc
+# ignoreboth = don't save commands that start with a space OR duplicate commands
 export HISTCONTROL=ignoreboth
+# Set history file size to 0 = don't write any commands to the on-disk history file
+# (prevents tokens/keys you typed from being saved to ~/.bash_history)
 export HISTFILESIZE=0
 ```
 
-Docs: https://docs.openclaw.ai/gateway/security
+Docs: <https://docs.openclaw.ai/gateway/security>
 
 ---
 
@@ -357,7 +395,9 @@ Docs: https://docs.openclaw.ai/gateway/security
 Keep your system patched automatically:
 
 ```bash
+# Install the automatic update tool
 sudo apt install unattended-upgrades
+# Interactive setup — select "Yes" to enable automatic security updates
 sudo dpkg-reconfigure unattended-upgrades
 ```
 
@@ -370,14 +410,18 @@ This ensures critical security patches are applied without manual intervention.
 Protect against SSH brute force attacks:
 
 ```bash
+# Install fail2ban — monitors SSH login attempts and bans IPs after too many failures
 sudo apt install fail2ban
+# Start fail2ban on boot
 sudo systemctl enable fail2ban
+# Start it now
 sudo systemctl start fail2ban
 ```
 
 Check status:
 
 ```bash
+# Shows how many IPs are currently banned and total failed attempts
 sudo fail2ban-client status sshd
 ```
 
@@ -421,11 +465,15 @@ WantedBy=default.target
 Enable and start:
 
 ```bash
+# Tell systemd to re-read service files (picks up your new/changed file)
 systemctl --user daemon-reload
+# Start the service automatically on boot
 systemctl --user enable openclaw-gateway
+# Start it right now
 systemctl --user start openclaw-gateway
 
-# Allow service to run when you're not logged in
+# By default, user services stop when you log out. "Linger" keeps them
+# running even when you're not SSH'd in — essential for an always-on server
 loginctl enable-linger $(whoami)
 ```
 
@@ -442,7 +490,9 @@ CPUQuota=80%
 Then reload:
 
 ```bash
+# Re-read service files to pick up changes
 sudo systemctl daemon-reload
+# Restart the service with new limits applied
 sudo systemctl restart openclaw-gateway
 ```
 
@@ -457,10 +507,11 @@ OpenClaw stores configuration, credentials, and session data in `~/.openclaw/`. 
 ### Create a backup
 
 ```bash
-# Full backup (config + credentials + sessions)
+# Full backup — compresses the entire .openclaw/ directory into a dated archive
+# "tar czf" = create (c) a gzip-compressed (z) archive file (f)
 tar czf openclaw-backup-$(date +%Y%m%d).tar.gz -C ~/ .openclaw/
 
-# Privacy-conscious backup (exclude session transcripts)
+# Privacy-conscious backup — same thing but skips chat logs and temp files
 tar czf openclaw-backup-$(date +%Y%m%d).tar.gz \
   --exclude='.openclaw/sessions' \
   --exclude='.openclaw/workspace' \
@@ -470,17 +521,19 @@ tar czf openclaw-backup-$(date +%Y%m%d).tar.gz \
 ### Restore from backup
 
 ```bash
-# Stop the service first
+# Stop the gateway so files aren't being written while we restore
 systemctl --user stop openclaw-gateway
 
-# Restore
+# Extract the backup archive into your home directory
+# "tar xzf" = extract (x) a gzip-compressed (z) archive file (f)
 tar xzf openclaw-backup-YYYYMMDD.tar.gz -C ~/
 
-# Fix permissions
+# Lock down permissions — 700 means only your user can access the directory
 chmod 700 ~/.openclaw
+# 600 means only your user can read/write the config file (contains secrets)
 chmod 600 ~/.openclaw/openclaw.json
 
-# Restart
+# Start the gateway again with the restored config
 systemctl --user start openclaw-gateway
 ```
 
@@ -490,6 +543,7 @@ systemctl --user start openclaw-gateway
 - Schedule weekly backups via cron:
 
 ```bash
+# Add a weekly cron job: runs every Sunday at 2 AM, creates a dated backup archive
 echo "0 2 * * 0 $(whoami) tar czf /home/$(whoami)/backups/openclaw-backup-\$(date +\%Y\%m\%d).tar.gz -C /home/$(whoami)/ .openclaw/" | sudo tee -a /etc/crontab > /dev/null
 ```
 
@@ -502,10 +556,10 @@ If you want OpenClaw's browser agent to work on a headless VPS, you need a headl
 ### Install headless Chromium
 
 ```bash
-# Install from Ubuntu repos (NOT a standalone .deb)
+# Install Chromium from Ubuntu's package manager (gets automatic security updates)
 sudo apt install chromium-browser
 
-# Verify
+# Confirm it installed — prints the version number
 chromium-browser --version
 ```
 
@@ -536,15 +590,16 @@ Add to `openclaw.json`:
 > **Fastest path to a hardened VPS.** The DigitalOcean Marketplace app pre-configures security best practices automatically.
 
 Official resources:
-- Marketplace: https://marketplace.digitalocean.com/apps/moltbot
-- Tutorial: https://www.digitalocean.com/community/tutorials/how-to-run-moltbot
+
+- Marketplace: <https://marketplace.digitalocean.com/apps/moltbot>
+- Tutorial: <https://www.digitalocean.com/community/tutorials/how-to-run-moltbot>
 
 ### What 1-Click handles for you
 
 The 1-Click deployment configures these security controls out of the box:
 
 | Control | Description |
-|---------|-------------|
+| --------- | ------------- |
 | Authenticated gateway token | Auto-generated; protects against unauthorized access |
 | Hardened firewall rules | Rate-limiting on OpenClaw ports to prevent DoS |
 | Non-root execution | OpenClaw runs as a non-root user, limiting attack surface |
@@ -554,7 +609,7 @@ The 1-Click deployment configures these security controls out of the box:
 ### System requirements
 
 | Usage Level | RAM | CPU | Recommended For |
-|-------------|-----|-----|-----------------|
+| ------------- | ----- | ----- | ----------------- |
 | Personal (1-5 users) | 4GB | 2 | Individual use, few channels |
 | Small Team (5-20) | 8GB | 4 | Multiple channels |
 | Medium Team (20-50) | 16GB | 8 | Heavy usage |
@@ -563,6 +618,7 @@ The 1-Click deployment configures these security controls out of the box:
 ### Step 1: Create the Droplet
 
 **Via DigitalOcean Console:**
+
 1. Sign in to DigitalOcean -> **Create Droplet**
 2. Under **Choose an Image** -> **Marketplace** tab
 3. Search for "OpenClaw" and select it
@@ -591,6 +647,7 @@ ssh root@your_droplet_ip
 The welcome message displays your **Dashboard URL**-save it for browser access.
 
 **Interactive setup:**
+
 1. Choose LLM Provider: Anthropic (recommended), Gradient, or OpenAI (coming soon)
 2. Paste your API key when prompted
 3. The clawdbot service restarts automatically
@@ -617,6 +674,7 @@ Open the Dashboard URL from the welcome message in your browser. The URL include
 ```
 
 **Telegram:**
+
 1. Run `/opt/clawdbot-cli.sh channels add` and select Telegram
 2. Open Telegram -> chat with @BotFather -> send `/newbot`
 3. Follow prompts to create your bot and get a token
@@ -636,7 +694,7 @@ systemctl restart clawdbot
 ### Troubleshooting commands
 
 | Task | Command |
-|------|---------|
+| ------ | --------- |
 | Check service status | `systemctl status clawdbot` |
 | View live logs | `journalctl -u clawdbot -f` |
 | Edit environment | `nano /opt/clawdbot.env` |
@@ -645,23 +703,25 @@ systemctl restart clawdbot
 ### What's different from manual VPS setup
 
 The 1-Click handles sections 1-3 of this guide automatically:
+
 - VPS provisioning with Ubuntu 24.04 + Node.js 22 + Docker
 - OpenClaw installation and service setup
 - Gateway configuration with auth token
 
 You still need to:
+
 - Configure messaging channels (Step 4 above)
 - Optionally add SSH tunnel or Tailscale for remote access (see [section 4](#4-access-it-remotely-recommended-all))
 - Review the [Security Checklist](#security-checklist-vps) below
 
 ### Resources
 
-- **OpenClaw Documentation:** https://docs.openclaw.ai/
-- **Gateway Configuration:** https://docs.openclaw.ai/gateway/configuration
-- **Channel Setup:** https://docs.openclaw.ai/channels
-- **Security Guide:** https://docs.openclaw.ai/gateway/security
-- **Discord Community:** https://discord.gg/molt
-- **GitHub:** https://github.com/openclaw/openclaw
+- **OpenClaw Documentation:** <https://docs.openclaw.ai/>
+- **Gateway Configuration:** <https://docs.openclaw.ai/gateway/configuration>
+- **Channel Setup:** <https://docs.openclaw.ai/channels>
+- **Security Guide:** <https://docs.openclaw.ai/gateway/security>
+- **Discord Community:** <https://discord.gg/molt>
+- **GitHub:** <https://github.com/openclaw/openclaw>
 
 ---
 
@@ -674,24 +734,27 @@ For most single-user VPS deployments, Tailscale is simpler and more secure than 
 ### 12.1) VPS-side: Install and authenticate `[All]`
 
 ```bash
-# Install Tailscale on VPS
+# Download and install the Tailscale VPN client
 curl -fsSL https://tailscale.com/install.sh | sh
 
-# Interactive login (opens a browser URL to authenticate)
+# Connect to your Tailscale account — prints a URL you open in a browser to log in
 sudo tailscale up
 ```
 
 For a **headless VPS** without a browser, generate an auth key from the [Tailscale admin console Keys page](https://login.tailscale.com/admin/settings/keys), then:
 
 ```bash
+# Log in without a browser using a pre-generated auth key (replace XXXXX with your key)
 sudo tailscale up --auth-key=tskey-auth-XXXXX
 ```
 
 Verify the connection:
 
 ```bash
+# Shows all devices on your tailnet and their connection status
 tailscale status
-tailscale ip -4    # Shows your VPS's tailnet IP (e.g. 100.x.y.z)
+# Prints just this machine's tailnet IP address (starts with 100.x.y.z)
+tailscale ip -4
 ```
 
 ### 12.2) Client-side: Install on your personal devices `[All]`
@@ -699,13 +762,14 @@ tailscale ip -4    # Shows your VPS's tailnet IP (e.g. 100.x.y.z)
 Install Tailscale on every device you'll use to access the VPS:
 
 | Platform | Install Method |
-|----------|---------------|
-| macOS | Download from https://tailscale.com/download or `brew install tailscale` |
-| Windows | Download from https://tailscale.com/download |
+| ---------- | --------------- |
+| macOS | Download from <https://tailscale.com/download> or `brew install tailscale` |
+| Windows | Download from <https://tailscale.com/download> |
 | Linux | `curl -fsSL https://tailscale.com/install.sh \| sh` |
 | iOS/Android | App Store / Play Store |
 
 After installing on each device:
+
 1. Open Tailscale and log in with the **same identity provider** (Google, Microsoft, Apple) you used for the VPS
 2. Verify the device appears on the [Machines page](https://login.tailscale.com/admin/machines) in the admin console
 3. Confirm you can reach the VPS by its tailnet IP: `ping 100.x.y.z`
@@ -715,10 +779,11 @@ After installing on each device:
 `shields-up` blocks **all** incoming Tailscale connections to a device. Enable it on laptops and phones that only need to *initiate* connections to the VPS, never receive them:
 
 ```bash
-# On your laptop/personal device (NOT the VPS):
+# Run this on your LAPTOP/PHONE (not the VPS):
+# Blocks all incoming connections from other tailnet devices to this machine
 tailscale set --shields-up
 
-# To disable later if needed:
+# To allow incoming connections again later:
 tailscale set --shields-up=false
 ```
 
@@ -729,15 +794,17 @@ This prevents other devices on your tailnet from connecting to your laptop — r
 If you **only** access the VPS via Tailscale (no public SSH), lock the firewall to the `tailscale0` interface:
 
 ```bash
-# Set defaults FIRST (correct order — some blog guides get this wrong)
+# Block everything from the public internet by default
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 
-# Allow all traffic on the Tailscale interface only
+# Only allow traffic arriving through the Tailscale VPN tunnel
+# "tailscale0" is the virtual network interface Tailscale creates
 sudo ufw allow in on tailscale0
 
-# Enable AFTER setting defaults
+# Activate the firewall (must set defaults before enabling)
 sudo ufw enable
+# Review the rules — you should see "ALLOW IN" only for tailscale0
 sudo ufw status verbose
 ```
 
@@ -748,13 +815,14 @@ This means port 22 is only reachable via tailnet, not the public internet. Your 
 `tailscale serve` exposes a local port to your tailnet with automatic TLS — no certbot needed:
 
 ```bash
-# Serve OpenClaw gateway (port 18789) over HTTPS to your tailnet
+# Expose your local gateway (port 18789) as HTTPS on your private tailnet
+# --bg runs it in the background; --https=443 means it listens on standard HTTPS port
 sudo tailscale serve --bg --https=443 127.0.0.1:18789
 
-# Check status
+# See what's currently being served
 tailscale serve status
 
-# Reset/remove serve config
+# Remove the serve config (stops exposing the port)
 tailscale serve reset
 ```
 
@@ -779,7 +847,8 @@ Or via CLI: `openclaw gateway --tailscale serve`
 Funnel exposes your service to the **public internet**, not just your tailnet:
 
 ```bash
-# Expose gateway publicly (DANGEROUS for browser control endpoints)
+# Make the gateway accessible from the PUBLIC INTERNET (not just your tailnet)
+# WARNING: anyone on the internet can reach this — use strong auth
 sudo tailscale funnel --https=443 127.0.0.1:18789
 ```
 
@@ -808,7 +877,7 @@ This is the "users access own devices" pattern — prevents other tailnet member
 ### Configuration reference
 
 | Key | Value | Purpose |
-|-----|-------|---------|
+| ----- | ------- | --------- |
 | `gateway.bind` | `"loopback"` | Keep Gateway on 127.0.0.1 |
 | `gateway.tailscale.mode` | `"serve"` / `"funnel"` / `"off"` | Exposure level |
 | `gateway.auth.allowTailscale` | `true` | Accept Tailscale identity headers |
@@ -836,6 +905,7 @@ OpenClaw has **no built-in rate limiting** ([#8594](https://github.com/openclaw/
 ### Install nginx
 
 ```bash
+# Install the nginx web server (acts as a middleman between the internet and OpenClaw)
 sudo apt install nginx
 ```
 
@@ -911,7 +981,9 @@ server {
 Enable the site:
 
 ```bash
+# Create a symbolic link to activate the config (nginx reads from sites-enabled/)
 sudo ln -s /etc/nginx/sites-available/openclaw /etc/nginx/sites-enabled/
+# Remove the default "Welcome to nginx" site
 sudo rm /etc/nginx/sites-enabled/default
 ```
 
@@ -946,12 +1018,15 @@ OpenClaw does not set HSTS headers. A reverse proxy with Let's Encrypt TLS fixes
 ### Install certbot
 
 ```bash
+# Install certbot (the Let's Encrypt client) and its nginx plugin
 sudo apt install certbot python3-certbot-nginx
 ```
 
 ### Obtain certificate
 
 ```bash
+# Request a free TLS certificate for your domain and auto-configure nginx
+# You'll be asked for an email address and to agree to terms of service
 sudo certbot --nginx -d your-domain.com
 ```
 
@@ -960,6 +1035,8 @@ Certbot will automatically update your nginx config with certificate paths.
 ### Auto-renewal
 
 ```bash
+# Set up a cron job that checks for certificate renewal twice daily (at midnight and noon)
+# The random sleep prevents millions of servers hitting Let's Encrypt at the same second
 SLEEPTIME=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}')
 echo "0 0,12 * * * root sleep $SLEEPTIME && certbot renew -q" | sudo tee -a /etc/crontab > /dev/null
 ```
@@ -977,16 +1054,20 @@ OpenClaw stores **all secrets** (API keys, OAuth tokens, gateway tokens) in **pl
 ### Option A: LUKS encrypted partition
 
 ```bash
-# Install cryptsetup
+# Install the disk encryption tools
 sudo apt install cryptsetup
 
-# Create encrypted volume (DESTRUCTIVE — choose an empty disk/partition)
+# Set up encryption on an empty disk/partition — DESTROYS ALL DATA on /dev/sdX
+# You'll be asked to create a passphrase (this unlocks the disk on reboot)
 sudo cryptsetup luksFormat /dev/sdX
+# Unlock the encrypted volume (prompts for your passphrase)
 sudo cryptsetup open /dev/sdX openclaw-vault
+# Create a filesystem inside the encrypted volume
 sudo mkfs.ext4 /dev/mapper/openclaw-vault
 
-# Mount as OpenClaw data directory
+# Mount it as the OpenClaw data directory
 sudo mount /dev/mapper/openclaw-vault /home/openclaw/.openclaw
+# Give the openclaw user ownership
 sudo chown openclaw:openclaw /home/openclaw/.openclaw
 ```
 
@@ -1003,7 +1084,7 @@ RequiresMountsFor=/home/openclaw/.openclaw
 ### Option B: Provider-level encryption
 
 | Provider | Encryption-at-rest |
-|----------|-------------------|
+| ---------- | ------------------- |
 | DigitalOcean | Block storage volumes encrypted by default |
 | AWS | Enable EBS encryption on the volume |
 | Hetzner | Enable LUKS at provisioning time |
@@ -1129,7 +1210,7 @@ Several security-relevant config options exist but aren't enabled by default. Th
 ### Setting explanations
 
 | Setting | Why |
-|---------|-----|
+| --------- | ----- |
 | `gateway.bind: "loopback"` | Only listen on 127.0.0.1 — access via SSH tunnel or Tailscale |
 | `gateway.auth.mode: "token"` | Require bearer token for all requests ([docs](https://docs.openclaw.ai/gateway/security)) |
 | `gateway.trustedProxies: ["127.0.0.1"]` | Required if using reverse proxy — prevents X-Forwarded-For spoofing ([docs](https://docs.openclaw.ai/gateway/security)) |
@@ -1145,6 +1226,7 @@ Several security-relevant config options exist but aren't enabled by default. Th
 Set via environment variable (>= 32 characters):
 
 ```bash
+# Generate a new random 64-character hex token and set it as an environment variable
 export OPENCLAW_GATEWAY_TOKEN="$(openssl rand -hex 32)"
 ```
 
@@ -1174,22 +1256,28 @@ Create `/usr/local/bin/rotate-openclaw-token.sh`:
 
 ```bash
 #!/bin/bash
-# Default OpenClaw install: token in ~/.openclaw/openclaw.json
+# Rotation script for default OpenClaw installs
+# Token location: ~/.openclaw/openclaw.json
 # Service: systemd user unit "openclaw-gateway.service"
+
 OPENCLAW_USER="openclaw"
 OPENCLAW_HOME="/home/${OPENCLAW_USER}"
 CONFIG="${OPENCLAW_HOME}/.openclaw/openclaw.json"
+
+# Generate a new random token
 NEW_TOKEN=$(openssl rand -hex 32)
 
-# Update token in openclaw.json using jq
+# Replace the token in openclaw.json using jq (a JSON command-line processor)
+# Writes to a temp file first to avoid corrupting the config if interrupted
 jq --arg t "$NEW_TOKEN" '.gateway.auth.token = $t' "$CONFIG" > "${CONFIG}.tmp" \
   && mv "${CONFIG}.tmp" "$CONFIG" \
   && chown "${OPENCLAW_USER}:${OPENCLAW_USER}" "$CONFIG"
 
-# Restart the systemd user service (runs as the openclaw user)
+# Restart the gateway so it picks up the new token
 sudo -u "$OPENCLAW_USER" XDG_RUNTIME_DIR="/run/user/$(id -u $OPENCLAW_USER)" \
   systemctl --user restart openclaw-gateway
 
+# Log the rotation for audit trail
 echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
 ```
 
@@ -1197,9 +1285,13 @@ echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
 
 ```bash
 #!/bin/bash
-# DO 1-Click: token in /opt/clawdbot.env, service name "moltbot"
+# Rotation script for DigitalOcean 1-Click installs
+# Token location: /opt/clawdbot.env, service name: "moltbot"
+
 NEW_TOKEN=$(openssl rand -hex 32)
+# Find the OPENCLAW_GATEWAY_TOKEN line in the env file and replace its value
 sed -i "s/^OPENCLAW_GATEWAY_TOKEN=.*/OPENCLAW_GATEWAY_TOKEN=${NEW_TOKEN}/" /opt/clawdbot.env
+# Restart the service so it reads the new token
 systemctl restart moltbot
 echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
 ```
@@ -1207,6 +1299,7 @@ echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
 Make it executable:
 
 ```bash
+# Mark the script as executable so cron can run it
 sudo chmod +x /usr/local/bin/rotate-openclaw-token.sh
 ```
 
@@ -1215,6 +1308,7 @@ sudo chmod +x /usr/local/bin/rotate-openclaw-token.sh
 ### Schedule monthly rotation
 
 ```bash
+# Add a monthly cron job: runs at 3 AM on the 1st of each month as root
 echo "0 3 1 * * root /usr/local/bin/rotate-openclaw-token.sh" | sudo tee -a /etc/crontab > /dev/null
 ```
 
@@ -1231,6 +1325,7 @@ Docs: [gateway/security](https://docs.openclaw.ai/gateway/security) (token auth 
 Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-setup-guide) (uses legacy "Moltbot" name).
 
 ### Baseline Hardening
+
 - [ ] SSH password authentication disabled (`PasswordAuthentication no`)
 - [ ] SSH root login disabled (`PermitRootLogin no`)
 - [ ] SSH config validated with `sshd -t` before reload
@@ -1240,39 +1335,46 @@ Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-
 - [ ] Configuration backup schedule active
 
 ### Network
+
 - [ ] Security group inbound is SSH only from your IP
 - [ ] Gateway port 18789 is NOT public
 - [ ] Host firewall (UFW) is enabled
 - [ ] Fail2ban is active for SSH protection
 
 ### Authentication & Access
+
 - [ ] Gateway auth token is set
 - [ ] DM policy is `allowlist` or `pairing`
 - [ ] Only approved user IDs can trigger actions
 
 ### Execution Safety
+
 - [ ] Docker sandbox enabled for execution tools
 - [ ] Sandbox has `network: none` or strict isolation
 - [ ] Dangerous command patterns blocked (`rm -rf`, `curl | bash`, etc.)
 - [ ] Tools restricted to minimum needed
 
 ### Secrets
+
 - [ ] Secrets stored in env vars (not in shell history)
 - [ ] Sensitive files set to `chmod 600`
 - [ ] Shell history protected (`HISTCONTROL=ignoreboth`)
 - [ ] `~/.openclaw/` on encrypted volume (LUKS or provider-level)
 
 ### System Maintenance
+
 - [ ] Automatic security updates enabled
 - [ ] Node.js 22.12.0+ installed
 - [ ] Systemd resource limits configured
 
 ### Observability
+
 - [ ] Session logging enabled
 - [ ] Log rotation active (`/var/log/openclaw/`)
 - [ ] Weekly review habit
 
 ### Tailscale (if using Tailscale path — [section 12](#12-tailscale-setup-recommended-intermediate))
+
 - [ ] Tailscale installed and authenticated on VPS
 - [ ] Tailscale installed on all client devices (same identity provider)
 - [ ] `tailscale.mode: "serve"` configured (tailnet-only)
@@ -1283,6 +1385,7 @@ Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-
 - [ ] ACL policy reviewed in admin console
 
 ### Reverse Proxy & TLS (if using nginx path — [sections 13-14](#13-reverse-proxy-hardening-nginx-advanced))
+
 - [ ] Reverse proxy (nginx/Caddy) in front of gateway
 - [ ] Rate limiting configured (general + auth endpoints)
 - [ ] Security headers set (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
@@ -1290,10 +1393,12 @@ Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-
 - [ ] `gateway.trustedProxies` configured
 
 ### Encrypted Storage ([section 15](#15-encrypted-storage-for-secrets-advanced))
+
 - [ ] `~/.openclaw/` on encrypted volume (LUKS or provider-level)
 - [ ] Session transcripts permissions 600 (not 644)
 
 ### Docker Hardening (for Docker deployments — [section 16](#16-docker-deployment-hardening-advanced))
+
 - [ ] `OPENCLAW_GATEWAY_BIND=loopback` in `.env`
 - [ ] `cap_drop: ALL` with minimal `cap_add`
 - [ ] `no-new-privileges` security option enabled
@@ -1301,6 +1406,7 @@ Based on [VibeProof Security Guide](https://vibeproof.dev/blog/moltbot-security-
 - [ ] Resource limits (memory, PIDs) configured
 
 ### OpenClaw Config ([section 17](#17-openclaw-config-hardening-advanced))
+
 - [ ] `browser.evaluateEnabled: false`
 - [ ] Plugins disabled or allowlisted
 - [ ] Sandbox mode `"all"` for agents processing untrusted input
