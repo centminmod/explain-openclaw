@@ -374,7 +374,8 @@ Prices are per million tokens via OpenRouter (Feb 2026). Append `:floor` to any 
 | `meta-llama/llama-4-scout` | $0.08 | $0.30 | Cheapest open-weight model |
 | `moonshot/kimi-k2.5` | $0.45 | $2.25 | Strong coding, budget price |
 | `minimax/minimax-m2.1` | $0.27 | $0.95 | Budget coding alternative |
-| `perplexity/sonar-pro` | $3.00 | $15.00 | Purpose-built for search (+$5/K searches) |
+| `perplexity/sonar-pro` | $3.00 | $15.00 | Best search quality (+$5/K searches) |
+| `perplexity/sonar` | $1.00 | $1.00 | Budget native search (+$5/K searches) |
 | `openrouter/auto` | varies | varies | Routes to best model; you pay that model's rate |
 | `openrouter/free` | $0.00 | $0.00 | Free tier; rate-limited, lower quality |
 
@@ -410,7 +411,7 @@ Different OpenClaw functions have varying compute requirements. Using the right 
 | **Main Chat (Brain)** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | `agents.defaults.model` |
 | **Heartbeat** | `anthropic/claude-haiku-4-5` | `anthropic/claude-haiku-4-5` | `agents.defaults.heartbeat.model` |
 | **Coding** | `codex-cli/gpt-5.2-codex` | `minimax/MiniMax-M2.1` | `agents.defaults.cliBackends` |
-| **Web Search/Browsing** | `perplexity/sonar-pro` | `deepseek/deepseek-chat` | `tools.web.search.perplexity.model` |
+| **Web Search/Browsing** | `perplexity/sonar-pro` | `perplexity/sonar` | `tools.web.search.perplexity.model` |
 | **Content Writing** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | (same as main chat) |
 | **Voice** | `openai/gpt-4o-mini-transcribe` | `openai/gpt-4o-mini-transcribe` | `tools.media.audio.models` |
 | **Vision** | `anthropic/claude-opus-4-5` | `google/gemini-3-flash-preview` | `agents.defaults.imageModel` |
@@ -586,9 +587,9 @@ tools:
       readability: true
 ```
 
-#### Budget Configuration (DeepSeek V3 via OpenRouter)
+#### Budget Configuration (Perplexity Sonar)
 
-Route through OpenRouter to use DeepSeek for cheaper web search:
+Perplexity Sonar (non-pro) provides native web search at lower token costs:
 
 ```yaml
 tools:
@@ -597,15 +598,14 @@ tools:
       enabled: true
       provider: perplexity
       perplexity:
-        apiKey: ${OPENROUTER_API_KEY}
-        baseUrl: https://openrouter.ai/api/v1
-        model: deepseek/deepseek-chat  # DeepSeek V3
+        apiKey: ${PERPLEXITY_API_KEY}
+        model: perplexity/sonar
       maxResults: 10
       timeoutSeconds: 30
       cacheTtlMinutes: 120  # Longer cache = fewer API calls
 ```
 
-**Why DeepSeek V3?** Highly efficient for web crawling and extraction at much lower cost than Opus.
+**Why Sonar (non-pro)?** Native web search at $1/$1 per M tokens + $5/K searches — roughly 1/3 the token cost of Sonar Pro while still purpose-built for search. Only models with native `web_search_options` support (Perplexity, OpenAI, Anthropic, xAI) can search reliably; general chat models like DeepSeek lack this capability.
 
 ---
 
@@ -825,15 +825,14 @@ agents:
       target: "last"
 
 tools:
-  # Web search: DeepSeek V3 via OpenRouter
+  # Web search: Perplexity Sonar (native search, budget tier)
   web:
     search:
       enabled: true
       provider: perplexity
       perplexity:
-        apiKey: ${OPENROUTER_API_KEY}
-        baseUrl: https://openrouter.ai/api/v1
-        model: deepseek/deepseek-chat
+        apiKey: ${PERPLEXITY_API_KEY}
+        model: perplexity/sonar
 
   # Audio: GPT-4o transcribe (best price/performance)
   media:
@@ -902,8 +901,8 @@ Before enabling expensive features, estimate costs:
 | ----- | ----- | ----- |
 | **Quality** | Opus 4.5 main + Haiku heartbeat + Sonar search | ~$20-25 |
 | **Balanced** | Sonnet 4.5 main + Haiku heartbeat | ~$12-15 |
-| **Budget** | Sonnet:floor main + DeepSeek search + Gemini Flash vision | ~$3-5 |
-| **Ultra-budget** | Kimi K2.5 main + MiniMax coding + DeepSeek search | ~$1-2 |
+| **Budget** | Sonnet:floor main + Sonar search + Gemini Flash vision | ~$3-5 |
+| **Ultra-budget** | Kimi K2.5 main + MiniMax coding + Sonar search | ~$1-2 |
 | **Free** | openrouter/free everywhere | $0 |
 
 Actual costs vary with message length, tool use frequency, and model routing. Check your [OpenRouter dashboard](https://openrouter.ai/activity) for real-time spend.
