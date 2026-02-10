@@ -8,6 +8,8 @@ In January 2026, the [ZeroLeeks AI Red Team](https://zeroleeks.ai/) published an
 
 **Bottom line:** This is the third external security audit evaluated. Like the prior two (Issue #1796 Argus: 0/8 exploitable, Medium article: 0/8 exploitable), it finds **0 demonstrated exploitable vulnerabilities**.
 
+📚 **Background reading:** The techniques tested by ZeroLeeks are documented in our [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) guide (27 examples).
+
 ### Audit overview
 
 | Attribute | Value |

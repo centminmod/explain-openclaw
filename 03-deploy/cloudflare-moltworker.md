@@ -610,6 +610,8 @@ CDP endpoints available at `/cdp/*` paths, requiring authentication header.
 
 **Important:** If you require credentials to never leave hardware you control, Moltworker is not the right choice. Use the [Mac mini](./standalone-mac-mini.md) or [VPS](./isolated-vps.md) deployment instead.
 
+> **See also:** [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) -- Moltworker's lack of egress filtering means a successful prompt injection can exfiltrate data with no firewall to stop it.
+
 ---
 
 ## Comparison: Mac mini vs VPS vs Moltworker

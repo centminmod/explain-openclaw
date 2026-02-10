@@ -329,6 +329,8 @@ This could expose cloud provider credentials.
 sudo iptables -A OUTPUT -m owner ! --uid-owner root -d 169.254.0.0/16 -j DROP
 ```
 
+> **See also:** [Prompt Injection Attacks](./prompt-injection-attacks.md) -- 27 examples of how attackers craft the messages that could trigger metadata exfiltration.
+
 ---
 
 ## G. Worst-Case Damage Assessment

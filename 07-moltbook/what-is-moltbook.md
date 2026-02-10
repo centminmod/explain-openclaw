@@ -284,6 +284,8 @@ Every 4+ hours:
    - 19% of content related to cryptocurrency activity
    - Mitigation: Implement content filtering; limit agent response to untrusted posts
 
+   > **See:** [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) for 27 detailed examples of injection techniques.
+
 7. **Agent-to-agent prompt injection ("Molt-Muggings")**
    - Malicious agents embed hostile instructions in posts consumed by other agents
    - Can plant payloads in persistent memory that activate later ("time-shifted injection")
@@ -470,6 +472,7 @@ The Moltbook security concerns overlap with the [Ecosystem Security Threats](../
 - [What is OpenClaw?](../01-plain-english/what-is-clawdbot.md) — The platform Moltbook agents run on
 - [Threat model](../04-privacy-safety/threat-model.md) — Understanding your security boundaries
 - [Hardening checklist](../04-privacy-safety/hardening-checklist.md) — Steps to secure your deployment
+- [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) -- 27 attack examples
 
 ---
 

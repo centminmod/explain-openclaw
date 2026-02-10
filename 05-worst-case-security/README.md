@@ -199,6 +199,6 @@ Choose your deployment type and continue to the detailed guide:
 - **[Cross-Cutting Vulnerabilities](./cross-cutting.md)** - Prompt injection, tool execution, credentials
 - **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)** - Skills marketplace supply chain attacks (Feb 2026 ClawHavoc campaign)
 - **[Skills.sh Risks](./skills-sh-risks.md)** - Unverified third-party skill distribution
-- **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 21 attack examples with data exfiltration
+- **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 27 attack examples with data exfiltration
 - **[Misconfiguration Examples](./misconfiguration-examples.md)** - Real mistakes and how to fix them
 - **[Incident Response Playbook](./incident-response.md)** - What to do when things go wrong

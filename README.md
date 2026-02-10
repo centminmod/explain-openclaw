@@ -478,6 +478,8 @@ Based on source code review of:
 | [Misconfiguration Examples](./05-worst-case-security/misconfiguration-examples.md) | 10 real mistakes with step-by-step fixes |
 | [Incident Response](./05-worst-case-security/incident-response.md) | Containment, credential rotation, recovery procedures |
 
+📚 **Key resource:** The [Prompt Injection Attacks](./05-worst-case-security/prompt-injection-attacks.md) guide (27 examples with defenses) is referenced throughout this documentation. If you read one security document beyond the threat model, read that one.
+
 ---
 
 ## Detecting OpenClaw Requests (for hosting services)

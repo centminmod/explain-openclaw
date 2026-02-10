@@ -183,3 +183,4 @@ If a skill is available on both platforms, always prefer the ClawHub version.
 - [Cross-Cutting Vulnerabilities](./cross-cutting.md) - Supply chain risks section
 - [Threat Model](../04-privacy-safety/threat-model.md) - Plugin/extension risks
 - [Hardening Checklist](../04-privacy-safety/hardening-checklist.md) - Plugin safety guidance
+- [Prompt Injection Attacks](./prompt-injection-attacks.md) - 27 attack examples; unverified skills are a delivery vector for injection payloads

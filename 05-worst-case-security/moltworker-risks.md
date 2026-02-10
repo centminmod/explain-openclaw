@@ -91,6 +91,8 @@ If a prompt injection attack succeeds in executing JavaScript within the Moltwor
 2. The malicious code can read from the R2 bucket
 3. The malicious code can make outbound requests (see next section)
 
+> **See:** [Prompt Injection Attacks](./prompt-injection-attacks.md) -- 27 examples of how attackers craft these payloads, including data exfiltration techniques relevant to the egress gap below.
+
 ### 🟠 The Rotation Problem
 
 > **The Analogy:** To change your locks, you have to coordinate with everyone who has a key.

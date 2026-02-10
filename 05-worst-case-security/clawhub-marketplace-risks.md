@@ -601,4 +601,5 @@ Note: ClawHub is a third-party service, not part of the OpenClaw codebase. The r
 - [Threat Model](../04-privacy-safety/threat-model.md) - Plugin/extension risks
 - [Hardening Checklist](../04-privacy-safety/hardening-checklist.md) - Plugin safety guidance
 - [Skills.sh Risks](./skills-sh-risks.md) - Unverified third-party skill distribution
+- [Prompt Injection Attacks](./prompt-injection-attacks.md) - 27 attack examples; skills can embed injection payloads in .md and .mmd files
 - Official security docs: https://docs.openclaw.ai/gateway/security

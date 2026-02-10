@@ -481,3 +481,5 @@ openclaw security audit --deep
 # The one command to rule them all
 openclaw security audit --deep
 ```
+
+> **See also:** Many misconfigurations become critical when combined with prompt injection. See [Prompt Injection Attacks](./prompt-injection-attacks.md) for 27 real attack examples that exploit the configurations described above.

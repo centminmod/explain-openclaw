@@ -137,6 +137,8 @@ Docs:
 - https://docs.openclaw.ai/tools
 - https://docs.openclaw.ai/gateway/sandboxing
 
+> **Why this matters for prompt injection:** Limiting tools reduces the damage a successful injection can do. See [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) for 27 examples of how attackers exploit tool access.
+
 ---
 
 ## 8) Protect secrets on disk

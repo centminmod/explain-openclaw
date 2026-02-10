@@ -162,6 +162,8 @@ This is a meaningful detection gap that existing tools don't address:
 - **ClawHub/VirusTotal** — focuses on malware binaries, not prompt injection in text
 - **Koi Security Scanner** — third-party, targets code patterns not prompt content
 
+> **See:** [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) for 27 documented examples of the injection techniques these scanners aim to detect.
+
 #### Beyond SKILL.md: all persistent .md files are unscanned
 
 The SKILL.md gap extends to **all persistent `.md` files** in the workspace. Two separate injection paths exist, each with different trust levels and attack surface:
