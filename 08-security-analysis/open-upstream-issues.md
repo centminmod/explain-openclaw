@@ -4,7 +4,7 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 10-02-2026 (08:04 AEST)
+> **Last checked:** 11-02-2026 (08:34 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -74,6 +74,7 @@
 | [#11431](https://github.com/openclaw/openclaw/issues/11431) | CRITICAL | Hook/plugin npm install runs lifecycle scripts (no --ignore-scripts) | `src/hooks/install.ts:237`, `src/plugins/install.ts:281` |
 | [#11023](https://github.com/openclaw/openclaw/issues/11023) | HIGH | Sandbox browser bridge started without auth token | `src/agents/sandbox/browser.ts:192` — no `authToken` passed; relates to #6609 |
 | [#11945](https://github.com/openclaw/openclaw/issues/11945) | HIGH | config.patch bypasses commands.restart restriction | `src/gateway/server-methods/config.ts:330` — `scheduleGatewaySigusr1Restart()` with no `commands.restart` check; contrast `gateway-tool.ts:78` |
+| [#13683](https://github.com/openclaw/openclaw/issues/13683) | HIGH | CLI `config get` returns unredacted secrets to sandboxed agents | `src/cli/config-cli.ts:269-270` — reads `snapshot.config` without `redactConfigObject()`; gateway RPC at `server-methods/config.ts:108` correctly redacts |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
 | [#11879](https://github.com/openclaw/openclaw/issues/11879) | NOT APPLICABLE | Malicious ClawHub skill exfiltrating to Feishu | Ecosystem/marketplace issue; 13,981 installs; relates to #10890 (Skill Security Framework) |
@@ -709,6 +710,28 @@ All changes take effect immediately via automatic restart.
 **Root cause hypothesis:** Session pool exhaustion, session ID collision after rollover, isolation context corruption, or WebSocket routing table degradation. The consistent ~24-hour timeframe suggests a periodic cleanup (GC, connection pool reset) that breaks isolation context.
 
 **Impact:** Prompt injection via session leak — isolated agent identity payloads delivered to the wrong session. Requires specific cron config + extended runtime + multiple concurrent isolated sessions.
+
+### #13683: CLI `config get` Returns Unredacted Secrets to Sandboxed Agents
+
+**Severity:** HIGH
+**CWE:** CWE-200 (Exposure of Sensitive Information)
+
+**Vulnerability:** The CLI `openclaw config get` command reads and outputs resolved config values (including secrets from `${ENV_VAR}` substitution) without applying the redaction system. The gateway RPC `config.get` handler correctly redacts via `redactConfigSnapshot()`, but the CLI path bypasses this entirely. A sandboxed agent with exec access can extract any API key configured via env var substitution.
+
+**Affected code:**
+- `src/cli/config-cli.ts:269-270` — `loadValidConfig()` returns resolved `snapshot.config`; `getAtPath()` reads values directly
+- `src/cli/config-cli.ts:277-288` — output paths (`defaultRuntime.log`) emit unredacted values
+
+**Correct implementation (for comparison):**
+- `src/gateway/server-methods/config.ts:107-108` — RPC handler calls `redactConfigSnapshot(snapshot)` before `respond()`
+- `src/config/redact-snapshot.ts:48-50` — `redactConfigObject()` is exported and available for use in CLI
+
+**Relationship to existing issues:**
+- #9627: Config *write-back* destroys `${VAR}` references (different attack: disk persistence)
+- #5995: Secrets in session *transcripts* (different attack: log files)
+- #8591: Env vars via `env`/`printenv` (related: alternate exfiltration path via `process.env`)
+
+**Fix:** Apply `redactConfigObject()` to the value before output in CLI `config get`, or use `redactConfigSnapshot()` on the entire snapshot and read from the redacted copy.
 
 ### Notable Non-Core Issues
 

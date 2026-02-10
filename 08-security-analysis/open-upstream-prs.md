@@ -4,7 +4,7 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 10-02-2026 (22:37 AEST)
+> **Last checked:** 11-02-2026 (08:44 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
@@ -39,6 +39,9 @@
 | [#5401](https://github.com/openclaw/openclaw/pull/5401) | OPEN | security-fix | Detect audio binary by magic bytes to prevent context injection | — | OPEN/PENDING |
 | [#2580](https://github.com/openclaw/openclaw/pull/2580) | OPEN | security-fix | SSRF, path traversal, shell injection, and rate limiting protections | — | OPEN/PENDING |
 | [#2544](https://github.com/openclaw/openclaw/pull/2544) | OPEN | security-fix | XSS vulnerability in Canvas Host | — | OPEN/PENDING |
+| [#13680](https://github.com/openclaw/openclaw/pull/13680) | OPEN | hardening | Add per-IP rate limiting to gateway authentication (CWE-307) | — | OPEN/PENDING |
+| [#13521](https://github.com/openclaw/openclaw/pull/13521) | OPEN | security-fix | Require webhook secret in Telegram runtime webhook mode | [#13116](https://github.com/openclaw/openclaw/issues/13116) | OPEN/PENDING |
+| [#13474](https://github.com/openclaw/openclaw/pull/13474) | OPEN | hardening | Distinguish webhooks from internal hooks in audit summary | [#13466](https://github.com/openclaw/openclaw/issues/13466) | OPEN/PENDING |
 | [#13308](https://github.com/openclaw/openclaw/pull/13308) | OPEN | hardening | Address audit findings (gateway, CI, Docker) | — | OPEN/PENDING |
 | [#13293](https://github.com/openclaw/openclaw/pull/13293) | OPEN | hardening | Block tainted sink calls from untrusted tool outputs | — | OPEN/PENDING |
 | [#13185](https://github.com/openclaw/openclaw/pull/13185) | OPEN | hardening | Sanitize error responses to prevent information leakage | — | OPEN/PENDING |
@@ -68,7 +71,7 @@
 | [#11093](https://github.com/openclaw/openclaw/pull/11093) | MERGED | security-fix | Add `sanitizeFilename()` to BlueBubbles attachments | [#10333](https://github.com/openclaw/openclaw/issues/10333) | SYNC NEEDED |
 | [#13182](https://github.com/openclaw/openclaw/pull/13182) | MERGED | hardening | Split oversized security audit files using dot-naming convention | — | ALREADY SYNCED |
 
-**Total:** 44 tracked PRs (11 merged, 32 open, 1 draft)
+**Total:** 47 tracked PRs (11 merged, 35 open, 1 draft)
 
 ### Cross-Reference: PRs and Tracked Issues
 
@@ -93,6 +96,9 @@
 | [#13117](https://github.com/openclaw/openclaw/pull/13117) | [#6606](https://github.com/openclaw/openclaw/issues/6606) (HIGH) | HIGH | OPEN | Enforces webhook authentication for Telegram webhook mode |
 | [#13170](https://github.com/openclaw/openclaw/pull/13170) | [#6606](https://github.com/openclaw/openclaw/issues/6606) (HIGH) | HIGH | OPEN | Enforces `webhookSecret` at runtime for Telegram webhook mode |
 | [#13182](https://github.com/openclaw/openclaw/pull/13182) | (refactor) | LOW | MERGED | Barrel re-export at `src/security/audit-extra.ts` → `.sync.ts` + `.async.ts` |
+| [#13680](https://github.com/openclaw/openclaw/pull/13680) | (CWE-307 brute force) | MEDIUM | OPEN | Per-IP rate limiting for gateway auth — no limiter exists locally in `src/gateway/auth.ts` |
+| [#13521](https://github.com/openclaw/openclaw/pull/13521) | [#13116](https://github.com/openclaw/openclaw/issues/13116) (HIGH) | HIGH | OPEN | Fail-close webhook secret enforcement; related to #13170 and #13117 |
+| [#13474](https://github.com/openclaw/openclaw/pull/13474) | [#13466](https://github.com/openclaw/openclaw/issues/13466) (LOW) | LOW | OPEN | Split `hooks:` → `hooks.webhooks:` + `hooks.internal:` at `audit-extra.sync.ts:294-317` |
 | [#8718](https://github.com/openclaw/openclaw/pull/8718) | [#8696](https://github.com/openclaw/openclaw/issues/8696) (HIGH) | HIGH | OPEN | Sanitizes download filenames to prevent path traversal (CWE-22) |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy

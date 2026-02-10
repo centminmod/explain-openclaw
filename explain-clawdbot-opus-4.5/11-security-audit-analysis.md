@@ -776,6 +776,14 @@ Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memoryS
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
+### Post-Merge Notes (Feb 11 sync 1) — 22 upstream commits
+
+**Merge commit:** `05baacb2a` | **Security relevance: LOW** — zero overlap with documented security source files. No line number shifts.
+
+**Breakdown:** ~13 docs/CI/maintenance, 5 bug fixes, 3 features, 1 revert. Notable: reasoning tag stripping from messaging tool send path (`67d25c653` — sanitization, prevents `<think>` leakage), ClawDock docker helpers (`31f616d45`), custom/local API onboarding flow (`c0befdee0`). No new CVEs.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
 ---
 
 ## Recommended Hardening Measures

@@ -34,6 +34,7 @@
 - [Feb 10 sync 3 (26 commits)](#post-merge-hardening-feb-10-sync-3-26-upstream-commits)
 - [Feb 10 sync 5 (51 commits)](#post-merge-hardening-feb-10-sync-5-51-upstream-commits)
 - [Feb 10 sync 7 (6 commits)](#post-merge-hardening-feb-10-sync-7-6-upstream-commits)
+- [Feb 11 sync 1 (22 commits)](#post-merge-notes-feb-11-sync-1-22-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -511,6 +512,34 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 - **`40919b1fc`** — **fix(test): add StringSelectMenu to @buape/carbon mock:** Non-security test fix.
 
 **Line number shifts in this sync:** `src/memory/qmd-manager.ts` +5 lines at line 265 (collection filter args), +8 lines at end (new `buildCollectionFilterArgs()` method). References updated: `qmd-manager.ts:331-337` → `336-342` (4 files).
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Notes (Feb 11 sync 1, 22 upstream commits)
+
+**Merge commit:** `05baacb2a` | **Range:** `2a5799afb..05baacb2a`
+
+**Security relevance: LOW** — zero overlap with 25 key security-referenced source files. No line number shifts in any documented files.
+
+**Breakdown:** ~13 docs/CI/maintenance, 5 bug fixes, 3 features, 1 revert.
+
+**Notable commits:**
+
+- **`67d25c653` + `22458f57f` + `c4d3800c2`** — **fix: strip `<think>` reasoning tags and `[Historical context: ...]` from messaging tool send path** (`src/agents/tools/message-tool.ts`). Sanitization improvement — prevents model internals (reasoning traces) from leaking to end users via the messaging tool. LOW security relevance (defense-in-depth for information disclosure).
+
+- **`31f616d45`** — **feat: ClawDock — shell docker helpers for dev** (`scripts/shell-helpers/clawdock-helpers.sh`, #12817). Developer convenience scripts for Docker-based development. NONE security relevance.
+
+- **`c0befdee0`** — **feat(onboard): custom/local API configuration flow** (`src/commands/onboard-custom.ts`, #11106). New onboarding path for custom API providers. LOW security relevance (new provider config path, no auth bypass).
+
+- **`5fab11198`** — **fix: matrix media attachments** (`extensions/matrix/src/matrix/monitor/media.ts`, #12967). Bug fix for media handling. NONE security relevance.
+
+- **`6731c6a1c`** — **fix(docker): support Bash 3.2 in docker-setup.sh** (#9441). Compatibility fix. NONE security relevance.
+
+**Other changes:** Maintainer workflow docs (AGENTS.md, CONTRIBUTING.md, PR_WORKFLOW.md), CI paths-ignore tweaks, credits/token-use doc updates, onboarding overview docs, env example expansion, stale bot config, embedded subscribe/utils refactoring, revert of docker release workflow change.
+
+**Line number shifts in this sync:** NONE. No documented security source files were modified.
 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 

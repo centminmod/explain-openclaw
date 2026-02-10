@@ -491,6 +491,12 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
+### Post-Merge Notes (Feb 11 sync 1) — 22 upstream commits
+
+**Security relevance: LOW** — zero overlap with documented security source files. No line number shifts. ~13 docs/CI/maintenance, 5 bug fixes, 3 features, 1 revert. Notable: reasoning tag stripping from messaging tool (`67d25c653` — prevents `<think>` leakage), ClawDock docker helpers (`31f616d45`), custom API onboarding (`c0befdee0`). No new CVEs.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
