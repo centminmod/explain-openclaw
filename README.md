@@ -34,6 +34,7 @@
   - [Third security audit (ZeroLeeks AI Red Team)](./08-security-analysis/zeroleeks-audit.md)
   - [Post-merge security hardening](./08-security-analysis/post-merge-hardening.md)
   - [Open upstream security issues](./08-security-analysis/open-upstream-issues.md)
+  - [Open upstream security PRs](./08-security-analysis/open-upstream-prs.md)
   - [Ecosystem security threats](./08-security-analysis/ecosystem-security-threats.md)
   - [SecurityScorecard STRIKE report analysis](./08-security-analysis/securityscorecard-strike-report.md) *(Feb 2026, 28k+ exposed instances)*
   - [Model poisoning and sleeper agent backdoors](./08-security-analysis/model-poisoning-sleeper-agents.md) *(Feb 2026 Microsoft research)*
@@ -421,6 +422,10 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 ---
 
 > **See:** [Open Upstream Security Issues](./08-security-analysis/open-upstream-issues.md)
+
+---
+
+> **See:** [Open Upstream Security PRs](./08-security-analysis/open-upstream-prs.md)
 
 ---
 
