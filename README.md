@@ -6,6 +6,7 @@
 
 # Explain OpenClaw (formerly Moltbot/Clawdbot) - Integrated Beginner + Technical Guide
 
+> **Public repo:** This documentation is also available at [github.com/centminmod/explain-openclaw](https://github.com/centminmod/explain-openclaw)
 
 ## Table of contents
 
@@ -50,6 +51,7 @@
   - [Skills.sh risks](./05-worst-case-security/skills-sh-risks.md) *(supply chain)*
   - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(27 examples)*
   - [Misconfiguration examples](./05-worst-case-security/misconfiguration-examples.md)
+  - [AI self-misconfiguration](./05-worst-case-security/ai-self-misconfiguration.md)
 
 ---
 
