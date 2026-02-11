@@ -312,7 +312,7 @@ Previously, the gateway host merged `params.env` without sanitization. As of PR 
 - Validation function at `src/agents/bash-tools.exec.ts:83-107`
 - Enforcement at `src/agents/bash-tools.exec.ts:976-977`
 
-On the node host, there is an explicit blocklist (`src/node-host/runner.ts:165-174`):
+On the node host, there is an explicit blocklist (`src/node-host/runner.ts:166-175`):
 ```
 const blockedEnvKeys = new Set(["NODE_OPTIONS", "PYTHONHOME", "PYTHONPATH", "PERL5LIB", "PERL5OPT", "RUBYOPT"]);
 const blockedEnvPrefixes = ["DYLD_", "LD_"];
@@ -597,7 +597,7 @@ Six security-relevant commits:
 
 - **`d6c088910`** — Credential protection via .gitignore: Adds `memory/` and `.agent/*.json` (excluding `workflows/`) to gitignore, preventing accidental commit of agent credentials and session data. Defense-in-depth for credential hygiene.
 
-- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via blocklists in `src/node-host/runner.ts:165-174` and `src/agents/bash-tools.exec.ts:61-78` (PR #12). Thanks @18-RAJAT.
+- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via blocklists in `src/node-host/runner.ts:166-175` and `src/agents/bash-tools.exec.ts:61-78` (PR #12). Thanks @18-RAJAT.
 
 - **`93b450349`** — Session state hygiene: Clears stale token metrics (totalTokens, inputTokens, outputTokens, contextTokens) when starting new sessions via /new or /reset. Prevents misleading context usage display from previous sessions.
 
@@ -613,7 +613,7 @@ Fourteen security-relevant commits:
 
 **CRITICAL (3):**
 
-- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:92-126` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
+- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:96-130` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
 
 - **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** `config.get` previously exposed all secrets (tokens, API keys) to any connected gateway client. New `redactConfigSnapshot()` function in `src/config/redact-snapshot.ts:117-126` strips sensitive values from config snapshots before returning them over the gateway wire protocol. Partially addresses tracked issues [#5995](https://github.com/openclaw/openclaw/issues/5995), [#9627](https://github.com/openclaw/openclaw/issues/9627), [#9813](https://github.com/openclaw/openclaw/issues/9813). Tests: `src/config/redact-snapshot.test.ts` (335 lines).
 
@@ -645,7 +645,7 @@ Four security-relevant commits:
 
 **HIGH (2):**
 
-- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:46-63` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:150-157` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
+- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:92-109` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:154-161` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
 
 - **`bccdc95a9`** (PR [#10000](https://github.com/openclaw/openclaw/pull/10000)) — **Cap sessions_history payloads:** New `SESSIONS_HISTORY_MAX_BYTES` (80KB) and `SESSIONS_HISTORY_TEXT_MAX_CHARS` (4000) in `src/agents/tools/sessions-history-tool.ts:24-25`. Sanitization strips thinking signatures, image data, usage/cost metadata. Prevents DoS via unbounded session history injection. Thanks @gut-puncture.
 
@@ -781,6 +781,23 @@ Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memoryS
 **Merge commit:** `05baacb2a` | **Security relevance: LOW** — zero overlap with documented security source files. No line number shifts.
 
 **Breakdown:** ~13 docs/CI/maintenance, 5 bug fixes, 3 features, 1 revert. Notable: reasoning tag stripping from messaging tool send path (`67d25c653` — sanitization, prevents `<think>` leakage), ClawDock docker helpers (`31f616d45`), custom/local API onboarding flow (`c0befdee0`). No new CVEs.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Hardening (Feb 11 sync 2) — 17 upstream commits
+
+**Merge commit:** `86aca131b` | **Security relevance: LOW** — no overlap with 16 audit claims or 3 gaps. 5 security-adjacent commits.
+
+**MEDIUM (3):**
+- **`7f1712c1b`** (PR [#13455](https://github.com/openclaw/openclaw/pull/13455)) — Enforce embedding token limit: New `enforceEmbeddingMaxInputTokens()` in `src/memory/embedding-chunk-limits.ts`. Prevents DoS from oversized embedding inputs.
+- **`424d2dddf`** (PR [#13498](https://github.com/openclaw/openclaw/pull/13498)) — Prevent browser evaluate hangs: Clamps `evaluate()` timeout to 120s max in `src/browser/pw-tools-core.interactions.ts:235-246`. Prevents DoS from runaway evaluations.
+- **`fa906b26a`** — IRC first-class channel: New `extensions/irc/` with TLS, NickServ auth, channel allowlisting (`extensions/irc/src/policy.ts`). **New attack surface** — external network protocol.
+
+**LOW (2):**
+- **`841dbeee0`** (PR [#13468](https://github.com/openclaw/openclaw/pull/13468)) — Coerce form values to schema types before `config.set`. Prevents type confusion at Web UI → Gateway boundary.
+- **`ca629296c`** (PR [#13672](https://github.com/openclaw/openclaw/pull/13672)) — Add `agentId` to webhook mappings with allowlist enforcement. Least privilege for webhook → agent routing.
+
+**Line number shifts:** `runner.ts` +1 (165-174→166-175), `hooks.ts` +46 (46-63→92-109), `server-http.ts` +4/+18 (92-126→96-130, 150-157→154-161, 332→350, 356-376→374-394), `manager.ts` refactored (2257-2354→2198-2301). All refs updated.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
