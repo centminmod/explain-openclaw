@@ -17,6 +17,7 @@
   - [Isolated VPS](../03-deploy/isolated-vps.md)
   - [Cloudflare Moltworker](../03-deploy/cloudflare-moltworker.md)
 - Optimizations
+  - [Resource usage analysis (CPU, memory, disk)](./resource-usage.md)
   - [Cost + token optimization](./cost-token-optimization.md)
 - Reference
   - [Commands + troubleshooting](../99-reference/commands-and-troubleshooting.md)
@@ -52,6 +53,7 @@ Running a self-hosted AI assistant incurs costs from model API calls and can con
 
 | Guide | Description |
 |-------|-------------|
+| [Resource usage analysis](./resource-usage.md) | CPU, memory, disk footprint for OpenClaw processes and dependencies |
 | [Cost + token optimization](./cost-token-optimization.md) | OpenRouter integration, auto routing, provider configuration, token management |
 
 ---
