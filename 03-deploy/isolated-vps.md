@@ -258,6 +258,40 @@ If you're headless and need OAuth-style auth, do the auth step on a trusted mach
 
 Docs: <https://docs.openclaw.ai/start/getting-started>
 
+### Non-interactive onboarding (CI/CD and automation)
+
+For automated deployments or custom LLM providers (Ollama, LM Studio, LiteLLM proxy, etc.), use the non-interactive flow:
+
+```bash
+# Using env var for API key (recommended — avoids process list exposure)
+export CUSTOM_API_KEY="your-api-key-here"
+openclaw onboard --non-interactive --install-daemon \
+  --custom-base-url "https://llm.example.com/v1" \
+  --custom-model-id "my-model" \
+  --custom-compatibility openai
+
+# Or with explicit auth choice and all options
+openclaw onboard --non-interactive --install-daemon \
+  --auth-choice custom-api-key \
+  --custom-base-url "http://localhost:11434/v1" \
+  --custom-model-id "llama3" \
+  --custom-provider-id "ollama" \
+  --custom-compatibility openai
+```
+
+Available `--custom-*` flags:
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--custom-base-url <url>` | Yes | Provider endpoint URL |
+| `--custom-model-id <id>` | Yes | Model identifier |
+| `--custom-api-key <key>` | No | API key (falls back to `CUSTOM_API_KEY` env var, then auth profile) |
+| `--custom-provider-id <id>` | No | Provider identifier (auto-derived from URL if omitted) |
+| `--custom-compatibility <mode>` | No | `openai` (default) or `anthropic` |
+
+> **Security:** Avoid passing API keys via `--custom-api-key` flag in shared environments — they're visible in process lists. Use `CUSTOM_API_KEY` env var instead.
+
+Docs: https://docs.openclaw.ai/start/wizard-cli-automation
+
 ---
 
 ## 3) Keep the Gateway loopback-only `[All]`

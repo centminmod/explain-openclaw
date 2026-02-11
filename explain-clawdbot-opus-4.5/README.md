@@ -505,6 +505,18 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
+### Post-Merge Hardening (Feb 12 sync 1) — 32 upstream commits
+
+**Merge commit:** `3ed7dc83a` | **Security relevance: CRITICAL** — default-deny scope hardening (`cfd112952`), plugin install `--ignore-scripts` supply chain defense (`92702af7a`), maxTokens redaction anchor fix (`66ca5746c`). Line shifts in `web-search.ts` only.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Notes (Feb 12 sync 2) — 6 upstream commits
+
+**Merge commit:** `d0b825593` | **Security relevance: LOW** — custom provider non-interactive onboarding (`029b77c85`, PR [#14223](https://github.com/openclaw/openclaw/pull/14223)). New `--custom-*` flags for unattended setup. **Credential hygiene:** prefer `CUSTOM_API_KEY` env var over `--custom-api-key` flag (process list visibility). No line shifts. No new CVEs.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---

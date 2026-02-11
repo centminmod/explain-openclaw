@@ -91,6 +91,18 @@ openclaw onboard --install-daemon
 
 This typically sets up a per-user service (launchd) and writes config under `~/.openclaw/`.
 
+For automated/headless setup with a custom LLM provider (Ollama, LM Studio, etc.):
+
+```bash
+export CUSTOM_API_KEY="your-api-key-here"
+openclaw onboard --non-interactive --install-daemon \
+  --custom-base-url "http://localhost:11434/v1" \
+  --custom-model-id "llama3" \
+  --custom-compatibility openai
+```
+
+See [Non-interactive onboarding flags](../99-reference/commands-and-troubleshooting.md#non-interactive-custom-provider-onboarding) for all options.
+
 ### 4) Verify basics
 
 ```bash

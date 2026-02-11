@@ -37,6 +37,7 @@
 - [Feb 11 sync 1 (22 commits)](#post-merge-notes-feb-11-sync-1-22-upstream-commits)
 - [Feb 11 sync 2 (17 commits)](#post-merge-hardening-feb-11-sync-2-17-upstream-commits)
 - [Feb 12 sync 1 (32 commits)](#post-merge-hardening-feb-12-sync-1-32-upstream-commits)
+- [Feb 12 sync 2 (Notes)](#post-merge-notes-feb-12-sync-2-6-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -605,6 +606,30 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 6. **`93411b74a`** — **fix(cli): exit with non-zero code when configure/agents-add wizards are cancelled:** Exit code 0→1 on cancellation for automation reliability.
 
 **Line number shifts in this sync:** `web-search.ts` +21-24 below line 109 (Grok type/function expansion + `extractGrokContent()` rewrite). References updated: X-Title 427-428→448-449, Grok fetch 480-486→502-508, wrapWebContent 547,618,620→571,592,642,644, Brave headers 596-601→620-625.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Notes (Feb 12 sync 2, 6 upstream commits)
+
+**Merge commit:** `d0b825593` | **Range:** `3ed7dc83a..d0b825593`
+
+**Security relevance: LOW** — no overlap with the 16 audit claims or 3 legitimate gaps.
+
+**Security-adjacent (1):**
+
+- **`029b77c85`** (PR [#14223](https://github.com/openclaw/openclaw/pull/14223)) — **Custom provider non-interactive onboarding:** Enables fully unattended `openclaw onboard` with new `--custom-*` flags: `--custom-base-url`, `--custom-model-id`, `--custom-api-key`, `--custom-provider-id`, `--custom-compatibility`. Auth resolution chain: CLI flag > `CUSTOM_API_KEY` env var > auth profile fallback. Auto-inference: providing `--custom-base-url` auto-sets `--auth-choice custom-api-key`. Files: `src/commands/onboard-custom.ts` (+350/-), `src/cli/program/register.onboard.ts`, `src/commands/onboard-non-interactive/local/auth-choice-inference.ts`, `src/commands/onboard-non-interactive/local/auth-choice.ts`, `src/commands/onboard-non-interactive/api-keys.ts`, `src/commands/onboard-types.ts`. Tests: `src/commands/onboard-custom.test.ts`, `src/commands/onboard-non-interactive.provider-auth.test.ts` (240 lines). **Credential hygiene note:** `--custom-api-key` flag exposes the API key in process lists (`ps aux`); prefer `CUSTOM_API_KEY` env var in shared/CI environments.
+
+**Non-security (5):**
+
+- `c8d9733e4` — Changelog: add #13262 entry
+- `a67752e6b` — fix(discord): use partial mock for @buape/carbon in slash test
+- `940ce424c` — chore: make review mode switching idempotent
+- `4200782a5` — fix(heartbeat): honor `heartbeat.model` config for heartbeat turns (#14103). New `src/infra/heartbeat-active-hours.ts` (99 lines) + `src/infra/heartbeat-runner.model-override.test.ts` (246 lines).
+- `72fbfaa75` — chore: making PR review chores deterministic + less token hungry
+
+**Line number shifts in this sync:** NONE. No documented security source files were modified.
 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 

@@ -801,6 +801,31 @@ Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memoryS
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
+### Post-Merge Hardening (Feb 12 sync 1) — 32 upstream commits
+
+**Merge commit:** `3ed7dc83a` | **Security relevance: CRITICAL** — default-deny scope hardening, supply chain defense, config redaction fix.
+
+**CRITICAL (2):**
+- **`cfd112952`** — Default-deny missing connect scopes: Removed implicit `operator.admin` grant when scopes omitted in WebSocket connect. Prevents privilege escalation via empty scope arrays. **Strengthens Audit 2 Claim 5** (self-approving agent).
+- **`92702af7a`** — Plugin/hook install `--ignore-scripts`: Added `--ignore-scripts` to `npm install` in `src/plugins/install.ts` and `src/hooks/install.ts`. Prevents RCE via malicious npm lifecycle scripts.
+
+**MEDIUM (1):**
+- **`66ca5746c`** — Config redaction anchor fix: Anchored `/token/i` → `/token$/i` in `redact-snapshot.ts`. Prevents false-positive redaction of `maxTokens`/`contextTokens` fields.
+
+**Line number shifts:** `web-search.ts` +21-24 below line 109 (Grok rewrite). All refs updated.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Notes (Feb 12 sync 2) — 6 upstream commits
+
+**Merge commit:** `d0b825593` | **Security relevance: LOW** — no audit claim or gap overlap.
+
+- **`029b77c85`** (PR [#14223](https://github.com/openclaw/openclaw/pull/14223)) — Custom provider non-interactive onboarding: New `--custom-base-url`, `--custom-model-id`, `--custom-api-key`, `--custom-provider-id`, `--custom-compatibility` flags. Auth chain: CLI flag > `CUSTOM_API_KEY` env var > profile fallback. **Credential hygiene:** prefer env var over `--custom-api-key` flag (process list visibility). 5 non-security commits (changelog, test fix, review chore, heartbeat config, PR review chore).
+
+No line shifts. No new CVEs.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
 ---
 
 ## Recommended Hardening Measures

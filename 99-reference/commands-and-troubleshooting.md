@@ -38,6 +38,24 @@ Docs: https://docs.openclaw.ai/install and https://docs.openclaw.ai/start/wizard
 
 ---
 
+## Non-interactive custom provider onboarding
+
+```bash
+export CUSTOM_API_KEY="your-api-key-here"
+openclaw onboard --non-interactive --install-daemon \
+  --custom-base-url "https://llm.example.com/v1" \
+  --custom-model-id "my-model" \
+  --custom-compatibility openai
+```
+
+Flags: `--custom-base-url` (required), `--custom-model-id` (required), `--custom-api-key` (optional, env var preferred), `--custom-provider-id` (optional), `--custom-compatibility openai|anthropic` (optional).
+
+Auto-inference: providing any `--custom-*` flag auto-sets `--auth-choice custom-api-key`.
+
+Docs: https://docs.openclaw.ai/start/wizard-cli-automation and https://docs.openclaw.ai/cli/onboard
+
+---
+
 ## Start/stop the Gateway
 
 Foreground:
