@@ -1,6 +1,6 @@
 # Resource Usage Analysis (CPU, Memory, Disk)
 
-> **Verified by:** 3 Explore agents, LSP symbol checks, direct file reads, and dual-AI consultation (Codex GPT-5.3 + Code-Searcher). All findings independently confirmed with high agreement.
+> **Verified by:** 3 Explore agents, LSP symbol checks, direct file reads, and [`/consult-codex` dual-AI consultation](https://github.com/centminmod/my-claude-code-setup/tree/master/.claude/skills/consult-codex/SKILL.md) (Codex GPT-5.3 + Code-Searcher). All findings independently confirmed with high agreement.
 
 Users report OpenClaw can be resource-intensive. This guide documents every resource-consuming subsystem with verified source references, plain-English explanations, and practical optimization strategies.
 
