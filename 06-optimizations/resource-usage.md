@@ -217,7 +217,246 @@ There are **zero** free-space checks (`statvfs`/disk usage) anywhere in the code
    - `sessions.maxEntries` — cap total session count
    - `sessions.rotateBytes` — rotate session store file at size threshold
 
-### Monitoring commands
+---
+
+## E. Monitoring & Profiling Guide
+
+*Sections A-C told you **what** consumes CPU, memory, and disk. This section tells you **how to see it happening** on your actual machine. Think of it like the difference between a thermometer (one quick reading) and a thermograph (a chart that records temperature all day). You need both: quick checks to see what's happening right now, and historical tools to spot trends before they become problems.*
+
+### Quick process identification
+
+Before monitoring anything, find the OpenClaw Gateway process:
+
+```bash
+# Find the Gateway PID (both platforms)
+pgrep -f "openclaw"
+
+# See full process details (both platforms)
+ps aux | grep openclaw
+
+# macOS — also check Activity Monitor (search "openclaw" or "node")
+# The Gateway runs as a Node.js process, so look for "node" if "openclaw" doesn't appear
+```
+
+> *Tip:* Save the PID in a variable for repeated use: `OC_PID=$(pgrep -f "openclaw")`
+
+### Real-time monitoring (point-in-time)
+
+*These tools are like glancing at your car's dashboard — they show you what's happening right now, but don't record history.*
+
+**top / htop** (both platforms)
+
+```bash
+# Filter top for the OpenClaw process (both platforms)
+top -p $(pgrep -f "openclaw")
+
+# htop — a friendlier version with color-coded bars
+# Install: brew install htop (macOS) / apt install htop (Linux)
+htop -p $(pgrep -f "openclaw")
+```
+
+**Per-process one-liner** (both platforms)
+
+```bash
+# Snapshot of CPU% and memory for the Gateway
+ps -p $(pgrep -f "openclaw") -o pid,%cpu,%mem,rss,vsz,command
+```
+
+Column reference: `%cpu` = CPU percentage, `%mem` = RAM percentage, `rss` = resident set size (actual RAM in KB), `vsz` = virtual size (allocated, not all physical).
+
+**macOS Activity Monitor:**
+Open Activity Monitor from Spotlight (`Cmd+Space` → "Activity Monitor"), then search for `openclaw` or `node`. The Memory tab shows Real Memory (same as RSS) and the CPU tab shows per-process usage.
+
+### sysstat tutorial (Linux VPS)
+
+*`top` and `htop` show you what's happening right now — like glancing at a speedometer. But what if you want to know how fast you were going at 3 AM when nobody was watching? That's what sysstat does. It's a suite of tools that automatically records system performance every 10 minutes and lets you replay the data later. Think of it as a dashcam for your server.*
+
+#### What's included
+
+| Tool | Purpose |
+|------|---------|
+| `sar` | **S**ystem **A**ctivity **R**eporter — replays historical data (CPU, memory, disk, network) |
+| `pidstat` | Per-process stats (like `top`, but with timestamps and logging) |
+| `iostat` | Disk I/O throughput and latency |
+| `mpstat` | Per-CPU core breakdown |
+
+#### Install
+
+```bash
+# Debian/Ubuntu
+sudo apt install sysstat
+
+# RHEL/CentOS/Fedora
+sudo dnf install sysstat    # or: sudo yum install sysstat
+
+# Enable automatic data collection (records every 10 min by default)
+sudo systemctl enable --now sysstat
+```
+
+After enabling, sysstat stores daily data files in `/var/log/sa/` (or `/var/log/sysstat/`). You can replay any day's data — even from last week.
+
+#### sar — system-wide historical replay
+
+```bash
+# CPU usage over time (today) — shows %user, %system, %idle
+sar -u
+
+# CPU usage for a specific date (e.g., February 10)
+sar -u -f /var/log/sa/sa10
+
+# CPU usage sampled every 5 seconds, 12 times (1 minute of live data)
+sar -u 5 12
+
+# Memory usage over time — shows kbmemfree, kbmemused, %memused
+sar -r
+
+# Disk I/O — shows tps (transfers per second), read/write throughput
+sar -b          # block device summary
+sar -d          # per-device breakdown (useful to identify which disk)
+
+# Network interface stats — shows rxkB/s, txkB/s per interface
+sar -n DEV
+```
+
+> *Reading sar output:* Each row is a timestamp. Look for `%idle` dropping below 20 (CPU saturated), `%memused` above 90 (memory pressure), or sudden spikes in `tps` (disk I/O storms). If your Gateway was sluggish at 3 AM, run `sar -u -f /var/log/sa/sa$(date -d yesterday +%d)` to see yesterday's CPU.
+
+#### pidstat — per-process monitoring
+
+*`pidstat` is like `top`, but it prints timestamped lines you can log to a file. Perfect for watching OpenClaw specifically without the noise of other processes.*
+
+```bash
+# Per-process CPU usage for the Gateway
+pidstat -p $(pgrep -f "openclaw") 1
+# Prints a line every 1 second showing %usr, %system, %CPU
+
+# Per-process memory (RSS, VSZ, %MEM)
+pidstat -r -p $(pgrep -f "openclaw") 5
+# Prints memory stats every 5 seconds
+
+# Per-process disk I/O (kB read/written per second)
+pidstat -d -p $(pgrep -f "openclaw") 5
+
+# Combined: CPU + memory + disk, every 5 seconds for 1 minute (12 samples)
+pidstat -urd -p $(pgrep -f "openclaw") 5 12
+
+# Monitor ALL Node.js processes (useful if OpenClaw spawns children)
+pidstat -urd -C "node" 5
+```
+
+> *Pro tip:* Pipe `pidstat` output to a file for later analysis:
+> ```bash
+> pidstat -urd -p $(pgrep -f "openclaw") 60 1440 > ~/openclaw-24h-stats.log &
+> ```
+> This logs CPU/memory/disk every 60 seconds for 24 hours (1440 samples).
+
+#### macOS note
+
+sysstat is **not available on macOS**. Use these alternatives instead:
+
+```bash
+# Memory pressure (macOS equivalent of sar -r)
+vm_stat 5
+# Columns: free, active, inactive, wired — multiply by page size (16384 on Apple Silicon)
+
+# Disk I/O (macOS equivalent of sar -b / iostat)
+iostat -w 5
+# Shows KB/t, tps, MB/s per disk
+
+# Per-process stats — use ps in a loop (macOS equivalent of pidstat)
+while true; do
+  date; ps -p $(pgrep -f "openclaw") -o %cpu,%mem,rss 2>/dev/null
+  sleep 5
+done
+```
+
+### Disk I/O monitoring
+
+*If your OpenClaw instance is slow but CPU and memory look fine, the bottleneck might be disk. These tools tell you who's reading/writing and how fast.*
+
+```bash
+# iostat — disk throughput snapshot (both platforms)
+iostat -x 5       # extended stats, every 5 seconds
+# Key columns: r/s (reads/sec), w/s (writes/sec), %util (how busy the disk is)
+
+# iotop — who's doing the I/O (Linux, requires root)
+sudo iotop -o     # only show processes with active I/O
+# Look for "node" or "openclaw" — heavy writes may be transcript/log accumulation
+
+# macOS — use fs_usage to trace file system calls
+sudo fs_usage -f filesys node   # trace all filesystem calls by Node.js processes
+```
+
+### Node.js profiling (OpenClaw-specific)
+
+*When you've confirmed that the Gateway is using too much CPU or memory, these tools let you look **inside** the Node.js process to find exactly which function is responsible.*
+
+#### Chrome DevTools (CPU profile + heap snapshot)
+
+```bash
+# Start the Gateway with the inspector enabled
+openclaw --inspect=0.0.0.0:9229
+
+# Or attach to an already-running Gateway (send SIGUSR1)
+kill -USR1 $(pgrep -f "openclaw")
+```
+
+Then open `chrome://inspect` in Chrome/Chromium, click the OpenClaw target, and:
+- **CPU Profile tab** → Record → trigger the slow operation → Stop → see which functions took the most time
+- **Memory tab** → Take Heap Snapshot → see what objects are consuming memory (look for the unbounded Maps from Section B)
+
+#### clinic.js (automated diagnosis)
+
+```bash
+# Install
+npm install -g clinic
+
+# Detect CPU bottlenecks (generates an HTML flamegraph)
+clinic doctor -- node /path/to/openclaw/gateway.js
+
+# Generate a flamegraph (visual call-stack breakdown)
+clinic flame -- node /path/to/openclaw/gateway.js
+
+# Detect async bottlenecks (event loop delays)
+clinic bubbleprof -- node /path/to/openclaw/gateway.js
+```
+
+#### 0x flamegraph (lightweight alternative)
+
+```bash
+# Install
+npm install -g 0x
+
+# Profile the Gateway for 30 seconds
+0x -D 30000 -- node /path/to/openclaw/gateway.js
+# Opens a flamegraph in your browser — wider bars = more CPU time
+```
+
+### Network monitoring
+
+*OpenClaw communicates via WebSocket (Gateway port 18789), HTTP APIs, and outbound connections to AI providers. These tools help you see what's connected and how much traffic is flowing.*
+
+```bash
+# Who's connected to the Gateway WebSocket port? (both platforms)
+lsof -i :18789
+# Shows every client connected — useful to check if browser extension / web UI is attached
+
+# List all connections by the Gateway process (Linux)
+ss -tnp | grep openclaw
+# Shows established TCP connections, remote IPs, and ports
+
+# macOS equivalent
+lsof -i -P -n | grep openclaw
+
+# Count active WebSocket connections
+lsof -i :18789 | grep -c ESTABLISHED
+
+# Watch connection count over time
+watch -n 5 'lsof -i :18789 | grep -c ESTABLISHED'
+```
+
+### Disk size checks
+
+*These commands give you a quick health check on the biggest disk consumers documented in Section C.*
 
 ```bash
 # Check total state directory size
@@ -241,6 +480,58 @@ ls -lh /tmp/tts-* /tmp/openclaw-* 2>/dev/null
 # Check commands.log
 ls -lh ~/.openclaw/logs/commands.log
 ```
+
+### Automated monitoring over time
+
+*One-time checks are useful, but problems often creep in gradually. A cron job that logs resource usage lets you spot trends — like memory slowly growing or transcripts silently ballooning.*
+
+#### Simple RSS logger (both platforms)
+
+```bash
+# Save this as ~/openclaw-monitor.sh
+#!/bin/bash
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+PID=$(pgrep -f "openclaw")
+if [ -n "$PID" ]; then
+  RSS=$(ps -p "$PID" -o rss= 2>/dev/null | tr -d ' ')
+  CPU=$(ps -p "$PID" -o %cpu= 2>/dev/null | tr -d ' ')
+  DISK=$(du -sm ~/.openclaw/ 2>/dev/null | cut -f1)
+  echo "$TIMESTAMP  PID=$PID  RSS_KB=$RSS  CPU=$CPU%  DISK_MB=$DISK" >> ~/openclaw-resource.log
+fi
+
+# Make executable
+chmod +x ~/openclaw-monitor.sh
+```
+
+#### Cron schedule
+
+```bash
+# Log every 5 minutes (add with: crontab -e)
+*/5 * * * * ~/openclaw-monitor.sh
+```
+
+After a few days, review trends:
+
+```bash
+# See memory trend (RSS column)
+awk '{print $1, $2, $4}' ~/openclaw-resource.log | tail -50
+
+# Check if disk usage is climbing
+awk '{print $1, $2, $6}' ~/openclaw-resource.log | tail -50
+```
+
+#### Linux: leverage sysstat automatic collection
+
+If you enabled sysstat (see above), it already collects system-wide stats every 10 minutes. No extra cron needed — just query with `sar` whenever you want historical data.
+
+#### When to consider Prometheus/Grafana
+
+For most single-instance deployments (Mac mini, small VPS), the tools above are sufficient. Consider Prometheus + Grafana only if:
+- You run **multiple OpenClaw instances** and need centralized dashboards
+- You want **alerting** (e.g., "notify me if RSS exceeds 2GB")
+- You're already running a monitoring stack for other services
+
+Setting up Prometheus/Grafana is beyond the scope of this guide — see the [Prometheus docs](https://prometheus.io/docs/introduction/overview/) for getting started.
 
 ---
 
