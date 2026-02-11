@@ -137,7 +137,7 @@ Docs:
 - https://docs.openclaw.ai/tools
 - https://docs.openclaw.ai/gateway/sandboxing
 
-> **Why this matters for prompt injection:** Limiting tools reduces the damage a successful injection can do. See [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) for 27 examples of how attackers exploit tool access.
+> **Why this matters for prompt injection:** Limiting tools reduces the damage a successful injection can do. See [Prompt Injection Attacks](../05-worst-case-security/prompt-injection-attacks.md) for 30 examples of how attackers exploit tool access.
 
 ---
 
@@ -259,3 +259,62 @@ skill-scanner scan ~/your-workspace-dir/
 Files to audit: `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`, `BOOTSTRAP.md`, `MEMORY.md`, `memory.md`, and any files in the `memory/` directory.
 
 See: [Cisco AI Defense gap analysis](../08-security-analysis/cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned), [Threat model #7](./threat-model.md#7-persistent-memory-files), [Attack #27](../05-worst-case-security/prompt-injection-attacks.md#-attack-27-persistent-memory-injection)
+
+---
+
+## 13) Never let AI modify security-critical config
+
+The gateway tool's `config.apply` and `config.patch` actions have **zero permission checks** — unlike the `/config set` chat command (which checks both `commands.config` and `configWrites`), the gateway tool bypasses both gates entirely. This is the primary AI self-misconfiguration risk.
+
+**Remove the `gateway` tool** (primary defense):
+
+```bash
+# Option A: Use the coding tool profile (excludes gateway tool entirely)
+openclaw config set tools.profile coding
+
+# Option B: Deny the gateway tool specifically
+openclaw config set tools.deny '["gateway"]'
+```
+
+Source: `src/agents/tool-policy.ts:63-80` (coding profile), `src/agents/tools/gateway-tool.ts:175-225` (zero gating)
+
+**Keep config commands disabled** (defense-in-depth):
+
+```bash
+# commands.config is false by default — verify it stays that way
+openclaw config get commands.config
+# Should be: false (or unset)
+```
+
+**Set `configWrites: false`** on all channels:
+
+```bash
+openclaw config set configWrites false
+```
+
+Note: `configWrites: false` only blocks the `/config set` chat command. It does NOT block the gateway tool — that's why removing the gateway tool (above) is the primary defense.
+
+**After any AI-initiated config change:**
+
+```bash
+# Run security audit
+openclaw security audit --deep
+
+# Compare against backup (OpenClaw keeps 5 rotating .bak files)
+diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
+
+# Restore from backup if needed
+cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
+openclaw gateway restart
+```
+
+Source: `src/config/io.ts:95-112` (backup rotation)
+
+**Consider version-controlling your config** for change tracking:
+
+```bash
+cd ~/.openclaw && git init && git add openclaw.json && git commit -m "known good baseline"
+# After any change: git diff to see what changed
+```
+
+See: [AI Self-Misconfiguration Guide](../05-worst-case-security/ai-self-misconfiguration.md), [Attack #28](../05-worst-case-security/prompt-injection-attacks.md#-attack-28-config-self-modification-via-gateway-tool)

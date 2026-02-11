@@ -425,6 +425,104 @@ openclaw gateway restart
 
 ---
 
+## 🔴 Mistake #11: Asking AI to "Optimize" Your Config
+
+### What They Did
+
+Told their AI assistant: "Optimize my OpenClaw config for performance."
+
+### What They Thought
+
+"The AI knows the config schema, it'll make smart changes."
+
+### What Actually Happened
+
+The AI called the gateway tool's `config.patch` action and:
+- Set `tools.exec.security: "full"` (for "faster command execution without approval overhead")
+- Disabled TLS verification (for "reduced connection latency")
+- Widened `gateway.bind` from `loopback` to `lan` (for "better connectivity")
+
+Each change had a plausible justification in the AI's response. None were what the user wanted. All weakened security. The gateway tool's `config.patch` has **zero permission checks** — no `configWrites` gate, no `commands.config` gate — so these changes went through immediately.
+
+> **The Root Cause:** The AI doesn't understand the security implications of config changes. It optimizes for the goal you stated ("performance") and confidently disables safety mechanisms that it perceives as overhead.
+
+Source: `src/agents/tools/gateway-tool.ts:175-225` — zero permission gating on `config.patch`
+
+### The Fix
+
+```bash
+# 1. Remove the gateway tool so AI can't modify config at all
+openclaw config set tools.profile coding
+# Or: openclaw config set tools.deny '["gateway"]'
+
+# 2. Review and revert the changes
+diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
+
+# 3. Restore from backup if needed
+cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
+openclaw gateway restart
+
+# 4. Always review config changes manually — never let AI modify config unattended
+openclaw security audit --deep
+```
+
+See: [AI Self-Misconfiguration Guide](./ai-self-misconfiguration.md)
+
+---
+
+## 🟠 Mistake #12: AI Set Schema-Valid But Dangerous Values
+
+### What They Did
+
+Asked their AI: "Make OpenClaw accessible from my phone."
+
+### What They Thought
+
+"The AI will figure out the right way to set up remote access."
+
+### What Actually Happened
+
+The AI set:
+```json
+{
+  "gateway": {
+    "bind": "lan",
+    "tailscale": { "mode": "funnel" }
+  }
+}
+```
+
+Both values are **perfectly schema-valid** — OpenClaw's Zod schema with `.strict()` mode rejects unknown keys and type errors, but `"lan"` is a legitimate value for `gateway.bind` and `"funnel"` is a legitimate value for `tailscale.mode`. The AI chose the most "accessible" options without understanding that:
+- `bind: "lan"` exposes the gateway to everyone on the local network
+- `tailscale.mode: "funnel"` exposes the gateway to the **entire internet** through Tailscale's public funnel
+
+The user's phone was now able to connect — along with everyone else.
+
+> **The Core Issue:** Schema validation catches **structural** errors (wrong types, unknown keys) but not **semantic** security errors. The AI can set dangerous values for every known key, and validation will happily accept them.
+
+Source: `src/config/validation.ts:86-131`, `src/config/zod-schema.ts:599-600`
+
+### The Fix
+
+```bash
+# 1. Set safe values
+openclaw config set gateway.bind loopback
+openclaw config set gateway.tailscale.mode serve
+
+# 2. Use SSH tunnel or Tailscale Serve for phone access instead
+# SSH tunnel:
+ssh -N -L 18789:127.0.0.1:18789 user@gateway-host
+# Tailscale Serve (HTTPS within your tailnet only):
+openclaw config set gateway.bind tailnet
+
+# 3. Always run security audit after AI config changes
+openclaw security audit --deep
+```
+
+See: [AI Self-Misconfiguration Guide](./ai-self-misconfiguration.md) — Part 4: Schema-Valid but Unsafe Values
+
+---
+
 ## Quick Security Audit Checklist
 
 Run this checklist to catch common misconfigurations:
@@ -464,7 +562,7 @@ openclaw security audit --deep
 
 ---
 
-## Summary: The 10 Commandments
+## Summary: The 12 Commandments
 
 1. **Thou shalt bind to loopback** unless you have a specific reason not to
 2. **Thou shalt always set an auth token** and never leave it empty
@@ -476,10 +574,12 @@ openclaw security audit --deep
 8. **Thou shalt use TLS** (SSH tunnel or Tailscale)
 9. **Thou shalt never share tokens** in messages or screenshots
 10. **Thou shalt run security audit** regularly
+11. **Thou shalt not let AI modify thy config** — remove the `gateway` tool
+12. **Thou shalt not trust schema validation** for security — audit after AI changes
 
 ```bash
 # The one command to rule them all
 openclaw security audit --deep
 ```
 
-> **See also:** Many misconfigurations become critical when combined with prompt injection. See [Prompt Injection Attacks](./prompt-injection-attacks.md) for 27 real attack examples that exploit the configurations described above.
+> **See also:** Many misconfigurations become critical when combined with prompt injection. See [Prompt Injection Attacks](./prompt-injection-attacks.md) for 30 real attack examples that exploit the configurations described above. For AI-specific config modification risks, see [AI Self-Misconfiguration](./ai-self-misconfiguration.md).

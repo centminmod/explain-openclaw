@@ -145,7 +145,9 @@ Throughout this guide, we use these severity indicators:
    - [Skills.sh Risks](./skills-sh-risks.md)
 5. **Check the Misconfiguration Examples** to see if you've made common mistakes:
    - [Misconfiguration Hall of Shame](./misconfiguration-examples.md)
-6. **Run the security audit** to verify your configuration:
+6. **Read the AI Self-Misconfiguration guide** if you use AI to manage your config:
+   - [AI Self-Misconfiguration](./ai-self-misconfiguration.md)
+7. **Run the security audit** to verify your configuration:
    ```bash
    openclaw security audit --deep
    ```
@@ -199,6 +201,7 @@ Choose your deployment type and continue to the detailed guide:
 - **[Cross-Cutting Vulnerabilities](./cross-cutting.md)** - Prompt injection, tool execution, credentials
 - **[ClawHub Marketplace Risks](./clawhub-marketplace-risks.md)** - Skills marketplace supply chain attacks (Feb 2026 ClawHavoc campaign)
 - **[Skills.sh Risks](./skills-sh-risks.md)** - Unverified third-party skill distribution
-- **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 27 attack examples with data exfiltration
+- **[AI Self-Misconfiguration](./ai-self-misconfiguration.md)** - When AI modifies its own security config
+- **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 30 attack examples with data exfiltration
 - **[Misconfiguration Examples](./misconfiguration-examples.md)** - Real mistakes and how to fix them
 - **[Incident Response Playbook](./incident-response.md)** - What to do when things go wrong
