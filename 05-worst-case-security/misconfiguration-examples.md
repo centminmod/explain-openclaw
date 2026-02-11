@@ -13,6 +13,25 @@
 
 ---
 
+## Table of Contents
+
+1. [Mistake #1: Exposing Gateway to Network](#-mistake-1-exposing-gateway-to-network)
+2. [Mistake #2: The "Temporary" Dangerous Flag](#-mistake-2-the-temporary-dangerous-flag)
+3. [Mistake #3: Cloud-Syncing Credentials](#-mistake-3-cloud-syncing-credentials)
+4. [Mistake #4: The Nuclear chmod](#-mistake-4-the-nuclear-chmod)
+5. [Mistake #5: Production Keys in Test](#-mistake-5-production-keys-in-test)
+6. [Mistake #6: The Missing Token](#-mistake-6-the-missing-token)
+7. [Mistake #7: Running as Root](#-mistake-7-running-as-root)
+8. [Mistake #8: Forgot to Restart After Config Change](#-mistake-8-forgot-to-restart-after-config-change)
+9. [Mistake #9: Using HTTP Instead of HTTPS](#-mistake-9-using-http-instead-of-https)
+10. [Mistake #10: Sharing the Gateway Token](#-mistake-10-sharing-the-gateway-token)
+11. [Mistake #11: Asking AI to "Optimize" Your Config](#-mistake-11-asking-ai-to-optimize-your-config)
+12. [Mistake #12: AI Set Schema-Valid But Dangerous Values](#-mistake-12-ai-set-schema-valid-but-dangerous-values)
+13. [Quick Security Audit Checklist](#quick-security-audit-checklist)
+14. [Summary: The 12 Commandments](#summary-the-12-commandments)
+
+---
+
 ## 🔴 Mistake #1: Exposing Gateway to Network
 
 ### What They Did
