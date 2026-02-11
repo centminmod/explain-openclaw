@@ -55,6 +55,7 @@ Running a self-hosted AI assistant incurs costs from model API calls and can con
 |-------|-------------|
 | [Resource usage analysis](./resource-usage.md) | CPU, memory, disk footprint for OpenClaw processes and dependencies |
 | [Cost + token optimization](./cost-token-optimization.md) | OpenRouter integration, auto routing, provider configuration, token management |
+| [`/consult-codex` dual-AI consultation](https://github.com/centminmod/my-claude-code-setup/tree/master/.claude/skills/consult-codex/SKILL.md) | Codex GPT-5.3 + Code-Searcher cross-verification used for analysis in this section |
 
 ---
 
