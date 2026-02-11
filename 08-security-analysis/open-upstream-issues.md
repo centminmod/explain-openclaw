@@ -4,7 +4,7 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 11-02-2026 (20:03 AEST)
+> **Last checked:** 12-02-2026 (04:46 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -78,6 +78,8 @@
 | [#13786](https://github.com/openclaw/openclaw/issues/13786) | HIGH | BlueBubbles webhook auth bypass via loopback proxy trust | `extensions/bluebubbles/src/monitor.ts:1537` — loopback remoteAddress bypasses shared-secret check; relates to #8512 |
 | [#13718](https://github.com/openclaw/openclaw/issues/13718) | HIGH | Unauthenticated Nostr profile API allows remote config tampering | `extensions/nostr/src/nostr-profile-http.ts:322-331` — GET/PUT/POST with no auth; relates to #8512 |
 | [#13937](https://github.com/openclaw/openclaw/issues/13937) | MEDIUM | HTML not escaped in Control UI webchat (XSS) | `ui/` webchat renders raw HTML in messages instead of escaping |
+| [#14137](https://github.com/openclaw/openclaw/issues/14137) | HIGH | Gateway auth has no rate limiting (CWE-307) | `src/gateway/auth.ts` — no brute-force protection; ~645 attempts/sec; fix PR [#13680](https://github.com/openclaw/openclaw/pull/13680) pending; relates to #8594 |
+| [#14117](https://github.com/openclaw/openclaw/issues/14117) | MEDIUM | Session isolation & message attribution failure | Cross-session message leakage between main + remote sessions; raw cron output exposed; relates to #12571 |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
 | [#11879](https://github.com/openclaw/openclaw/issues/11879) | NOT APPLICABLE | Malicious ClawHub skill exfiltrating to Feishu | Ecosystem/marketplace issue; 13,981 installs; relates to #10890 (Skill Security Framework) |
@@ -790,6 +792,40 @@ All changes take effect immediately via automatic restart.
 **Affected code:** The webchat markdown rendering pipeline in `ui/` passes raw HTML through without sanitization (per CommonMark spec, which allows inline HTML). No explicit `innerHTML`/`dangerouslySetInnerHTML` usage found outside test files — the issue is in the markdown-to-HTML rendering configuration.
 
 **Impact:** Stored XSS if messages containing HTML are persisted and displayed to other gateway users. Exploitability is reduced because sending messages typically requires gateway authentication.
+
+### #14137: Gateway Authentication Has No Rate Limiting (CWE-307)
+
+**Severity:** HIGH
+**CWE:** CWE-307 (Improper Restriction of Excessive Authentication Attempts)
+
+**Vulnerability:** `authorizeGatewayConnect()` accepts unlimited failed authentication attempts with no rate limiting, lockout, or backoff. A PoC using 50 concurrent WebSocket connections achieves ~645 brute-force attempts/second with zero resistance. `safeEqual()` correctly uses `timingSafeEqual` (timing attacks mitigated), but the lack of attempt throttling means weak tokens can be brute-forced in seconds.
+
+**Affected code:**
+- `src/gateway/auth.ts:40-45` — `safeEqual()` present but no rate limiting mechanism
+- `src/gateway/server-http.ts` — no rate limiting middleware on any endpoint
+- `src/gateway/server/ws-connection/message-handler.ts` — no per-connection attempt limiting
+
+**Fix available:** PR [#13680](https://github.com/openclaw/openclaw/pull/13680) (OPEN, not merged) — per-IP sliding window: 10 failures in 60s → IP blocked for 5 minutes; HTTP 429 with Retry-After; localhost exempt.
+
+**Relationship:** Subset of #8594 (general rate limiting, CWE-770, MEDIUM) but higher severity — specifically targets auth brute-force with demonstrated PoC.
+
+### #14117: Session Isolation & Message Attribution Failure
+
+**Severity:** MEDIUM
+**CWE:** CWE-200 (Exposure of Sensitive Information) / CWE-362 (Race Condition)
+
+**Vulnerability:** Three distinct session management failures:
+1. **Session crossover:** Messages sent to the main session appear in remote Triager sessions (connected via Tailscale) as if the user sent them to the Triager
+2. **Raw cron output:** Cron job internals (session keys, stats, system prompts) displayed to users instead of clean notifications
+3. **Message attribution:** System cannot distinguish between user input, leaked messages from other sessions, and automated system content
+
+**Affected code:**
+- Session routing code across `src/cron/service/jobs.ts`, `src/infra/outbound/`, `src/gateway/server/hooks.ts`
+- 25+ files involved in session isolation paths
+
+**Impact:** Private conversations in the main session are visible in remote sessions. Agents may respond to "user" messages that the user never sent, creating both privacy and integrity failures.
+
+**Relationship:** Related to #12571 (session isolation leak in cron jobs after ~24h) — different manifestation. #12571 is cron-specific after extended runtime; #14117 is cross-session routing between main and remote sessions. May share root cause in session routing/isolation code.
 
 ### Notable Non-Core Issues
 

@@ -36,6 +36,7 @@
 - [Feb 10 sync 7 (6 commits)](#post-merge-hardening-feb-10-sync-7-6-upstream-commits)
 - [Feb 11 sync 1 (22 commits)](#post-merge-notes-feb-11-sync-1-22-upstream-commits)
 - [Feb 11 sync 2 (17 commits)](#post-merge-hardening-feb-11-sync-2-17-upstream-commits)
+- [Feb 12 sync 1 (32 commits)](#post-merge-hardening-feb-12-sync-1-32-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -576,6 +577,34 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 - `74273d62d` (PR [#13723](https://github.com/openclaw/openclaw/pull/13723)) — Fix(pairing): show actual code in approval command instead of placeholder
 
 **Line number shifts in this sync:** `runner.ts` +1 (165-174→166-175, new `withTimeout` import), `hooks.ts` +46 (46-63→92-109, 65-111→111-157, new types/agent policy functions/imports), `server-http.ts` +4/+18 (92-126→96-130, 150-157→154-161, 332→350, 356-376→374-394, 418-440→436-458), `manager.ts` refactored (2257-2354→2198-2301, session helpers extracted). All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Hardening (Feb 12 sync 1, 32 upstream commits)
+
+**Merge commit:** `3ed7dc83a` | **Range:** `86aca131b..3ed7dc83a`
+
+**CRITICAL — Scope hardening & supply chain (2):**
+
+1. **`cfd112952`** — **fix(gateway): default-deny missing connect scopes:** Removed implicit `operator.admin` scope grant when scopes are empty or omitted in WebSocket connect params. Changed `message-handler.ts` from `requestedScopes.length > 0 ? requestedScopes : role === "operator" ? ["operator.admin"] : []` to `Array.isArray(connectParams.scopes) ? connectParams.scopes : []`. Prevents privilege escalation via omitted scope arrays. **Strengthens Audit 2 Claim 5** (self-approving agent / no RBAC). 170+ lines of new test coverage.
+
+2. **`92702af7a`** — **fix(plugins): ignore install scripts during plugin/hook install:** Added `--ignore-scripts` flag to `npm install` in both `src/plugins/install.ts` and `src/hooks/install.ts`. Prevents RCE via malicious npm postinstall/preinstall lifecycle scripts in plugin/hook dependencies. New supply chain defense-in-depth.
+
+**MEDIUM — Config correctness (1):**
+
+3. **`66ca5746c`** — **fix(config): avoid redacting maxTokens-like fields:** Anchored sensitive-key regex from `/token/i` to `/token$/i` in `src/config/redact-snapshot.ts:15`, `schema.field-metadata.ts`, `schema.hints.ts`. Prevents false-positive redaction of legitimate numeric fields (`maxTokens`, `contextTokens`). Avoids config round-trip validation failures.
+
+**Other notable changes:**
+
+4. **`27453f5a3`** — **fix(web-search): handle xAI Responses API format in Grok provider:** Expanded `extractGrokContent()` to iterate message outputs, extract `url_citation` annotations. Line number shifts documented below.
+
+5. **`e85bbe01f`** — **fix: report subagent timeout as 'timed out' instead of 'completed successfully':** Added `"timeout"` status to `AgentRunSnapshot` in `src/agents/subagent-registry.ts`. Prevents false success reporting for timed-out subagents.
+
+6. **`93411b74a`** — **fix(cli): exit with non-zero code when configure/agents-add wizards are cancelled:** Exit code 0→1 on cancellation for automation reliability.
+
+**Line number shifts in this sync:** `web-search.ts` +21-24 below line 109 (Grok type/function expansion + `extractGrokContent()` rewrite). References updated: X-Title 427-428→448-449, Grok fetch 480-486→502-508, wrapWebContent 547,618,620→571,592,642,644, Brave headers 596-601→620-625.
 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 
