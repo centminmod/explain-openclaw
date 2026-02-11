@@ -247,10 +247,13 @@ ps aux | grep openclaw
 **top / htop** (both platforms)
 
 ```bash
-# Filter top for the OpenClaw process (both platforms)
+# Filter top for the OpenClaw process
+# Linux:
 top -p $(pgrep -f "openclaw")
+# macOS (different flag):
+top -pid $(pgrep -f "openclaw")
 
-# htop — a friendlier version with color-coded bars
+# htop — a friendlier version with color-coded bars (both platforms, same flag)
 # Install: brew install htop (macOS) / apt install htop (Linux)
 htop -p $(pgrep -f "openclaw")
 ```
@@ -374,9 +377,11 @@ done
 *If your OpenClaw instance is slow but CPU and memory look fine, the bottleneck might be disk. These tools tell you who's reading/writing and how fast.*
 
 ```bash
-# iostat — disk throughput snapshot (both platforms)
-iostat -x 5       # extended stats, every 5 seconds
-# Key columns: r/s (reads/sec), w/s (writes/sec), %util (how busy the disk is)
+# iostat — disk throughput snapshot
+# Linux (extended stats):
+iostat -x 5       # every 5 seconds; key columns: r/s, w/s, %util
+# macOS (different flags — no -x support):
+iostat -w 5       # every 5 seconds; shows KB/t, tps, MB/s per disk
 
 # iotop — who's doing the I/O (Linux, requires root)
 sudo iotop -o     # only show processes with active I/O
@@ -426,9 +431,12 @@ clinic bubbleprof -- node /path/to/openclaw/gateway.js
 # Install
 npm install -g 0x
 
-# Profile the Gateway for 30 seconds
-0x -D 30000 -- node /path/to/openclaw/gateway.js
-# Opens a flamegraph in your browser — wider bars = more CPU time
+# Profile the Gateway (press Ctrl+C to stop and generate flamegraph)
+0x -- node /path/to/openclaw/gateway.js
+
+# Auto-open flamegraph in browser when done
+0x -o -- node /path/to/openclaw/gateway.js
+# Wider bars in the flamegraph = more CPU time spent in that function
 ```
 
 ### Network monitoring
