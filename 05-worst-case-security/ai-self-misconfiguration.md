@@ -266,35 +266,250 @@ openclaw config set tools.elevated false
 **Severity:** 🟠 HIGH
 **Applicability:** Self-hosted
 
+OpenClaw's Docker sandbox ships with strong defaults (`src/agents/sandbox/config.ts:39-81`). But every hardened default can be overridden via config — meaning an AI (or a human) can systematically dismantle the sandbox one setting at a time.
+
+#### 4a. Network Isolation Removal
+
 **The misconfiguration:**
 ```json
 {
   "sandbox": {
     "docker": {
-      "network": "bridge",
+      "network": "bridge"
+    }
+  }
+}
+```
+
+**Default:** `"none"` — complete network isolation (the container cannot make any network connections).
+
+**What `"bridge"` does:** Gives the container full outbound internet access AND access to the Docker host's local network. A sandboxed agent can now:
+- Exfiltrate data to external servers
+- Reach the gateway port (`127.0.0.1:18789`) via the Docker bridge network
+- Scan and attack other services on the local network
+- Download additional tools or payloads
+
+**Even worse:** `"host"` shares the host's network namespace directly — no isolation at all.
+
+Source: `src/agents/sandbox/docker.ts:153` — `args.push("--network", params.cfg.network)`
+
+#### 4b. Linux Capabilities Restoration
+
+**The misconfiguration:**
+```json
+{
+  "sandbox": {
+    "docker": {
       "capDrop": []
     }
   }
 }
 ```
 
-**Security impact:** Docker sandbox has full network access (can reach the internet and local network). All Linux capabilities retained — container escape becomes easier.
+**Default:** `["ALL"]` — drops every Linux capability (the container runs with zero privileges).
 
-**How to detect:**
-```bash
-openclaw config get sandbox.docker.network
-# Should be: "none" or restricted
-openclaw config get sandbox.docker.capDrop
-# Should be: ["ALL"] or a comprehensive list
+**What `[]` (empty array) does:** Retains all default Docker capabilities including:
+- `CAP_NET_RAW` — craft raw packets, ARP spoofing
+- `CAP_SYS_PTRACE` — attach debuggers to other processes (container escape vector)
+- `CAP_DAC_OVERRIDE` — bypass file permission checks
+- `CAP_SETUID` / `CAP_SETGID` — change process identity
+
+With capabilities restored, a container escape via kernel exploits becomes significantly easier.
+
+**Note:** The `--security-opt no-new-privileges` flag is **hardcoded** and always applied (`src/agents/sandbox/docker.ts:161`). This cannot be disabled via config and prevents SUID binaries from gaining elevated privileges — a genuine defense-in-depth measure.
+
+Source: `src/agents/sandbox/docker.ts:158-160` — iterates `capDrop` array to build `--cap-drop` flags
+
+#### 4c. Read-Only Root Filesystem Disabled
+
+**The misconfiguration:**
+```json
+{
+  "sandbox": {
+    "docker": {
+      "readOnlyRoot": false
+    }
+  }
+}
 ```
 
-**How to fix:**
+**Default:** `true` — the container's root filesystem is mounted read-only. Only `/tmp`, `/var/tmp`, and `/run` are writable (via tmpfs).
+
+**What `false` does:** Makes the entire container filesystem writable. A sandboxed agent can now:
+- Install packages (`apt-get install`)
+- Modify system binaries (replace `/usr/bin/curl` with a malicious version)
+- Write persistent files that survive container restarts (if volumes are mounted)
+- Create SUID binaries (though `no-new-privileges` limits exploitation)
+
+Source: `src/agents/sandbox/docker.ts:147` — `if (params.cfg.readOnlyRoot) args.push("--read-only")`
+
+#### 4d. Workspace Access Escalation
+
+**The misconfiguration:**
+```json
+{
+  "sandbox": {
+    "workspaceAccess": "rw"
+  }
+}
+```
+
+**Default:** `"none"` — no host filesystem is mounted into the container.
+
+**Escalation path:**
+- `"none"` → container sees nothing from the host
+- `"ro"` → container can **read** the workspace directory (mounted with `:ro` suffix)
+- `"rw"` → container can **read and write** the workspace directory
+
+With `"rw"`, the sandboxed agent can modify files on the host filesystem — potentially overwriting config files, scripts, or source code outside the sandbox.
+
+Source: `src/agents/sandbox/docker.ts:227-236` — workspace mount with optional `:ro` suffix
+
+#### 4e. Dangerous Bind Mounts
+
+**The misconfiguration:**
+```json
+{
+  "sandbox": {
+    "docker": {
+      "binds": [
+        "/:/host:rw",
+        "/var/run/docker.sock:/var/run/docker.sock"
+      ]
+    }
+  }
+}
+```
+
+**Default:** No extra bind mounts.
+
+**What these do:**
+- `/:/host:rw` — mounts the **entire host filesystem** read-write into the container. Complete host compromise.
+- `/var/run/docker.sock` — gives the container access to the Docker daemon. The sandboxed agent can now create new privileged containers, escape the sandbox entirely, and control the host.
+
+Any bind mount widens the attack surface. Agent-level binds are **concatenated** with global binds (`src/agents/sandbox/config.ts:55`), so per-agent overrides add to — not replace — the global list.
+
+Source: `src/agents/sandbox/docker.ts:200-204` — iterates `binds` array to build `-v` flags
+
+#### 4f. Resource Limits Removed
+
+**The misconfiguration:**
+```json
+{
+  "sandbox": {
+    "docker": {
+      "pidsLimit": 0,
+      "memory": "0",
+      "cpus": 0
+    }
+  }
+}
+```
+
+**Default:** No limits set (Docker's own defaults apply).
+
+**What removing limits enables:**
+- **No PID limit** — fork bomb can exhaust the host's process table, denial-of-service on the entire machine
+- **No memory limit** — a single container can consume all host memory, triggering the OOM killer on other processes
+- **No CPU limit** — cryptocurrency mining or compute-intensive attacks consume all available CPU
+
+These are availability attacks, not confidentiality or integrity attacks — but on a shared host they can take down the gateway and other services.
+
+Source: `src/agents/sandbox/docker.ts:178-191` — resource limit flags
+
+#### 4g. Custom DNS for Network Redirection
+
+**The misconfiguration:**
+```json
+{
+  "sandbox": {
+    "docker": {
+      "network": "bridge",
+      "dns": ["10.0.0.1"],
+      "extraHosts": ["api.anthropic.com:10.0.0.1"]
+    }
+  }
+}
+```
+
+**Default:** No custom DNS or extra hosts.
+
+**What this does:** Even with network access (`"bridge"`), DNS manipulation redirects API calls to attacker-controlled servers. The `extraHosts` entry maps `api.anthropic.com` to `10.0.0.1` — any API calls from within the sandbox now go to that IP instead of the real Anthropic endpoint. This enables credential theft (API keys sent to the wrong server) and response manipulation.
+
+Requires `network` to not be `"none"` — this attack only works when network isolation has already been weakened (4a).
+
+Source: `src/agents/sandbox/docker.ts:170-175` — DNS and extra hosts flags
+
+#### 4h. Security Profile Removal
+
+**The misconfiguration:**
+```json
+{
+  "sandbox": {
+    "docker": {
+      "seccompProfile": "",
+      "apparmorProfile": ""
+    }
+  }
+}
+```
+
+**Default:** Not set (Docker's default seccomp and AppArmor profiles apply).
+
+**What blank values do:** Depending on Docker's handling, this may disable the default seccomp profile that blocks ~44 dangerous syscalls (including `mount`, `reboot`, `kexec_load`). Without seccomp filtering, a container has access to a wider kernel attack surface.
+
+Source: `src/agents/sandbox/docker.ts:163-166` — seccomp and AppArmor `--security-opt` flags
+
+#### Combined "Full Sandbox Dismantle" Example
+
+All weakening options together — what a worst-case looks like:
+
+```json
+{
+  "sandbox": {
+    "mode": "all",
+    "workspaceAccess": "rw",
+    "docker": {
+      "readOnlyRoot": false,
+      "network": "host",
+      "capDrop": [],
+      "binds": ["/:/host:rw"],
+      "pidsLimit": 0,
+      "seccompProfile": "",
+      "apparmorProfile": ""
+    }
+  }
+}
+```
+
+This produces a container that: has full network access, all Linux capabilities, writable root filesystem, the entire host mounted read-write, no resource limits, and no syscall filtering. The only remaining hardcoded protection is `--security-opt no-new-privileges`.
+
+**How to detect all sandbox weakening:**
+```bash
+openclaw config get sandbox.docker.network
+# Should be: "none"
+openclaw config get sandbox.docker.capDrop
+# Should be: ["ALL"]
+openclaw config get sandbox.docker.readOnlyRoot
+# Should be: true (or unset)
+openclaw config get sandbox.workspaceAccess
+# Should be: "none" or "ro"
+openclaw config get sandbox.docker.binds
+# Should be: empty or very specific
+openclaw config get sandbox.docker.pidsLimit
+# Should be: a positive number (e.g., 256)
+```
+
+**How to restore secure defaults:**
 ```bash
 openclaw config set sandbox.docker.network none
 openclaw config set sandbox.docker.capDrop '["ALL"]'
+openclaw config set sandbox.docker.readOnlyRoot true
+openclaw config set sandbox.workspaceAccess none
+openclaw config set sandbox.docker.binds '[]'
 ```
 
-**Does `openclaw security audit` catch this?** Partially — checks network mode but not all capability settings.
+**Does `openclaw security audit` catch this?** Partially — checks network mode but does not audit capability settings, bind mounts, resource limits, workspace access level, or security profile configuration.
 
 ---
 

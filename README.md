@@ -6,7 +6,6 @@
 
 # Explain OpenClaw (formerly Moltbot/Clawdbot) - Integrated Beginner + Technical Guide
 
-> **Public repo:** This documentation is also available at [github.com/centminmod/explain-openclaw](https://github.com/centminmod/explain-openclaw)
 
 ## Table of contents
 
