@@ -25,6 +25,7 @@
 - [Commands + troubleshooting](./99-reference/commands-and-troubleshooting.md)
 - **Optimizations:**
   - [Overview](./06-optimizations/README.md)
+  - [Resource usage analysis (CPU, memory, disk)](./06-optimizations/resource-usage.md)
   - [Cost + token optimization](./06-optimizations/cost-token-optimization.md)
   - [Model recommendations by function](./06-optimizations/cost-token-optimization.md#model-recommendations-by-function)
 - **Security documentation:**
@@ -67,7 +68,7 @@ This folder is a **living knowledge base** for the OpenClaw framework — active
 | **Privacy & Safety** | Threat model, hardening checklist, request fingerprint detection |
 | **Security Audits** | Independently verified audit analyses, CVE/GHSA tracking, upstream issue monitoring |
 | **Worst-Case Scenarios** | Attack catalogs, prompt injection examples, supply chain threats, incident response |
-| **Optimizations** | Cost/token reduction, model routing recommendations |
+| **Optimizations** | Resource usage analysis (CPU/memory/disk), cost/token reduction, model routing |
 | **AI Model Comparison** | Accuracy benchmarks across five AI models' analyses |
 
 **What started as** a synthesis of five AI models' analyses has expanded through continuous upstream tracking and independent code verification. It reconciles analyses from [Copilot GPT-5.2](./explain-clawdbot-copilot-gpt-5.2/), [Gemini 3.0 Pro](./explain-clawdbot-gemini-3.0-pro/), [GLM 4.7](./explain-clawdbot-glm-4.7/), [Opus 4.5](./explain-clawdbot-opus-4.5/), and [Kimi K2.5](./explain-clawdbot-kilocode-kimi-k2.5/) — with an [accuracy comparison](./08-security-analysis/ai-model-analysis-comparison.md) showing which models verified claims against source code and which accepted them at face value.
