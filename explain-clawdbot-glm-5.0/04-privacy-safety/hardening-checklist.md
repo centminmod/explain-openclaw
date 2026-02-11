@@ -122,7 +122,11 @@ openclaw security audit --fix
 
 ## 6) Minimize tool blast radius
 
-GLM-5.0's function calling capabilities make tool policies especially important.
+~~GLM-5.0's function calling capabilities make tool policies especially important.~~
+
+> **Opus 4.6 audit:** OpenClaw has no separate "function calling" mechanism. All models (including GLM-5.0) use the same tool invocation pipeline. The relevant controls are `tools.profile` and `tools.allow`/`tools.deny`. Source: `src/agents/pi-tools.ts`, `src/agents/tool-policy.ts`.
+
+Tool policies are especially important for any model with tool access.
 
 Practical guidance:
 - Start with tools disabled or minimal
@@ -134,17 +138,24 @@ Docs:
 - https://docs.openclaw.ai/tools
 - https://docs.openclaw.ai/gateway/sandboxing
 
-### Function calling controls (GLM-5.0 specific)
+### ~~Function calling controls (GLM-5.0 specific)~~
 
-GLM-5.0 supports structured function calling. To control this:
+~~GLM-5.0 supports structured function calling. To control this:~~
 
-```bash
-# Enable/disable function calling at model level
-openclaw config set agents.defaults.functionCalling true
+~~`openclaw config set agents.defaults.functionCalling true`~~
 
-# Set tool allowlist for function calling
-openclaw config set agents.defaults.tools.allowlist '["web_search", "memory_search"]'
-```
+~~`openclaw config set agents.defaults.tools.allowlist '["web_search", "memory_search"]'`~~
+
+> **Opus 4.6 audit:** Both config options are fabricated. `agents.defaults.functionCalling` does not exist in OpenClaw's config schema (`src/config/types.agent-defaults.ts`). The correct tool allowlist option is `agents.defaults.tools.allow` (not `allowlist`). OpenClaw has no separate "function calling" toggle — all models use the same tool invocation pipeline controlled by `tools.profile` and `tools.allow`/`tools.deny`.
+>
+> Corrected commands:
+> ```bash
+> # Set tool profile (minimal, coding, messaging, or null for all)
+> openclaw config set agents.defaults.tools.profile minimal
+>
+> # Set tool allow list
+> openclaw config set agents.defaults.tools.allow '["web_search", "memory_search"]'
+> ```
 
 ---
 
@@ -257,14 +268,19 @@ openclaw config get commands.config
 
 ---
 
-## 12) Function calling audit trail
+## ~~12) Function calling audit trail~~
 
-GLM-5.0's function calling feature creates a new audit surface. Enable logging of all tool invocations:
+~~GLM-5.0's function calling feature creates a new audit surface. Enable logging of all tool invocations:~~
 
-```bash
-# Enable detailed tool logging
-openclaw config set logging.toolCalls true
-```
+~~`openclaw config set logging.toolCalls true`~~
+
+> **Opus 4.6 audit:** `logging.toolCalls` does not exist in OpenClaw's `LoggingConfig` (`src/config/types.base.ts`). There is no dedicated "function calling audit" toggle. Tool output visibility is controlled by `logging.redactSensitive` (valid values: `false`, `"tools"`, `"all"`). Setting `logging.redactSensitive: false` keeps full tool output in logs for auditing; `"tools"` redacts tool input/output.
+>
+> Corrected command:
+> ```bash
+> # Keep tool output visible in logs for auditing (less private, more auditable)
+> openclaw config set logging.redactSensitive false
+> ```
 
 Regularly review:
 

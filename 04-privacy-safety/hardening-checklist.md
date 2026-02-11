@@ -318,3 +318,7 @@ cd ~/.openclaw && git init && git add openclaw.json && git commit -m "known good
 ```
 
 See: [AI Self-Misconfiguration Guide](../05-worst-case-security/ai-self-misconfiguration.md), [Attack #28](../05-worst-case-security/prompt-injection-attacks.md#-attack-28-config-self-modification-via-gateway-tool)
+
+---
+
+See also: [High privacy config example](./high-privacy-config.example.json5.md) for a complete hardened configuration.

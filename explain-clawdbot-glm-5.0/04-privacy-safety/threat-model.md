@@ -151,7 +151,9 @@ The Gateway can advertise itself on local network via mDNS (Bonjour), using `_op
 
 **Risk:** Anyone on the same LAN segment can see that OpenClaw is running and learn your hostname.
 
-**GLM-5.0 consideration:** Larger context windows and more sessions increase potential information leakage through mDNS broadcasts.
+~~**GLM-5.0 consideration:** Larger context windows and more sessions increase potential information leakage through mDNS broadcasts.~~
+
+> **Opus 4.6 audit:** This claim is false. mDNS broadcasts contain only static gateway metadata (role, port, hostname, TLS status). There is zero dependency on context window size or session count. The broadcast payload is constructed from fixed gateway configuration, not runtime state. Source: `src/infra/bonjour.ts:112-156`.
 
 Mitigations:
 - Default mode is `minimal` (omits sensitive fields)
@@ -198,6 +200,8 @@ High privacy usually implies:
 **For GLM-5.0 specifically:**
 - Zhipu AI API keys stored securely
 - Model output (which may contain sensitive data) is redacted from logs
-- Function calling is audited and logged
+- ~~Function calling is audited and logged~~
+
+> **Opus 4.6 audit:** No dedicated function calling audit log exists. `logging.toolCalls` is not a real config option in `LoggingConfig` (`src/config/types.base.ts`). Tool output visibility is controlled by `logging.redactSensitive` (values: `false`, `"tools"`, `"all"`). OpenClaw uses "tool calls" (not "function calls") uniformly across all models.
 
 Next: [Hardening checklist](./hardening-checklist.md)

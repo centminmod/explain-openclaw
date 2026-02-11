@@ -37,14 +37,24 @@ This config assumes:
       "defaults": {
         "provider": "zhipu",
         "model": "glm-5.0",
-        "temperature": 0.3,
-        "maxTokens": 200000,
+        ~~"temperature": 0.3,~~
+        ~~"maxTokens": 200000,~~
         "authProfile": "default",
-        "// Disable function calling by default - enable explicitly if needed": "functionCalling": false,
-        "// GLM-5.0 API key - store in environment variable, never in config file": "apiEndpoint": "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+        ~~"functionCalling": false,~~
+        ~~"apiEndpoint": "https://open.bigmodel.cn/api/paas/v4/chat/completions"~~
       }
     }
   },
+
+> **Opus 4.6 audit — 4 fabricated/incorrect options above:**
+>
+> 1. ~~`"temperature": 0.3`~~ — `temperature` is not a valid option at `agents.defaults` level. It is a model-level parameter set by the provider, not an OpenClaw agent config property. Source: `src/config/types.agent-defaults.ts`.
+>
+> 2. ~~`"maxTokens": 200000`~~ — `maxTokens` is not a valid option at `agents.defaults` level. Same as temperature — this is a model-level property. Source: `src/config/types.agent-defaults.ts`.
+>
+> 3. ~~`"functionCalling": false`~~ — `agents.defaults.functionCalling` does not exist in OpenClaw's config schema. OpenClaw has no separate "function calling" toggle — all models use the same tool invocation pipeline controlled by `tools.profile` and `tools.allow`/`tools.deny`. Source: `src/config/types.agent-defaults.ts`.
+>
+> 4. ~~`"apiEndpoint": "..."`~~ — `agents.defaults.apiEndpoint` does not exist in OpenClaw's config schema. Provider endpoints are configured through the provider registration system, not as agent defaults. Source: `src/config/types.agent-defaults.ts`.
 
   "// Channel Configuration": {
     "// Telegram - example with high security settings": {
@@ -92,13 +102,13 @@ This config assumes:
     }
   },
 
-  "// Security Audit Settings": {
-    "// Run security audit on startup": {
-      "security": {
-        "auditOnStart": true
-      }
-    }
-  },
+  ~~"// Security Audit Settings": {~~
+    ~~"security": {~~
+      ~~"auditOnStart": true~~
+    ~~}~~
+  ~~},~~
+
+> **Opus 4.6 audit:** The entire `security` config section is fabricated. There is no `security.auditOnStart` option in OpenClaw's config schema. No `security` section exists in any config type definition under `src/config/types.*.ts`. Security audits are run manually via `openclaw security audit` CLI command.
 
   "// Browser Safety - Disabled by default": {
     "browser": {
@@ -114,28 +124,44 @@ This config assumes:
     }
   },
 
-  "// Memory Management": {
-    "memory": {
-      "enabled": true,
-      "maxMemoryChars": 64000,
-      "vector": {
-        "enabled": false
-      }
-    }
-  },
+  ~~"// Memory Management": {~~
+    ~~"memory": {~~
+      ~~"enabled": true,~~
+      ~~"maxMemoryChars": 64000,~~
+      ~~"vector": {~~
+        ~~"enabled": false~~
+      ~~}~~
+    ~~}~~
+  ~~},~~
 
-  "// Session Management": {
-    "sessions": {
-      "collapsing": {
-        "dms": "main",
-        "strategy": "recent"
-      },
-      "contextPruning": {
-        "enabled": true,
-        "targetMaxChars": 180000
-      }
-    }
-  },
+> **Opus 4.6 audit:** `memory.maxMemoryChars` and `memory.vector.enabled` are fabricated options. Neither exists in `MemoryConfig` (`src/config/types.memory.ts`). The `memory.enabled` field exists but the other two properties do not. Memory size is not configurable through a character limit, and there is no vector memory toggle in the config schema.
+
+  ~~"// Session Management": {~~
+    ~~"sessions": {~~
+      ~~"collapsing": {~~
+        ~~"dms": "main",~~
+        ~~"strategy": "recent"~~
+      ~~},~~
+      ~~"contextPruning": {~~
+        ~~"enabled": true,~~
+        ~~"targetMaxChars": 180000~~
+      ~~}~~
+    ~~}~~
+  ~~},~~
+
+> **Opus 4.6 audit:** This entire `sessions` block is fabricated/misplaced. `sessions.collapsing` does not exist in `SessionConfig` (`src/config/types.base.ts`). `contextPruning` exists but at `agents.defaults.contextPruning`, not under `sessions`. Source: `src/config/types.agent-defaults.ts`.
+>
+> Corrected placement (if needed):
+> ```json5
+> "agents": {
+>   "defaults": {
+>     "contextPruning": {
+>       "enabled": true,
+>       "targetMaxChars": 180000
+>     }
+>   }
+> }
+> ```
 
   "// Plugin Safety - Disabled by default": {
     "plugins": {
@@ -203,6 +229,8 @@ echo $GATEWAY_AUTH_TOKEN
 **Replace `GENERATE_WITH_OPENSSL_COMMAND_BELOW` with your actual token.**
 
 ### 2) Get Zhipu AI API key
+
+> **Opus 4.6 audit:** This section is GLM-5.0/Zhipu-specific. For a provider-agnostic version, see the [main docs high-privacy config](../../explain-clawdbot/04-privacy-safety/high-privacy-config.example.json5.md) which uses `openclaw onboard` for provider setup.
 
 1. Visit: https://open.bigmodel.cn/usercenter/apikeys
 2. Create a new API key

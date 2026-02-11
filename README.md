@@ -14,6 +14,7 @@
 - [What is Moltbook?](./07-moltbook/what-is-moltbook.md)
 - [Threat model](./04-privacy-safety/threat-model.md)
 - [Hardening checklist](./04-privacy-safety/hardening-checklist.md)
+- [High privacy config example](./04-privacy-safety/high-privacy-config.example.json5.md)
 - [Detecting OpenClaw requests (for hosting services)](./04-privacy-safety/detecting-openclaw-requests.md)
 - [Architecture (technical)](./02-technical/architecture.md)
 - [Repo map](./02-technical/repo-map.md)
@@ -125,6 +126,7 @@ Official docs starting point:
 ### 2) Privacy + safety first (highly recommended)
 - [Threat model (beginner-friendly)](./04-privacy-safety/threat-model.md)
 - [Hardening checklist (high privacy)](./04-privacy-safety/hardening-checklist.md)
+- [High privacy config example](./04-privacy-safety/high-privacy-config.example.json5.md)
 
 ### 3) Technical overview (how it works)
 - [Architecture (Gateway → channels → agent → tools)](./02-technical/architecture.md)
