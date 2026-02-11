@@ -1,6 +1,8 @@
 # OpenClaw with GLM-5.0 - Beginner + Technical Guide
 
-> **GLM-5.0 Edition:** This documentation explains OpenClaw specifically for users deploying with Zhipu AI's GLM-5.0 models. GLM-5.0 brings significant improvements in reasoning, code generation, and tool-use capabilities.
+> **GLM-5.0 Edition:** This documentation explains OpenClaw specifically for users deploying with Z.AI's GLM-5.0 models. GLM-5.0 brings significant improvements in reasoning, code generation, and tool-use capabilities.
+>
+> **Opus 4.6 correction:** This doc set originally referenced "Zhipu AI" and `open.bigmodel.cn` throughout. The correct provider is **Z.AI** (`api.z.ai`) with `ZAI_API_KEY`. Zhipu AI (智谱AI) is the parent research company; Z.AI is the international API platform used by OpenClaw, with infrastructure in Singapore. All references corrected below.
 
 **Public repo:** This documentation is also available at [github.com/centminmod/explain-openclaw](https://github.com/centminmod/explain-openclaw)
 
@@ -27,7 +29,7 @@
 
 ## What is GLM-5.0?
 
-**GLM-5.0** (General Language Model 5.0) is Zhipu AI's latest flagship model series. Compared to GLM-4.7, GLM-5.0 offers:
+**GLM-5.0** (General Language Model 5.0) is Z.AI's latest flagship model series. Compared to GLM-4.7, GLM-5.0 offers:
 
 | Capability | GLM-4.7 | GLM-5.0 | Improvement |
 |-----------|---------|---------|-------------|
@@ -46,18 +48,18 @@ GLM-5.0's enhanced function calling and reasoning capabilities make it particula
 3. **Longer conversations** - Larger context window means less frequent context truncation
 4. **Multilingual deployments** - Better handling of non-English prompts
 
-**Official GLM documentation:** https://open.bigmodel.cn/dev/api
+**Official GLM documentation:** See [Z.AI provider docs](https://docs.openclaw.ai/providers/zai)
 
 ---
 
 ## Why use GLM-5.0 with OpenClaw?
 
-OpenClaw supports GLM models through the Zhipu AI provider integration. Key advantages:
+OpenClaw supports GLM models through the Z.AI provider integration. Key advantages:
 
 - **Cost-effective** - GLM pricing is competitive with other major model providers
 - **High performance** - Strong benchmarks on coding and reasoning tasks
-- **Chinese language optimization** - Excellent for Chinese-language deployments
-- **Data residency** - Zhipu AI is a Chinese provider with data centers in mainland China
+- **Multilingual optimization** - Excellent for Chinese and multilingual deployments
+- **Data residency** - Z.AI provides GLM API access with Singapore-based infrastructure
 - **Flexible deployment** - Works with all OpenClaw deployment modes (Mac mini, VPS, serverless)
 
 ---
@@ -78,7 +80,7 @@ OpenClaw supports GLM models through the Zhipu AI provider integration. Key adva
 - [Repo map (where to look in code)](./02-technical/repo-map.md)
 
 ### 4) Installation
-- [Install and onboarding (with Zhipu AI setup)](./03-install/install-and-onboard.md)
+- [Install and onboarding (with Z.AI setup)](./03-install/install-and-onboard.md)
 - [Build from source](./03-install/from-source.md)
 
 ### 5) Deployment runbooks
@@ -107,7 +109,7 @@ npm install -g openclaw@latest
 openclaw onboard --install-daemon
 ```
 
-During onboarding, select **Zhipu AI** as your provider when prompted.
+During onboarding, select **Z.AI** as your provider when prompted.
 
 ---
 
@@ -147,21 +149,21 @@ GLM-5.0 offers several model variants. Choose based on your needs:
 
 ### API key setup
 
-You'll need a Zhipu AI API key. Get one from: https://open.bigmodel.cn/usercenter/apikeys
+You'll need a Z.AI API key. Create one in the Z.AI console.
 
-**Security note:** Treat your Zhipu AI API key like a password - never commit it to git, share it in screenshots, or log it.
+**Security note:** Treat your Z.AI API key like a password - never commit it to git, share it in screenshots, or log it.
 
 ### Performance considerations
 
 - **Streaming** - GLM-5.0 supports streaming responses for real-time output
 - **Function calling** - Native support for OpenClaw's tool system
 - **Temperature settings** - GLM-5.0 works well with temperatures 0.7-1.0 for creative tasks
-- **Rate limits** - Zhipu AI has generous rate limits; monitor usage if deploying at scale
+- **Rate limits** - Z.AI has generous rate limits; monitor usage if deploying at scale
 
 ---
 
 ## See also
 
 - [Official OpenClaw Documentation](https://docs.openclaw.ai/)
-- [Zhipu AI GLM Documentation](https://open.bigmodel.cn/dev/api)
+- [Z.AI Provider Documentation](https://docs.openclaw.ai/providers/zai)
 - [OpenClaw GitHub](https://github.com/openclaw/openclaw)

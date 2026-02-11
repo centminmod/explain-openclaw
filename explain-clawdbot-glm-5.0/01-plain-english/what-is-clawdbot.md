@@ -42,7 +42,7 @@ Official overview (good high-level read): https://docs.openclaw.ai
 
 > **OpenClaw is a self-hosted Gateway that connects chat apps to an AI agent that can reason and (optionally) act.**
 
-When you use GLM-5.0 as your model, you get Zhipu AI's powerful reasoning and code generation capabilities combined with OpenClaw's flexible deployment options.
+When you use GLM-5.0 as your model, you get Z.AI's powerful reasoning and code generation capabilities combined with OpenClaw's flexible deployment options.
 
 ---
 
@@ -55,7 +55,7 @@ The **Gateway** is a long-running process that you run on a machine you control.
 It:
 - receives inbound messages from chat platforms (channels)
 - decides what should happen (routing + policy)
-- runs the agent turn (calls your GLM-5.0 model via Zhipu AI)
+- runs the agent turn (calls your GLM-5.0 model via Z.AI)
 - sends a response back to the same chat platform
 - stores local state (config, credentials, session logs)
 
@@ -93,7 +93,7 @@ Docs: https://docs.openclaw.ai/concepts/session
 
 ### 4) The agent = "the brain (GLM-5.0 model + rules + tool policy)"
 
-The agent is where your AI model (GLM-5.0 via Zhipu AI) is actually called.
+The agent is where your AI model (GLM-5.0 via Z.AI) is actually called.
 
 OpenClaw supplies:
 - system prompt templates
@@ -167,13 +167,13 @@ Docs: https://docs.openclaw.ai/gateway/security
 
 ### Not "privacy magic"
 
-OpenClaw keeps state locally, but your chosen model provider (Zhipu AI) still receives the prompts you send for inference unless you run a local model.
+OpenClaw keeps state locally, but your chosen model provider (Z.AI) still receives the prompts you send for inference unless you run a local model.
 
 ---
 
 ## Why GLM-5.0?
 
-GLM-5.0 is Zhipu AI's latest model series. It brings significant improvements over GLM-4.7:
+GLM-5.0 is Z.AI's latest model series. It brings significant improvements over GLM-4.7:
 
 1. **Larger context window** - ~200K tokens vs ~128K in GLM-4.7
 2. **Better reasoning** - Multi-step chain-of-thought for complex problems

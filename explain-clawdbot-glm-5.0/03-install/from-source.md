@@ -174,9 +174,9 @@ npm install -g ./packages/openclaw-dist/openclaw-cli-*.tgz
 
 ---
 
-## Adding Zhipu AI provider locally
+## Adding Z.AI provider locally
 
-When building from source, the Zhipu AI provider is included. To test GLM-5.0 integration:
+When building from source, the Z.AI provider is included. To test GLM-5.0 integration:
 
 1. Ensure your build includes `src/providers/` directory
 2. The provider is registered in `src/agents/synthetic-models.ts` and related files

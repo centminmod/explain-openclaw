@@ -28,7 +28,7 @@ Sources verified against:
 - `../docs/gateway/index.md` (Gateway runbook)
 - `../docs/gateway/security.md`
 - `../src/gateway/server.impl.ts` (Gateway server startup + config validation)
-- `../src/providers/` (Provider integrations including GLM/Zhipu AI)
+- `../src/providers/` (Provider integrations including GLM/Z.AI)
 - `../src/agents/pi-embedded-runner.ts` (Agent turn execution)
 
 ---
@@ -47,7 +47,7 @@ Gateway (single always-on process)
   - tool calls
         │
         ▼
-Zhipu AI API (GLM-5.0 model)
+Z.AI API (GLM-5.0 model)
   - Function calling support
   - Streaming responses
   - ~200K token context
@@ -108,12 +108,12 @@ Docs: https://docs.openclaw.ai/gateway/configuration
 
 ### Providers
 
-GLM/Zhipu AI provider integration is in `src/providers/`:
+GLM/Z.AI provider integration is in `src/providers/`:
 
 | File | Purpose |
 |------|---------|
 | `src/providers/together-models.ts` | Model definitions and aliases |
-| `src/agents/zai.live.test.ts` | Zhipu AI integration tests |
+| `src/agents/zai.live.test.ts` | Z.AI integration tests |
 | `src/infra/provider-usage.*.ts` | Provider usage tracking and metrics |
 | `src/commands/auth-choice.*.ts` | Provider selection CLI commands |
 
@@ -140,7 +140,7 @@ Below is a conceptual pipeline for GLM-5.0. Exact details vary by channel.
 - Build the agent prompt context (templates + system prompt + history + attachments).
 
 5) **Model call (agent turn with GLM-5.0)**
-- Call the Zhipu AI provider with the GLM-5.0 model.
+- Call the Z.AI provider with the GLM-5.0 model.
 - GLM-5.0 supports function calling - the model can request structured tool invocations.
 - Stream output events.
 - If the model requests tools, invoke them via the Gateway's tool execution policy.
@@ -191,7 +191,7 @@ GLM models are configured through the standard provider system:
 {
   "agents": {
     "defaults": {
-      "provider": "zhipu",
+      "provider": "zai",
       "model": "glm-5.0"
     }
   }

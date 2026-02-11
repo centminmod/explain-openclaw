@@ -165,14 +165,14 @@ Docs:
 - Don't sync it to iCloud/Dropbox/etc.
 - Ensure permissions are tight (audit can fix)
 
-### Zhipu AI API key protection
+### Z.AI API key protection
 
 ```bash
 # Store in environment variable (not in shell history)
-export ZHIPU_API_KEY="your-key-here"
+export ZAI_API_KEY="your-key-here"
 
 # Or use a secure file manager
-pass insert zhipu-api-key <key>
+pass insert zai-api-key <key>
 ```
 
 ---
@@ -307,13 +307,13 @@ Recommendations:
 
 ---
 
-## 14) Secure Zhipu AI API key rotation
+## 14) Secure Z.AI API key rotation
 
-If you suspect your Zhipu AI API key has been compromised:
+If you suspect your Z.AI API key has been compromised:
 
-1. Generate a new API key from Zhipu AI console
+1. Generate a new API key from the Z.AI console
 2. Update the key in your configuration
-3. Revoke the old key from Zhipu AI console
+3. Revoke the old key from the Z.AI console
 
 ```bash
 # Update key via CLI
@@ -342,12 +342,12 @@ For high-security deployments, consider using separate agents for different trus
   "agents": {
     "lists": {
       "public-bot": {
-        "provider": "zhipu",
+        "provider": "zai",
         "model": "glm-5.0-flash",
         "tools": { "profile": "minimal" }
       },
       "private-assistant": {
-        "provider": "zhipu",
+        "provider": "zai",
         "model": "glm-5.0",
         "tools": { "profile": "coding" },
         "systemPrompt": "You are a private assistant with elevated tool access. Be cautious with tool requests."

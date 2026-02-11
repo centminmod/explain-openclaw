@@ -88,15 +88,15 @@ This typically sets up a per-user service (launchd) and writes config under `~/.
 ### 4) Select GLM-5.0 during onboarding
 
 When prompted for provider selection:
-1. Choose "Zhipu AI"
+1. Choose "Z.AI"
 2. Select "GLM-5.0" or your preferred variant
-3. Enter your Zhipu AI API key when prompted
+3. Enter your Z.AI API key when prompted
 
 **Alternative: Configure via CLI after onboarding**
 
 ```bash
-# Set provider to Zhipu AI
-openclaw config set agents.defaults.provider zhipu
+# Set provider to Z.AI
+openclaw config set agents.defaults.provider zai
 
 # Set GLM-5.0 as default model
 openclaw config set agents.defaults.model glm-5.0
@@ -386,7 +386,7 @@ launchctl start com.openclaw.gateway
 - Check channel status and logs
 - Confirm pairing/allowlists aren't blocking
 - Verify model auth is present on **gateway host**
-- Check Zhipu AI API key is valid
+- Check Z.AI API key is valid
 
 ---
 

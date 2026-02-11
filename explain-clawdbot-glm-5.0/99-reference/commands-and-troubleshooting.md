@@ -33,7 +33,7 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 openclaw onboard --install-daemon
 ```
 
-During onboarding, select **Zhipu AI** as your provider and **GLM-5.0** as your model.
+During onboarding, select **Z.AI** as your provider and **GLM-5.0** as your model.
 
 Docs: https://docs.openclaw.ai/install and https://docs.openclaw.ai/start/wizard
 
@@ -91,8 +91,8 @@ Docs: https://docs.openclaw.ai/gateway/security
 ### Provider configuration
 
 ```bash
-# Set Zhipu AI as provider
-openclaw config set agents.defaults.provider zhipu
+# Set Z.AI as provider
+openclaw config set agents.defaults.provider zai
 
 # Set GLM-5.0 as default model
 openclaw config set agents.defaults.model glm-5.0
@@ -108,11 +108,11 @@ openclaw config set agents.defaults.functionCalling true
 openclaw config set agents.defaults.temperature 0.3
 ```
 
-### Zhipu AI API key setup
+### Z.AI API key setup
 
 ```bash
 # Set API key via environment variable (recommended)
-export ZHIPU_API_KEY="your-key-here"
+export ZAI_API_KEY="your-key-here"
 
 # Verify configuration
 openclaw config get agents.defaults
@@ -160,7 +160,7 @@ Docs: https://docs.openclaw.ai/gateway/remote
 - Stop supervised service: `openclaw gateway stop` or `launchctl stop com.openclaw.gateway`
 - Foreground reclaim: `openclaw gateway --force`
 
-### "Provider not recognized" error for Zhipu AI
+### "Provider not recognized" error for Z.AI
 
 - Ensure you're running the latest OpenClaw version
 - Check: `openclaw models list` to see available providers
@@ -169,7 +169,7 @@ Docs: https://docs.openclaw.ai/gateway/remote
 
 - Check channel status and logs: `openclaw status --all`
 - Confirm pairing/allowlists aren't blocking.
-- Verify Zhipu AI API key is valid and set correctly.
+- Verify Z.AI API key is valid and set correctly.
 
 ### GLM-5.0 specific issues
 
@@ -211,7 +211,7 @@ openclaw logs --component telegram
 - Remote access: https://docs.openclaw.ai/gateway/remote
 - Help / FAQ: https://docs.openclaw.ai/help/faq
 - Troubleshooting: https://docs.openclaw.ai/gateway/troubleshooting
-- Zhipu AI API: https://open.bigmodel.cn/dev/api
+- Z.AI Provider: https://docs.openclaw.ai/providers/zai
 
 ---
 

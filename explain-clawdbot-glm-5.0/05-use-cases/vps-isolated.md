@@ -213,17 +213,17 @@ Then onboard — this walks you through initial setup and creates a background s
 openclaw onboard --install-daemon
 ```
 
-During onboarding, select **Zhipu AI** as your provider when prompted.
+During onboarding, select **Z.AI** as your provider when prompted.
 
-### Set up Zhipu AI API key
+### Set up Z.AI API key
 
-You'll need a Zhipu AI API key to use GLM-5.0 models. Get one from: https://open.bigmodel.cn/usercenter/apikeys
+You'll need a Z.AI API key to use GLM-5.0 models. Create one in the Z.AI console.
 
 Set as environment variable to avoid storing in config file:
 
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-export ZHIPU_API_KEY="your-api-key-here"
+export ZAI_API_KEY="your-api-key-here"
 ```
 
 ---
@@ -657,9 +657,9 @@ Based on security best practices and GLM-5.0 deployment.
 - [ ] Only approved user IDs can trigger actions
 - [ ] If using Tailscale: `allowTailscale: true` is set
 
-### GLM/Zhipu AI Specific
+### GLM/Z.AI Specific
 
-- [ ] Zhipu AI API key stored in env var (not in config file)
+- [ ] Z.AI API key stored in env var (not in config file)
 - [ ] API endpoint configured correctly
 - [ ] Function calling audited and logged
 - [ ] Model context size appropriate for VPS memory

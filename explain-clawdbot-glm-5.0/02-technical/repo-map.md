@@ -107,7 +107,7 @@ The `src/` directory contains ~49 subdirectories. Key ones beyond entrypoints ab
 | `src/memory/` | — | Memory/context management, QMD |
 | `src/plugins/` | — | Plugin runtime and loading |
 | `src/plugin-sdk/` | — | Plugin SDK for extension authors |
-| `src/providers/` | — | LLM provider integrations (Anthropic, OpenAI, Zhipu, etc.) |
+| `src/providers/` | — | LLM provider integrations (Anthropic, OpenAI, Z.AI, etc.) |
 | `src/routing/` | — | Message routing, session key derivation |
 | `src/sessions/` | — | Session management and compaction |
 | `src/tts/` | — | Text-to-speech |
@@ -133,15 +133,15 @@ The `src/` directory contains ~49 subdirectories. Key ones beyond entrypoints ab
 
 ---
 
-## GLM / Zhipu AI specific files
+## GLM / Z.AI specific files
 
 ### Provider implementation
 
 | File | Purpose |
 |------|---------|
 | `src/providers/together-models.ts` | GLM model definitions and aliases |
-| `src/agents/zai.live.test.ts` | Zhipu AI integration tests |
-| `src/infra/provider-usage.fetch.zai.ts` | Zhipu AI usage tracking |
+| `src/agents/zai.live.test.ts` | Z.AI integration tests |
+| `src/infra/provider-usage.fetch.zai.ts` | Z.AI usage tracking |
 | `src/infra/provider-usage.shared.ts` | Shared provider usage utilities |
 | `src/commands/auth-choice.apply.api-providers.ts` | Provider selection CLI |
 | `src/commands/auth-choice-options.ts` | Provider configuration options |
@@ -166,8 +166,8 @@ From repo root:
   - search: `security audit`
   - docs: `docs/gateway/security/index.md`, CLI docs in `docs/cli/security.md`
 
-- **Find GLM/Zhipu AI provider code:**
-  - search: `zhipu` or `zai` in `src/providers/`
+- **Find GLM/Z.AI provider code:**
+  - search: `zai` in `src/providers/`
   - search: `glm-5` or `glm-5.0` for model definitions
 
 - **Find pairing:**
@@ -208,4 +208,4 @@ From repo root:
 - https://docs.openclaw.ai/gateway/security
 - https://docs.openclaw.ai/gateway/configuration
 - https://docs.openclaw.ai/help/faq
-- https://open.bigmodel.cn/dev/api (GLM API documentation)
+- https://docs.openclaw.ai/providers/zai (Z.AI provider documentation)

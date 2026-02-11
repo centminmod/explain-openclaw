@@ -5,7 +5,7 @@
 This config assumes:
 - Gateway bound to loopback only
 - Access via SSH tunnel or Tailscale
-- Zhipu AI (GLM-5.0) as model provider
+- Z.AI (GLM-5.0) as model provider
 - Minimal tool surface
 - Pairing required for DM access
 - Security audit findings addressed
@@ -32,10 +32,10 @@ This config assumes:
     }
   },
 
-  "// Zhipu AI / GLM-5.0 Provider Configuration": {
+  "// Z.AI / GLM-5.0 Provider Configuration": {
     "agents": {
       "defaults": {
-        "provider": "zhipu",
+        "provider": "zai",
         "model": "glm-5.0",
         ~~"temperature": 0.3,~~
         ~~"maxTokens": 200000,~~
@@ -228,17 +228,17 @@ echo $GATEWAY_AUTH_TOKEN
 
 **Replace `GENERATE_WITH_OPENSSL_COMMAND_BELOW` with your actual token.**
 
-### 2) Get Zhipu AI API key
+### 2) Get Z.AI API key
 
-> **Opus 4.6 audit:** This section is GLM-5.0/Zhipu-specific. For a provider-agnostic version, see the [main docs high-privacy config](../../explain-clawdbot/04-privacy-safety/high-privacy-config.example.json5.md) which uses `openclaw onboard` for provider setup.
+> **Opus 4.6 audit:** This section is GLM-5.0/Z.AI-specific. For a provider-agnostic version, see the [main docs high-privacy config](../../explain-clawdbot/04-privacy-safety/high-privacy-config.example.json5.md) which uses `openclaw onboard` for provider setup.
 
-1. Visit: https://open.bigmodel.cn/usercenter/apikeys
+1. Visit the Z.AI console
 2. Create a new API key
 3. Export as environment variable:
 
 ```bash
 # Add to ~/.zshrc or ~/.bashrc
-export ZHIPU_API_KEY="your-api-key-here"
+export ZAI_API_KEY="your-api-key-here"
 ```
 
 ### 3) Apply configuration
@@ -340,7 +340,7 @@ openclaw config validate
 openclaw logs --follow
 ```
 
-### "Provider not recognized" for Zhipu AI
+### "Provider not recognized" for Z.AI
 
 Ensure you're using the latest OpenClaw version with GLM support:
 

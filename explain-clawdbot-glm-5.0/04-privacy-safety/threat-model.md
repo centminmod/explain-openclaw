@@ -103,7 +103,7 @@ Mitigations:
 - Avoid syncing `~/.openclaw` to cloud drives
 - OS-level hardening (separate user, disk encryption)
 
-**Zhipu AI API keys:** Store these in env vars or encrypted storage where possible.
+**Z.AI API keys:** Store these in env vars or encrypted storage where possible.
 
 ### 5) Supply chain / plugins
 
@@ -198,7 +198,7 @@ High privacy usually implies:
 - Credentials are stored in env vars or encrypted stores where possible
 
 **For GLM-5.0 specifically:**
-- Zhipu AI API keys stored securely
+- Z.AI API keys stored securely
 - Model output (which may contain sensitive data) is redacted from logs
 - ~~Function calling is audited and logged~~
 

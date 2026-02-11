@@ -26,7 +26,7 @@ This glossary is intentionally biased toward words you'll see in CLI output and 
 ## Agent
 
 The "brain" that turns an incoming message + context into a response. In practice it's:
-- your chosen model (GLM-5.0 via Zhipu AI provider)
+- your chosen model (GLM-5.0 via Z.AI provider)
 - a system prompt + templates
 - tool availability rules
 - session/memory behavior
@@ -76,9 +76,9 @@ Docs: https://docs.openclaw.ai/gateway
 
 ## GLM-5.0
 
-General Language Model 5.0 - Zhipu AI's flagship model series with improved reasoning, larger context window (~200K tokens), and better code generation capabilities compared to GLM-4.7.
+General Language Model 5.0 - Z.AI's flagship model series with improved reasoning, larger context window (~200K tokens), and better code generation capabilities compared to GLM-4.7.
 
-**API Documentation:** https://open.bigmodel.cn/dev/api
+**Provider Documentation:** https://docs.openclaw.ai/providers/zai
 
 ## Pairing
 
@@ -118,7 +118,7 @@ Docs: https://docs.openclaw.ai/nodes
 
 ## Provider
 
-The external AI service you connect to for model inference. For GLM-5.0, this is **Zhipu AI** (https://open.bigmodel.cn).
+The external AI service you connect to for model inference. For GLM-5.0, this is **Z.AI** (`api.z.ai`).
 
 OpenClaw supports multiple providers - you choose during onboarding or via configuration.
 
@@ -132,9 +132,10 @@ When GLM-5.0 uses function calling:
 3. Gateway executes the tool and returns results
 4. Results are fed back to the model for final response
 
-## Zhipu AI
+## Z.AI
 
-Chinese AI company (Zhipu AI /智谱AI) that provides the GLM model series. Their API offers competitive pricing and strong performance on coding and reasoning tasks.
+The API platform for GLM models. Z.AI provides REST APIs for GLM and uses API keys for authentication. OpenClaw uses the `zai` provider with a `ZAI_API_KEY`.
 
-**Developer Portal:** https://open.bigmodel.cn/usercenter/apikeys
-**API Docs:** https://open.bigmodel.cn/dev/api
+> **Opus 4.6 correction:** Originally listed as "Zhipu AI" with `open.bigmodel.cn` URLs. Zhipu AI (智谱AI) is the parent research company that developed the GLM model family; Z.AI (`api.z.ai`) is the international API platform used by OpenClaw, with infrastructure in Singapore.
+
+**Provider Docs:** https://docs.openclaw.ai/providers/zai

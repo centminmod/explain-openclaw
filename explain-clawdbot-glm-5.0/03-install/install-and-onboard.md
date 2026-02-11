@@ -1,4 +1,4 @@
-# Install and Onboard (with Zhipu AI / GLM-5.0)
+# Install and Onboard (with Z.AI / GLM-5.0)
 
 ## Table of contents (Explain OpenClaw - GLM-5.0 Edition)
 
@@ -87,18 +87,18 @@ openclaw --version
 
 ---
 
-## Step 2: Get Zhipu AI API Key
+## Step 2: Get Z.AI API Key
 
-You'll need a Zhipu AI API key to use GLM-5.0 models.
+You'll need a Z.AI API key to use GLM-5.0 models.
 
 ### Get your API key
 
-1. Visit the Zhipu AI developer portal: https://open.bigmodel.cn/usercenter/apikeys
+1. Visit the Z.AI console
 2. Sign up or log in
 3. Create a new API key
 4. Copy the key for use in OpenClaw setup
 
-**Security note:** Treat your Zhipu AI API key like a password:
+**Security note:** Treat your Z.AI API key like a password:
 - Never commit it to git
 - Don't share it in screenshots
 - Don't log it in plaintext
@@ -106,7 +106,7 @@ You'll need a Zhipu AI API key to use GLM-5.0 models.
 
 ### API key formats
 
-Zhipu AI API keys typically start with a prefix like:
+Z.AI API keys typically start with a prefix like:
 - `sk-xxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 ---
@@ -115,9 +115,9 @@ Zhipu AI API keys typically start with a prefix like:
 
 The onboarding wizard will guide you through:
 
-1. **Provider selection** - Choose "Zhipu AI" when prompted
+1. **Provider selection** - Choose "Z.AI" when prompted
 2. **Model selection** - Select GLM-5.0 or your preferred variant
-3. **API key entry** - Enter your Zhipu AI API key
+3. **API key entry** - Enter your Z.AI API key
 4. **Channel setup** - Configure messaging channels (optional)
 5. **Background service** - Install the Gateway as a background service
 
@@ -142,14 +142,14 @@ After onboarding, you may want to customize your GLM-5.0 configuration.
 ### Provider configuration via CLI
 
 ```bash
-# Set the default provider to Zhipu AI
-openclaw config set agents.defaults.provider zhipu
+# Set the default provider to Z.AI
+openclaw config set agents.defaults.provider zai
 
 # Set the default model
 openclaw config set agents.defaults.model glm-5.0
 
 # Or set both at once
-openclaw config set agents.defaults.provider zhipu agents.defaults.model glm-5.0
+openclaw config set agents.defaults.provider zai agents.defaults.model glm-5.0
 ```
 
 ### Model variants
@@ -236,7 +236,7 @@ If `openclaw` command isn't found:
 
 ### "Provider not recognized" error
 
-If Zhipu AI provider isn't available:
+If Z.AI provider isn't available:
 - Ensure you're running the latest OpenClaw version
 - Check `openclaw models list` to see available providers
 
