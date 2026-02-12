@@ -1092,26 +1092,169 @@ Docs: https://docs.openclaw.ai/start/pairing
 
 ## 12. Memory + docs search
 
-### `openclaw memory`
+Memory is like a personal notebook the bot keeps about you and your project. OpenClaw reads your markdown files (`MEMORY.md` and everything in the `memory/` folder), breaks them into small overlapping chunks, converts each chunk into a "meaning vector" (an embedding — a list of numbers that captures what the text *means*), and stores everything in a searchable SQLite database. When you or the agent search, it finds the most relevant chunks by *meaning*, not just keyword matching. This is called **semantic search**, and it's why searching for "deploy instructions" can find a paragraph titled "How to push to production" even though the words don't overlap.
 
-**What it does:** Vector search over your memory files (`MEMORY.md` + `memory/*.md`). OpenClaw indexes these files so the agent can search them semantically.
+### `openclaw memory status`
+
+**What it does:** Shows the health of the memory search index — which embedding provider is active, how many files and chunks are indexed, whether the index is out of date ("dirty"), and whether the vector store (sqlite-vec) is available.
+
+**When would I use this?** After setting up memory for the first time, after changing your embedding provider, or when memory search results seem stale or missing. The `--deep` flag probes the embedding provider to confirm it can actually generate embeddings (useful when an API key might be expired).
 
 ```bash
-openclaw memory status                # index stats
-openclaw memory index                 # reindex memory files
-openclaw memory search "how to deploy"  # semantic search
+openclaw memory status                # quick index overview
+openclaw memory status --deep         # also probe embedding provider availability
+openclaw memory status --index        # reindex if dirty, then show status (implies --deep)
+openclaw memory status --index --force  # force full reindex even if not dirty
+openclaw memory status --json         # machine-readable JSON output
+openclaw memory status --agent mybot  # check a specific agent (not the default)
 ```
 
----
+| Option | What it does |
+|--------|-------------|
+| `--agent <id>` | Target a specific agent instead of the default |
+| `--json` | Print results as JSON (for scripts) |
+| `--deep` | Probe embedding provider availability and vector store readiness |
+| `--index` | Reindex if dirty before showing status (implies `--deep`) |
+| `--force` | Force full reindex even if nothing changed (use with `--index`) |
+| `--verbose` | Show detailed progress during indexing |
+
+### `openclaw memory index`
+
+**What it does:** Manually triggers a reindex of all memory files. OpenClaw scans your files, re-chunks them, generates fresh embeddings, and updates the SQLite database. A progress bar shows elapsed time and ETA.
+
+**When would I use this?** After you've edited `MEMORY.md` or files in `memory/`, after changing your embedding provider, or if `openclaw memory status` shows the index is dirty. Normally OpenClaw reindexes automatically (on session start, on file changes if watching is enabled), but this command forces it immediately.
+
+```bash
+openclaw memory index                 # incremental reindex (only changed files)
+openclaw memory index --force         # full reindex from scratch
+openclaw memory index --verbose       # show provider info + detailed progress
+openclaw memory index --agent mybot   # reindex a specific agent
+```
+
+| Option | What it does |
+|--------|-------------|
+| `--agent <id>` | Target a specific agent instead of the default |
+| `--force` | Full reindex — re-embeds every chunk even if the file hasn't changed |
+| `--verbose` | Show provider details and per-file progress with elapsed/ETA |
+
+### `openclaw memory search`
+
+**What it does:** Runs a semantic search across your memory files and prints scored results with file paths, line ranges, and text snippets. This is the same search the agent uses internally, but exposed as a CLI command so you can test it yourself.
+
+**When would I use this?** To check what the agent would "remember" about a topic, to verify that important information is indexed, or to find which memory file contains a specific piece of knowledge.
+
+```bash
+openclaw memory search "how to deploy"
+openclaw memory search "telegram setup" --max-results 10
+openclaw memory search "API keys" --min-score 0.5
+openclaw memory search "deployment" --json
+openclaw memory search "project goals" --agent mybot
+```
+
+| Option | What it does |
+|--------|-------------|
+| `--agent <id>` | Target a specific agent instead of the default |
+| `--max-results <n>` | Maximum number of results to return (default: 6) |
+| `--min-score <n>` | Minimum similarity score between 0 and 1 (default: 0.35) |
+| `--json` | Print results as JSON (for scripts) |
+
+Each result shows a **score** (0.000 to 1.000 — higher is more relevant), the **file path with line range**, and a **text snippet**.
+
+### How memory files are organized
+
+Think of `MEMORY.md` as the table of contents and the `memory/` folder as the chapters:
+
+| Location | Purpose |
+|----------|---------|
+| `MEMORY.md` | Your main memory file — long-term curated knowledge, preferences, key decisions |
+| `memory/*.md` | Topic files (e.g., `memory/debugging.md`, `memory/patterns.md`) — linked from MEMORY.md |
+| Session transcripts | (Experimental) Past conversation logs — opt in via `sources: ["memory", "sessions"]` |
+| Extra paths | Additional files/directories via `extraPaths` config — useful for shared team docs |
+
+OpenClaw scans all of these locations (based on your config) when building the search index. If a file doesn't exist yet, that's fine — just create it and run `openclaw memory index`.
+
+> **Security note:** Memory files (`MEMORY.md`, `memory/*.md`) are loaded as **trusted context** — they're injected directly into the agent's system prompt without untrusted-content markers. Any process or user with write access to your workspace can plant persistent prompt injection that survives across sessions. Restrict write access to the workspace directory and periodically audit memory file contents. See [Threat model, Section 7: Persistent memory files](../04-privacy-safety/threat-model.md) for full details.
+
+### How search works (plain English)
+
+Memory search happens in three stages:
+
+1. **Chunking** — Each file is split into overlapping pieces of roughly 400 tokens (~300 words). The chunks overlap by 80 tokens so that a sentence sitting on a boundary isn't lost. Think of it like cutting a book into pages that each repeat the last few lines of the previous page.
+
+2. **Embedding** — Each chunk is converted into a "meaning vector" — a list of numbers (typically 256-1536 dimensions) that captures the semantic meaning of the text. Two chunks about the same topic will have similar vectors even if they use completely different words. This is done by an embedding provider (see below).
+
+3. **Hybrid search** — When you search, OpenClaw runs *two* searches in parallel and blends the results:
+   - **Vector similarity** (70% weight by default) — finds chunks whose meaning is closest to your query, using cosine similarity between embedding vectors
+   - **Keyword matching / BM25** (30% weight by default) — traditional text search via SQLite FTS5, which boosts chunks that contain your exact words
+
+   The final score for each chunk is `0.7 * vectorScore + 0.3 * keywordScore`. This hybrid approach catches both "meaning matches" and "exact word matches" that pure vector search might miss.
+
+**sqlite-vec** is a native SQLite extension that accelerates vector search using hardware-optimized operations. When available, vector lookups are a fast indexed query. When it's *not* available, OpenClaw falls back to computing cosine similarity for *every* chunk in memory (an O(n) full scan) — which works but gets slow as your memory grows.
+
+> **Resource cost cross-reference:** Local embeddings are CPU-heavy (see [resource-usage.md, CPU #3](../06-optimizations/resource-usage.md) — "Very High" impact). The cosine fallback without sqlite-vec is also costly per query ([CPU #5](../06-optimizations/resource-usage.md)). SQLite memory databases don't auto-VACUUM ([Disk section](../06-optimizations/resource-usage.md) — WAL files can bloat over time).
+
+### Embedding providers
+
+An embedding provider is the service that converts text into meaning vectors. OpenClaw supports four:
+
+| Provider | Default model | Token limit | Where it runs | Best for |
+|----------|--------------|-------------|---------------|----------|
+| **OpenAI** | `text-embedding-3-small` | 8,192 | OpenAI API (remote) | Most users — fast, cheap, good quality |
+| **Gemini** | `gemini-embedding-001` | 2,048 | Google API (remote) | If you already have a Google API key |
+| **Voyage** | `voyage-4-large` | 32,000 | Voyage AI API (remote) | Long documents, code-heavy memory files |
+| **Local** | `embeddinggemma-300M` (GGUF) | varies | Your machine (node-llama-cpp) | Offline/air-gapped setups, privacy-sensitive |
+
+**Auto-selection** (the default): When `provider` is set to `"auto"`, OpenClaw tries providers in this order: local (if a model file exists) > OpenAI > Gemini > Voyage. The first one that works wins.
+
+**Practical advice:** If your machine is low-powered (e.g., a small VPS or older laptop), use an API provider instead of local. Local embedding inference demands serious CPU — see [resource-usage.md, CPU #3](../06-optimizations/resource-usage.md) for details.
+
+### How the agent uses memory
+
+During conversations, the agent has two memory tools it can call automatically:
+
+| Tool | What it does |
+|------|-------------|
+| `memory_search` | Semantically searches memory files — same as `openclaw memory search` but called by the agent mid-conversation. Returns scored snippets with file paths and line numbers. |
+| `memory_get` | Reads a specific section of a memory file (by path and line range). Used after `memory_search` to pull in just the relevant lines without loading entire files into context. |
+
+The agent's system prompt tells it: *"Before answering questions about prior work, decisions, dates, people, preferences, or todos — search memory first."* This means the agent will proactively search your memory files when you ask about something it might have noted before, without you having to tell it to.
+
+### Key configuration
+
+All memory settings live under `agents.defaults.memorySearch` in your config. The most important ones:
+
+| Config key | What it controls | Default |
+|-----------|-----------------|---------|
+| `provider` | Embedding provider (`"openai"`, `"gemini"`, `"voyage"`, `"local"`, `"auto"`) | `"auto"` |
+| `query.hybrid.vectorWeight` | How much to weight vector similarity (0-1) | `0.7` |
+| `query.hybrid.textWeight` | How much to weight keyword/BM25 matching (0-1) | `0.3` |
+| `chunking.tokens` | Chunk size in tokens | `400` |
+| `chunking.overlap` | Overlap between chunks in tokens | `80` |
+| `query.maxResults` | Default number of search results | `6` |
+| `query.minScore` | Minimum score threshold (0-1) | `0.35` |
+| `sync.onSessionStart` | Reindex when a new session starts | `true` |
+| `sync.onSearch` | Reindex before searching if dirty | `true` |
+| `sync.watch` | Watch memory files for changes and auto-reindex | `true` |
+| `store.vector.enabled` | Use sqlite-vec for accelerated vector search | `true` |
+| `sources` | Which sources to index (`["memory"]` or `["memory", "sessions"]`) | `["memory"]` |
+
+Run `openclaw configure` for an interactive setup wizard that walks you through these options.
+
+> **Resource impact:** Local embeddings are CPU-heavy ([resource-usage.md, CPU #3](../06-optimizations/resource-usage.md)). API providers offload that work to the cloud. The sqlite-vec extension avoids the O(n) cosine fallback ([CPU #5](../06-optimizations/resource-usage.md)). SQLite databases don't auto-VACUUM, so WAL files can bloat — run `sqlite3 ~/.openclaw/memory/*.sqlite VACUUM` periodically ([Disk section](../06-optimizations/resource-usage.md)).
 
 ### `openclaw docs`
 
-**What it does:** Search the live OpenClaw documentation index.
+**What it does:** Searches the **live OpenClaw documentation site** (docs.openclaw.ai) and prints matching pages with titles, links, and snippets. This is completely separate from `memory search` — it searches the *official docs*, not your local memory files.
+
+**How is this different from `memory search`?** `memory search` looks in *your* notes (MEMORY.md, memory/*.md). `docs` looks in the *project's official documentation*. Use `docs` when you want to know how a feature works; use `memory search` when you want to recall something you or the agent previously noted.
 
 ```bash
 openclaw docs "how do I set up Telegram?"
 openclaw docs "security audit"
+openclaw docs "memory search configuration"
 ```
+
+Results show the page **title**, a clickable **link** to the docs site, and a short **snippet** of matching content.
 
 ---
 
