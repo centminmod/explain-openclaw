@@ -87,6 +87,8 @@ ssh -N -L 18789:127.0.0.1:18789 user@gateway-host
 ### Tailscale Serve (best UX; tailnet-only)
 Keep Gateway on loopback and expose the UI via HTTPS Serve.
 
+Setup: [VPS Tailscale section](../03-deploy/isolated-vps.md#12-tailscale-setup-recommended-intermediate) | [Mac Mini Tailscale option](../03-deploy/standalone-mac-mini.md)
+
 Docs: https://docs.openclaw.ai/gateway/tailscale
 
 ---

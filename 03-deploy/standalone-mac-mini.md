@@ -174,6 +174,26 @@ Then open:
 ### Option B (best UX): Tailscale Serve
 Keep `gateway.bind: "loopback"` and use Tailscale Serve to publish the Control UI to your tailnet over HTTPS.
 
+```bash
+brew install tailscale
+tailscale up
+sudo tailscale serve --bg --https=443 127.0.0.1:18789
+```
+
+```json
+{
+  "gateway": {
+    "bind": "loopback",
+    "tailscale": { "mode": "serve" },
+    "auth": { "allowTailscale": true }
+  }
+}
+```
+
+Access at `https://<machine-name>.<tailnet>.ts.net/`.
+
+For shields-up, ACLs, and Funnel details, see [VPS Tailscale section](isolated-vps.md#12-tailscale-setup-recommended-intermediate).
+
 Docs: https://docs.openclaw.ai/gateway/tailscale
 
 ---

@@ -119,7 +119,7 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 | Telegram sticker cache | `src/telegram/sticker-cache.ts:35-67` | **No eviction** — JSON grows with unique stickers |
 | Browser user-data profiles | `src/browser/chrome.ts:62-64` | Full Chromium profile — can reach GBs |
 | SQLite databases | `src/memory/manager.ts:704-713` | **No VACUUM** — WAL files can bloat |
-| Per-day log file size | `src/logging/logger.ts:102-109` | No cap on individual file size |
+| Per-day log file size | `src/logging/logger.ts:112-119` | No cap on individual file size |
 | Voice-call `calls.jsonl` | `extensions/voice-call/src/manager/store.ts:7-10` | **Append-only, no rotation** + full-file reads on load |
 
 > *Transcript JSONL files:* Like a chat log that records every message forever but never archives or deletes old conversations — a busy bot can accumulate gigabytes over months.
@@ -133,7 +133,7 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 | Resource | Limit | Location |
 |----------|-------|----------|
 | Media files | 2min TTL auto-cleanup | `src/media/store.ts:15,67-83` |
-| Rolling logs | 24h age pruning | `src/logging/logger.ts:18,227-251` |
+| Rolling logs | 24h age pruning | `src/logging/logger.ts:28,237-261` |
 | Session store | 500 entries, 30d prune, 10MB rotation, 3 backups | `src/config/sessions/store.ts:208-210` |
 | Cron run logs | 2MB/2000 lines self-pruning | `src/cron/run-log.ts:26-57` |
 | TTS temp files | 5min delayed cleanup | `src/tts/tts.ts:42,989-998` |

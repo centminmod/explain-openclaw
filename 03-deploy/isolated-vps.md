@@ -796,6 +796,17 @@ tailscale status
 tailscale ip -4
 ```
 
+**Optional: Tailscale SSH** — To eliminate port 22 entirely (not just firewall it), enable Tailscale SSH:
+
+```bash
+# Enables SSH access over Tailscale using identity-based auth (no SSH keys needed)
+sudo tailscale up --ssh
+```
+
+This lets tailnet users SSH to the VPS without `sshd` listening on a public port. You can then skip UFW rules for port 22 or disable `sshd` entirely. Tailscale SSH is separate from Tailscale Serve (which handles the Gateway UI) — both can be used together.
+
+Verify from your local machine: `ssh user@100.x.y.z` should work without needing your SSH key.
+
 ### 12.2) Client-side: Install on your personal devices `[All]`
 
 Install Tailscale on every device you'll use to access the VPS:
@@ -830,7 +841,9 @@ This prevents other devices on your tailnet from connecting to your laptop — r
 
 ### 12.4) UFW firewall for Tailscale-only VPS `[Intermediate]`
 
-If you **only** access the VPS via Tailscale (no public SSH), lock the firewall to the `tailscale0` interface:
+If you **only** access the VPS via Tailscale (no public SSH), lock the firewall to the `tailscale0` interface.
+
+> **Before running these commands:** Verify Tailscale is connected (`tailscale status`) and you can reach the VPS via its tailnet IP (`ping 100.x.y.z`). If Tailscale is down when you enable UFW, you will lose access. Your provider's web console (Hetzner Console, DigitalOcean "Access" tab, AWS "EC2 Instance Connect") is your recovery path if locked out.
 
 ```bash
 # Block everything from the public internet by default

@@ -282,6 +282,7 @@ Then open: http://127.0.0.1:18789/
 3. Configure OpenClaw to accept Tailscale identity:
    ```json5
    "gateway": {
+     "tailscale": { "mode": "serve" },
      "auth": {
        "allowTailscale": true
      }

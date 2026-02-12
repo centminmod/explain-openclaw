@@ -4,7 +4,7 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 13-02-2026 (04:10 AEST)
+> **Last checked:** 13-02-2026 (07:31 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -79,6 +79,7 @@
 | [#13718](https://github.com/openclaw/openclaw/issues/13718) | ~~HIGH~~ FIXED | Unauthenticated Nostr profile API allows remote config tampering | Fixed in PR [#13719](https://github.com/openclaw/openclaw/pull/13719) — gateway-auth required for `/api/channels/` plugin routes (`server-http.ts:351-367`) |
 | [#13937](https://github.com/openclaw/openclaw/issues/13937) | ~~MEDIUM~~ FIXED | HTML not escaped in Control UI webchat (XSS) | Closed as COMPLETED 2026-02-11; `ui/` webchat HTML escaping fix applied upstream |
 | [#14137](https://github.com/openclaw/openclaw/issues/14137) | HIGH | Gateway auth has no rate limiting (CWE-307) | `src/gateway/auth.ts` — no brute-force protection; ~645 attempts/sec; fix PR [#13680](https://github.com/openclaw/openclaw/pull/13680) pending; relates to #8594 |
+| [#14875](https://github.com/openclaw/openclaw/issues/14875) | HIGH | Feishu channel hardcodes CommandAuthorized bypassing access groups | `extensions/feishu/src/bot.ts:818,906` — `CommandAuthorized: true` hardcoded; no `resolveCommandAuthorizedFromAuthorizers` check |
 | [#14117](https://github.com/openclaw/openclaw/issues/14117) | MEDIUM | Session isolation & message attribution failure | Cross-session message leakage between main + remote sessions; raw cron output exposed; relates to #12571 |
 | [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM (DUPLICATE #9627) | apiKey resolved to plaintext in models.json cache | `src/agents/models-config.ts:126-142` — `normalizeProviders()` includes resolved apiKey; relates to #9627/#13683 |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
@@ -825,6 +826,25 @@ All changes take effect immediately via automatic restart.
 - #8591: Env vars via `env`/`printenv` (different path: `process.env`)
 
 **Proposed fix (from issue):** Strip `apiKey` from provider objects before writing to `models.json`. Resolve credentials at HTTP request time instead of at cache write time.
+
+### #14875: Feishu Channel Hardcodes CommandAuthorized Bypassing Access Groups
+
+**Severity:** HIGH (CVSS 7.1)
+**CWE:** CWE-862 (Missing Authorization)
+
+**Vulnerability:** The Feishu channel extension unconditionally sets `CommandAuthorized: true` for every inbound message, bypassing the access group command gating system. All 16 other channel implementations (Discord, Mattermost, Matrix, Zalo, ZaloUser, BlueBubbles, WhatsApp, Google Chat, IRC, Nextcloud Talk, MSTeams, Telegram, Slack, iMessage) properly compute this value dynamically via `resolveCommandAuthorizedFromAuthorizers`.
+
+**Affected code:**
+- `extensions/feishu/src/bot.ts:818` — `CommandAuthorized: true` hardcoded in permission error context
+- `extensions/feishu/src/bot.ts:906` — `CommandAuthorized: true` hardcoded in main message context
+- Zero imports of `resolveCommandAuthorizedFromAuthorizers` in the Feishu extension
+
+**Verification:**
+- `src/channels/command-gating.ts:8` defines `resolveCommandAuthorizedFromAuthorizers()`
+- 16 other channel implementations all use dynamic `commandAuthorized` computation
+- `src/gateway/server-methods/chat.ts:484` also hardcodes `true` but is gateway-auth protected (owner-facing webchat, expected behavior)
+
+**Impact:** Any Feishu user can execute admin/control commands (e.g., `/model`, `/new`, `/reset`, `/elevated`) regardless of access group configuration. Requires Feishu channel to be enabled with access groups configured. Without access groups, all users are already allowed, so this only affects Feishu deployments with access restrictions.
 
 ### Notable Non-Core Issues
 

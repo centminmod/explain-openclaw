@@ -4,7 +4,7 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 13-02-2026 (04:12 AEST)
+> **Last checked:** 13-02-2026 (07:30 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
@@ -39,6 +39,7 @@
 | [#5401](https://github.com/openclaw/openclaw/pull/5401) | OPEN | security-fix | Detect audio binary by magic bytes to prevent context injection | — | OPEN/PENDING |
 | [#2580](https://github.com/openclaw/openclaw/pull/2580) | OPEN | security-fix | SSRF, path traversal, shell injection, and rate limiting protections | — | OPEN/PENDING |
 | [#2544](https://github.com/openclaw/openclaw/pull/2544) | OPEN | security-fix | XSS vulnerability in Canvas Host | — | OPEN/PENDING |
+| [#14689](https://github.com/openclaw/openclaw/pull/14689) | OPEN | hardening | Auto-set `per-channel-peer` dmScope default during multi-channel onboarding | [#14688](https://github.com/openclaw/openclaw/issues/14688) | OPEN/PENDING |
 | [#14222](https://github.com/openclaw/openclaw/pull/14222) | OPEN | hardening | Add `needsApproval` to `before_tool_call` hook; move AgentShield to extension | — | OPEN/PENDING |
 | [#14843](https://github.com/openclaw/openclaw/pull/14843) | OPEN | security-fix | Strip `apiKey` from `models.json` cache to prevent credential exposure | [#14808](https://github.com/openclaw/openclaw/issues/14808) | OPEN/PENDING |
 | [#14665](https://github.com/openclaw/openclaw/pull/14665) | OPEN | security-fix | Handle additional Unicode angle bracket homoglyphs in content sanitization | — | OPEN/PENDING |
@@ -49,7 +50,7 @@
 | [#14197](https://github.com/openclaw/openclaw/pull/14197) | OPEN | security-fix | Harden browser API auth, token comparisons (7 locations), and hook tokens | — | OPEN/PENDING |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | OPEN | hardening | Sanitize JSON tool-call payload text to prevent leak via Ollama/local providers | — | OPEN/PENDING |
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | OPEN | security-fix | Docker gateway auth bypass via Host header spoofing — verify client IP matches Docker gateway | — | OPEN/PENDING |
-| [#14512](https://github.com/openclaw/openclaw/pull/14512) | OPEN | hardening | Allow Docker bridge connections to extension relay via `OPENCLAW_RELAY_ALLOW_PRIVATE` | [#14433](https://github.com/openclaw/openclaw/issues/14433) | OPEN/PENDING |
+| [#14512](https://github.com/openclaw/openclaw/pull/14512) | CLOSED | hardening | Allow Docker bridge connections to extension relay via `OPENCLAW_RELAY_ALLOW_PRIVATE` (closed: author banned) | [#14433](https://github.com/openclaw/openclaw/issues/14433) | NOT AFFECTED |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | OPEN | hardening | Add `--harden` CLI flag for security-hardened gateway mode (loopback bind, token auth, no Tailscale) | — | OPEN/PENDING |
 | [#14318](https://github.com/openclaw/openclaw/pull/14318) | OPEN | hardening | Enforce outbound allowlist on Discord send functions (blocks agent writes to non-allowed channels) | — | OPEN/PENDING |
 | [#14224](https://github.com/openclaw/openclaw/pull/14224) | OPEN | hardening | Telegram member-info action exposes chat administrators (admin enumeration) | — | OPEN/PENDING |
@@ -63,6 +64,7 @@
 | [#13680](https://github.com/openclaw/openclaw/pull/13680) | OPEN | hardening | Add per-IP rate limiting to gateway authentication (CWE-307) | — | OPEN/PENDING |
 | [#13521](https://github.com/openclaw/openclaw/pull/13521) | OPEN | security-fix | Require webhook secret in Telegram runtime webhook mode | [#13116](https://github.com/openclaw/openclaw/issues/13116) | OPEN/PENDING |
 | [#13474](https://github.com/openclaw/openclaw/pull/13474) | OPEN | hardening | Distinguish webhooks from internal hooks in audit summary | [#13466](https://github.com/openclaw/openclaw/issues/13466) | OPEN/PENDING |
+| [#13321](https://github.com/openclaw/openclaw/pull/13321) | OPEN | hardening | Android gateway device identity hardening and A2UI UX improvements | — | OPEN/PENDING |
 | [#13308](https://github.com/openclaw/openclaw/pull/13308) | OPEN | hardening | Address audit findings (gateway, CI, Docker) | — | OPEN/PENDING |
 | [#13290](https://github.com/openclaw/openclaw/pull/13290) | OPEN | docs | Warn against storing secrets in injected workspace files (TOOLS.md enters model context) | — | OPEN/PENDING |
 | [#13293](https://github.com/openclaw/openclaw/pull/13293) | OPEN | hardening | Block tainted sink calls from untrusted tool outputs | — | OPEN/PENDING |
@@ -102,7 +104,7 @@
 | [#14218](https://github.com/openclaw/openclaw/pull/14218) | MERGED | security-fix | Antigravity thinking signature sanitization bypass via orphaned user-message repair | [#13765](https://github.com/openclaw/openclaw/issues/13765) | SYNC NEEDED |
 | [#14659](https://github.com/openclaw/openclaw/pull/14659) | MERGED | hardening | Add `--ignore-scripts` to skills install commands | — | ALREADY SYNCED |
 
-**Total:** 86 tracked PRs (15 merged, 69 open, 2 draft)
+**Total:** 88 tracked PRs (15 merged, 70 open, 2 draft, 1 closed)
 
 ### Cross-Reference: PRs and Tracked Issues
 
@@ -149,7 +151,8 @@
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | (tool-call JSON leak) | LOW | OPEN | `stripJsonToolCallText()` prevents Ollama/local providers from leaking raw tool-call JSON to user surfaces |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | OPEN | `--harden` flag forces loopback bind + token auth + no Tailscale; no equivalent exists locally |
 | [#14318](https://github.com/openclaw/openclaw/pull/14318) | (outbound channel control) | MEDIUM | OPEN | `enforceOutboundAllowlist()` blocks Discord sends to non-allowed channels; local `send.outbound.ts` has zero guards |
-| [#14512](https://github.com/openclaw/openclaw/pull/14512) | [#14433](https://github.com/openclaw/openclaw/issues/14433) | LOW | OPEN | Adds `isPrivateNetworkAddress()` to allow Docker bridge (RFC 1918) relay connections; Greptile flags invalid octet acceptance |
+| [#14689](https://github.com/openclaw/openclaw/pull/14689) | [#14688](https://github.com/openclaw/openclaw/issues/14688) | LOW | OPEN | Auto-set `per-channel-peer` dmScope during multi-channel onboarding; Greptile flags multi-account channels need `per-account-channel-peer` |
+| [#14512](https://github.com/openclaw/openclaw/pull/14512) | [#14433](https://github.com/openclaw/openclaw/issues/14433) | LOW | CLOSED | Author banned; `isPrivateNetworkAddress()` for Docker bridge relay needs re-implementation |
 | [#14224](https://github.com/openclaw/openclaw/pull/14224) | (admin enumeration) | LOW | OPEN | Telegram `getChatAdministrators` action — gate inconsistency may default to enabled |
 | [#14112](https://github.com/openclaw/openclaw/pull/14112) | [#13132](https://github.com/openclaw/openclaw/issues/13132) | MEDIUM | OPEN | Integration test verifying `--ignore-scripts` blocks postinstall in plugin archive install; related to #11432 |
 | [#13737](https://github.com/openclaw/openclaw/pull/13737) | (Docker privilege hardening) | LOW | OPEN | UID/GID remap in Dockerfile; Greptile flags GID collision not detected (silently reuses existing group) |

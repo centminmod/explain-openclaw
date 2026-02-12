@@ -159,13 +159,13 @@ openclaw security audit
 - If using SSH, use autossh with explicit timeouts
 - Never forward to 0.0.0.0 on the remote side
 
-### 🟠 Tailscale Serve Without Device Auth
+### 🟠 Tailnet Bind Without Auth
 
 > **The Analogy:** You gave everyone in your company a key to your house, thinking only you would use it.
 
 **What Actually Happens:**
 1. You enable `gateway.bind = "tailnet"` for convenient access
-2. Tailscale Serve exposes the gateway to your entire tailnet
+2. The tailnet bind exposes the gateway to your entire tailnet
 3. All devices on your tailnet can now access the gateway
 4. If you share a tailnet with others (work, family), they can access too
 

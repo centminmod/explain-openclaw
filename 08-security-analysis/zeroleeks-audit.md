@@ -53,16 +53,16 @@ Every item ZeroLeeks claims to have "extracted" is publicly readable TypeScript 
 | 5 | `HEARTBEAT_OK` = "HEARTBEAT_OK" | `src/auto-reply/tokens.ts:3` | Yes - exact value |
 | 6 | Reply tags (`[[reply_to_current]]`, etc.) | `src/agents/system-prompt.ts:89-91` | Yes - verbatim match |
 | 7 | Tool narration policy | `src/agents/system-prompt.ts:408-412` | Yes - verbatim match |
-| 8 | SOUL.md reference/logic | `src/agents/system-prompt.ts:552-569` | Yes - verbatim match |
+| 8 | SOUL.md reference/logic | `src/agents/system-prompt.ts:552-572` | Yes - verbatim match |
 | 9 | Reasoning format tags (`<think>`/`<final>`) | `src/agents/system-prompt.ts:323-332` | Yes - verbatim match |
 | 10 | Identity line ("personal assistant running inside OpenClaw") | `src/agents/system-prompt.ts:377,381` | Yes - verbatim match |
-| 11 | Silent reply rules | `src/agents/system-prompt.ts:572-587` | Yes - verbatim match |
+| 11 | Silent reply rules | `src/agents/system-prompt.ts:575-590` | Yes - verbatim match |
 
 #### Critical context
 
-1. **OpenClaw is open-source software** (MIT license, `github.com/openclaw/openclaw`). Anyone can read `src/agents/system-prompt.ts` (648 lines) and `src/auto-reply/tokens.ts` directly on GitHub.
+1. **OpenClaw is open-source software** (MIT license, `github.com/openclaw/openclaw`). Anyone can read `src/agents/system-prompt.ts` (651 lines) and `src/auto-reply/tokens.ts` directly on GitHub.
 
-2. The system prompt is **dynamically built** from `buildAgentSystemPrompt()` at `src/agents/system-prompt.ts:164-609` (445 lines). It is not a secret -- it is TypeScript code compiled and shipped with every installation.
+2. The system prompt is **dynamically built** from `buildAgentSystemPrompt()` at `src/agents/system-prompt.ts:164-612` (448 lines). It is not a secret -- it is TypeScript code compiled and shipped with every installation.
 
 3. **Extraction ≠ breach** for open-source projects. This is equivalent to "extracting" the contents of a public README file. System prompt confidentiality is a meaningful finding only for proprietary, closed-source AI products where the prompt contains trade secrets.
 

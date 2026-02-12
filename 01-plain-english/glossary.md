@@ -46,7 +46,7 @@ Docs: https://docs.openclaw.ai/gateway/security
 Where the Gateway listens:
 - `loopback` = localhost only (safest default)
 - `lan` = your LAN interfaces (requires auth)
-- `tailnet` = bind only to Tailscale IP (requires Tailscale)
+- `tailnet` = bind only to Tailscale IP, 100.x.y.z range (requires Tailscale)
 
 Docs: https://docs.openclaw.ai/gateway/remote and https://docs.openclaw.ai/gateway/tailscale
 
