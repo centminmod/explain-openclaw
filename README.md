@@ -11,6 +11,7 @@
 
 - [What is OpenClaw? (plain English)](./01-plain-english/what-is-clawdbot.md)
 - [Glossary](./01-plain-english/glossary.md)
+- [CLI commands (plain English)](./01-plain-english/cli-commands.md)
 - [What is Moltbook?](./07-moltbook/what-is-moltbook.md)
 - [Threat model](./04-privacy-safety/threat-model.md)
 - [Hardening checklist](./04-privacy-safety/hardening-checklist.md)

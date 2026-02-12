@@ -6,6 +6,7 @@
 - Plain English
   - [What is OpenClaw?](../01-plain-english/what-is-clawdbot.md)
   - [Glossary](../01-plain-english/glossary.md)
+  - [CLI commands](../01-plain-english/cli-commands.md)
 - Technical
   - [Architecture](./architecture.md)
   - [Repo map](./repo-map.md)

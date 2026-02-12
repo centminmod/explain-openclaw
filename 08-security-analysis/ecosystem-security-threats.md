@@ -6,6 +6,19 @@
 >
 > This section was prompted by a community security advisory from [@edgeaiplanet on Threads](https://www.threads.com/@edgeaiplanet/post/DUNyYMtjnw3).
 
+### Contents
+
+- [Official packages and accounts](#official-packages-and-accounts)
+- [1. npm Typosquatting Honeypots](#1-npm-typosquatting-honeypots)
+- [2. The Rebrand Trap (Handle Sniping)](#2-the-rebrand-trap-handle-sniping)
+- [3. Session Token Stealing](#3-session-token-stealing)
+- [4. The Shodan Trap (Exposed VPS Instances)](#4-the-shodan-trap-exposed-vps-instances)
+- [5. Fake SaaS / API Key Vacuums](#5-fake-saas--api-key-vacuums)
+- [6. ClawHub Malicious Skills (ClawHavoc Campaign)](#6-clawhub-malicious-skills-clawhavoc-campaign)
+- [7. Model Poisoning (Sleeper Agent Backdoors)](#7-model-poisoning-sleeper-agent-backdoors)
+- [Quick Protection Checklist](#quick-protection-checklist)
+- [Threat Summary](#threat-summary)
+
 ### Official packages and accounts
 
 Before installing or following any link, verify you are using official sources:
@@ -120,6 +133,45 @@ For the full analysis, see: [SecurityScorecard STRIKE Report Analysis](./securit
 - Rotate API keys if you suspect exposure
 - Monitor provider dashboards for unusual usage patterns
 
+### 6. ClawHub Malicious Skills (ClawHavoc Campaign)
+
+**What it is:** ClawHub is a third-party skills marketplace for OpenClaw. In February 2026, security researchers discovered **341 malicious skills** (12% of audited packages) designed to steal credentials and install malware.
+
+**How it works:**
+- Attackers publish skills with professional-looking documentation
+- "Prerequisites" section instructs users to run terminal commands or download files
+- Commands fetch Atomic Stealer (macOS) or keyloggers (Windows) from attacker infrastructure
+- Malware harvests crypto wallets, browser passwords, SSH keys, and API credentials
+
+**Campaign details:**
+- **Scale:** 341 malicious skills out of 2,857 audited (Koi Security)
+- **Primary payload:** Atomic Stealer (AMOS) for macOS
+- **Disguises:** Crypto tools (Solana trackers, Polymarket bots), YouTube utilities, ClawHub typosquats
+- **Attack method:** Social engineering via fake "prerequisites", not code exploits
+
+**Security improvements (Feb 2026):**
+- **VirusTotal partnership:** ClawHub now scans all published skills through a 6-step pipeline (deterministic packaging, SHA-256 hashing, VirusTotal analysis with 70+ AV engines, Gemini LLM code review, auto-approval/blocking). Previously approved skills are rescanned daily.
+- **OpenClaw local scanner:** Built-in pattern-based static analysis runs at install time, detecting dangerous code patterns (shell exec, eval, crypto mining, credential harvesting). See `src/security/skill-scanner.ts`.
+- **Limitations:** Neither layer can detect social engineering (the ClawHavoc attack vector), prompt injection, or zero-day threats. A clean scan is not a guarantee of safety.
+
+**Real-world sources:**
+- [OpenClaw Blog - VirusTotal Partnership](https://openclaw.ai/blog/virustotal-partnership)
+- [Koi Security ClawHavoc Report](https://www.koi.ai/blog/clawhavoc-341-malicious-clawedbot-skills-found-by-the-bot-they-were-targeting)
+- [The Hacker News](https://thehackernews.com/2026/02/researchers-find-341-malicious-clawhub.html)
+- [BleepingComputer](https://www.bleepingcomputer.com/news/security/malicious-moltbot-skills-used-to-push-password-stealing-malware)
+
+**Mitigations:**
+- **Never run prerequisite commands** without reading the code first
+- Check VirusTotal scan status on the ClawHub skill page before installing
+- Review local scanner warnings shown during skill installation
+- Avoid skills less than 30 days old or from unknown publishers
+- Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) to check skills before installing
+- Inspect skill code in `~/.openclaw/skills/` before enabling
+- Be extremely suspicious of crypto-related skills
+- Run OpenClaw in a VM/container for skill testing
+
+For detailed analysis, see: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
+
 ### 7. Model Poisoning (Sleeper Agent Backdoors)
 
 **What it is:** Attackers embed hidden behaviors into AI model weights during training. The model works perfectly under normal conditions but activates malicious behavior when it encounters a specific trigger phrase. Unlike software backdoors, these cannot be found by code review — they exist only in the model's learned parameters.
@@ -183,45 +235,6 @@ For the full analysis, see: [Model Poisoning and Sleeper Agent Backdoors](./mode
 | **Hidden .mmd payloads** | UI-invisible skill files | Prompt injection, data exfiltration | `ls -laR` skill directory, check for non-.md/.ts files |
 | **Skills.sh auto-install** | Unvetted skill distribution | Full Gateway compromise | Disable `skills.autoDiscover`, use ClawHub only |
 | **Model poisoning (sleeper agents)** | Compromised model weights | Tool-amplified data exfiltration, insecure code | Verify model checksums, use API providers, allowlist tools |
-
-### 6. ClawHub Malicious Skills (ClawHavoc Campaign)
-
-**What it is:** ClawHub is a third-party skills marketplace for OpenClaw. In February 2026, security researchers discovered **341 malicious skills** (12% of audited packages) designed to steal credentials and install malware.
-
-**How it works:**
-- Attackers publish skills with professional-looking documentation
-- "Prerequisites" section instructs users to run terminal commands or download files
-- Commands fetch Atomic Stealer (macOS) or keyloggers (Windows) from attacker infrastructure
-- Malware harvests crypto wallets, browser passwords, SSH keys, and API credentials
-
-**Campaign details:**
-- **Scale:** 341 malicious skills out of 2,857 audited (Koi Security)
-- **Primary payload:** Atomic Stealer (AMOS) for macOS
-- **Disguises:** Crypto tools (Solana trackers, Polymarket bots), YouTube utilities, ClawHub typosquats
-- **Attack method:** Social engineering via fake "prerequisites", not code exploits
-
-**Security improvements (Feb 2026):**
-- **VirusTotal partnership:** ClawHub now scans all published skills through a 6-step pipeline (deterministic packaging, SHA-256 hashing, VirusTotal analysis with 70+ AV engines, Gemini LLM code review, auto-approval/blocking). Previously approved skills are rescanned daily.
-- **OpenClaw local scanner:** Built-in pattern-based static analysis runs at install time, detecting dangerous code patterns (shell exec, eval, crypto mining, credential harvesting). See `src/security/skill-scanner.ts`.
-- **Limitations:** Neither layer can detect social engineering (the ClawHavoc attack vector), prompt injection, or zero-day threats. A clean scan is not a guarantee of safety.
-
-**Real-world sources:**
-- [OpenClaw Blog - VirusTotal Partnership](https://openclaw.ai/blog/virustotal-partnership)
-- [Koi Security ClawHavoc Report](https://www.koi.ai/blog/clawhavoc-341-malicious-clawedbot-skills-found-by-the-bot-they-were-targeting)
-- [The Hacker News](https://thehackernews.com/2026/02/researchers-find-341-malicious-clawhub.html)
-- [BleepingComputer](https://www.bleepingcomputer.com/news/security/malicious-moltbot-skills-used-to-push-password-stealing-malware)
-
-**Mitigations:**
-- **Never run prerequisite commands** without reading the code first
-- Check VirusTotal scan status on the ClawHub skill page before installing
-- Review local scanner warnings shown during skill installation
-- Avoid skills less than 30 days old or from unknown publishers
-- Use [Koi Security Scanner](https://koi.ai/clawhub-scanner) to check skills before installing
-- Inspect skill code in `~/.openclaw/skills/` before enabling
-- Be extremely suspicious of crypto-related skills
-- Run OpenClaw in a VM/container for skill testing
-
-For detailed analysis, see: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
 
 For detailed hardening guidance, see:
 - [Hardening checklist](../04-privacy-safety/hardening-checklist.md)
