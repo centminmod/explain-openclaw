@@ -770,7 +770,7 @@ One security-relevant fix:
 
 **LOW (1):**
 
-- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** New `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:987-993`) restricts QMD searches to configured collections only. Returns empty results if no managed collections exist. Defense-in-depth for Gap #4 (bootstrap/memory `.md` scanning).
+- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** New `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:972-978`) restricts QMD searches to configured collections only. Returns empty results if no managed collections exist. Defense-in-depth for Gap #4 (bootstrap/memory `.md` scanning).
 
 Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memorySearch` config migration (`868873016`, `a76dea0d2`), changelog update (`8d80212f9`), test mock fix (`40919b1fc`).
 
@@ -823,6 +823,24 @@ Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memoryS
 - **`029b77c85`** (PR [#14223](https://github.com/openclaw/openclaw/pull/14223)) — Custom provider non-interactive onboarding: New `--custom-base-url`, `--custom-model-id`, `--custom-api-key`, `--custom-provider-id`, `--custom-compatibility` flags. Auth chain: CLI flag > `CUSTOM_API_KEY` env var > profile fallback. **Credential hygiene:** prefer env var over `--custom-api-key` flag (process list visibility). 5 non-security commits (changelog, test fix, review chore, heartbeat config, PR review chore).
 
 No line shifts. No new CVEs.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Hardening (Feb 12 sync 3) — 8 upstream commits
+
+**Merge commit:** `8518d876a` | **Security relevance: MEDIUM** — 3 injection/LFI hardening + 3 robustness fixes.
+
+**MEDIUM (3):**
+- **`1d2c5783f`** (PR [#13830](https://github.com/openclaw/openclaw/pull/13830)) — Tool call ID sanitization extended to Anthropic provider in `resolveTranscriptPolicy()`. Was only Google + Mistral.
+- **`bebba124e`** (PR [#13952](https://github.com/openclaw/openclaw/pull/13952)) — Raw HTML in chat messages now escaped via `htmlEscapeRenderer` in `ui/src/ui/markdown.ts:132-133`. DOMPurify already handled XSS; this prevents confusing UX.
+- **`4baa43384`** — Major LFI defense refactor for CVE-2026-25475. `isValidMedia()` (`src/media/parse.ts:36-64`) now accepts all local path types. Security validation moved to load layer: `assertLocalMediaAllowed()` (`src/web/media.ts:42-69`) enforces directory root guards.
+
+**LOW (3):**
+- **`729181bd0`** (PR [#13747](https://github.com/openclaw/openclaw/pull/13747)) — Rate limit errors excluded from context overflow classification.
+- **`43818e158`** (PR [#13926](https://github.com/openclaw/openclaw/pull/13926)) — Tool_use/tool_result pairing repair re-runs after history truncation.
+- **`2f1f82674`** + **`3d343932c`** — QMD query parsing extracted to `src/memory/qmd-query-parser.ts`. Same logic, better isolation.
+
+**Line shifts:** `qmd-manager.ts` -12 (336-342→324-329), -15 (987-993→972-978). `media/parse.ts` refactored (17-33→36-64). `attempt.ts` +1 (211-215→212-216).
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 

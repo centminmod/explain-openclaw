@@ -4,7 +4,7 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 12-02-2026 (04:36 AEST)
+> **Last checked:** 12-02-2026 (11:04 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
@@ -45,6 +45,8 @@
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | OPEN | hardening | Sanitize JSON tool-call payload text to prevent leak via Ollama/local providers | — | OPEN/PENDING |
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | OPEN | security-fix | Docker gateway auth bypass via Host header spoofing — verify client IP matches Docker gateway | — | OPEN/PENDING |
 | [#14029](https://github.com/openclaw/openclaw/pull/14029) | OPEN | security-fix | Pass Twilio stream auth token via `<Parameter>` instead of query string | — | OPEN/PENDING |
+| [#14350](https://github.com/openclaw/openclaw/pull/14350) | OPEN | hardening | Add `--harden` CLI flag for security-hardened gateway mode (loopback bind, token auth, no Tailscale) | — | OPEN/PENDING |
+| [#14318](https://github.com/openclaw/openclaw/pull/14318) | OPEN | hardening | Enforce outbound allowlist on Discord send functions (blocks agent writes to non-allowed channels) | — | OPEN/PENDING |
 | [#14224](https://github.com/openclaw/openclaw/pull/14224) | OPEN | hardening | Telegram member-info action exposes chat administrators (admin enumeration) | — | OPEN/PENDING |
 | [#13894](https://github.com/openclaw/openclaw/pull/13894) | OPEN | hardening | Add manifest scanner for SKILL.md trust analysis (8 threat categories) | — | OPEN/PENDING |
 | [#13876](https://github.com/openclaw/openclaw/pull/13876) | OPEN | hardening | Auth & security enhancements — CLI sync, guard models, config protection | [#13196](https://github.com/openclaw/openclaw/issues/13196), [#13236](https://github.com/openclaw/openclaw/issues/13236) | OPEN/PENDING |
@@ -88,7 +90,7 @@
 | [#11093](https://github.com/openclaw/openclaw/pull/11093) | MERGED | security-fix | Add `sanitizeFilename()` to BlueBubbles attachments | [#10333](https://github.com/openclaw/openclaw/issues/10333) | SYNC NEEDED |
 | [#13182](https://github.com/openclaw/openclaw/pull/13182) | MERGED | hardening | Split oversized security audit files using dot-naming convention | — | ALREADY SYNCED |
 
-**Total:** 72 tracked PRs (11 merged, 59 open, 2 draft)
+**Total:** 74 tracked PRs (11 merged, 61 open, 2 draft)
 
 ### Cross-Reference: PRs and Tracked Issues
 
@@ -96,7 +98,7 @@
 |------|---------------|----------------|-----------|-------|
 | [#1795](https://github.com/openclaw/openclaw/pull/1795) | (unconfigured proxy bypass) | HIGH | MERGED | Fail-secure proxy detection in `isLocalDirectRequest()` at `src/gateway/auth.ts:93-113` |
 | [#2016](https://github.com/openclaw/openclaw/pull/2016) | [#2015](https://github.com/openclaw/openclaw/issues/2015) | HIGH | MERGED | `noteSecurityWarnings()` at `src/commands/doctor-security.ts:11` checks gateway bind + auth |
-| [#4880](https://github.com/openclaw/openclaw/pull/4880) | (LFI via MEDIA tokens) | HIGH | MERGED | `isValidMedia()` at `src/media/parse.ts:17-33` restricts to `https://` and safe `./` paths |
+| [#4880](https://github.com/openclaw/openclaw/pull/4880) | (LFI via MEDIA tokens) | HIGH | MERGED | `isValidMedia()` at `src/media/parse.ts:36-64` accepts all path types; LFI guard moved to `assertLocalMediaAllowed()` at `src/web/media.ts:42-69` |
 | [#8241](https://github.com/openclaw/openclaw/pull/8241) | (Matrix thread isolation) | MEDIUM | MERGED | `:thread:${threadRootId}` suffix at `extensions/matrix/src/matrix/monitor/handler.ts:446-447` |
 | [#8513](https://github.com/openclaw/openclaw/pull/8513) | [#8512](https://github.com/openclaw/openclaw/issues/8512) (CRITICAL) | CRITICAL | OPEN | Adds auth requirement for plugin HTTP routes in gateway |
 | [#9436](https://github.com/openclaw/openclaw/pull/9436) | [#9435](https://github.com/openclaw/openclaw/issues/9435) (HIGH), [#5120](https://github.com/openclaw/openclaw/issues/5120) (MEDIUM) | HIGH | MERGED | Query token acceptance removed from `extractHookToken()` in `src/gateway/hooks.ts`; server returns HTTP 400 when `?token=` present |
@@ -127,6 +129,8 @@
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | (Docker auth bypass) | HIGH | OPEN | Container on same Docker network can spoof `Host: localhost` to bypass `isLocalDirectRequest()` — adds `readDockerGatewayIp()` client IP verification |
 | [#14218](https://github.com/openclaw/openclaw/pull/14218) | [#13765](https://github.com/openclaw/openclaw/issues/13765) | LOW | OPEN | Thinking block sanitization bypass via orphaned user-message repair path in `attempt.ts` |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | (tool-call JSON leak) | LOW | OPEN | `stripJsonToolCallText()` prevents Ollama/local providers from leaking raw tool-call JSON to user surfaces |
+| [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | OPEN | `--harden` flag forces loopback bind + token auth + no Tailscale; no equivalent exists locally |
+| [#14318](https://github.com/openclaw/openclaw/pull/14318) | (outbound channel control) | MEDIUM | OPEN | `enforceOutboundAllowlist()` blocks Discord sends to non-allowed channels; local `send.outbound.ts` has zero guards |
 | [#14224](https://github.com/openclaw/openclaw/pull/14224) | (admin enumeration) | LOW | OPEN | Telegram `getChatAdministrators` action — gate inconsistency may default to enabled |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
@@ -162,10 +166,11 @@
 **Closes:** (fixes LFI via MEDIA: tokens allowing arbitrary file read)
 
 **Changes:**
-- `src/media/parse.ts:17-33` — `isValidMedia()` now only allows `https://` URLs and safe relative paths starting with `./` (no traversal)
-- `src/media/parse.test.ts` — test coverage for path restrictions
+- `src/media/parse.ts:36-64` — `isValidMedia()` refactored to accept all local path types (absolute, tilde, traversal, Windows, bare filenames); security validation deferred to load layer
+- `src/web/media.ts:42-69` — new `assertLocalMediaAllowed()` validates local paths against allowed directory roots (`/tmp`, `~/.openclaw/media`, `~/.openclaw/agents`), resolves symlinks
+- `src/media/parse.test.ts` — test coverage updated for new path acceptance + load-time validation
 
-**Local Impact:** ALREADY SYNCED — `isValidMedia()` at `src/media/parse.ts:27-32` has `https://` and `./` restriction with `..` traversal check
+**Local Impact:** ALREADY SYNCED — LFI defense now two-layer: `isValidMedia()` at `src/media/parse.ts:36-64` accepts paths, `assertLocalMediaAllowed()` at `src/web/media.ts:42-69` enforces directory root guards
 
 ### #8241: Matrix Thread Session Isolation
 

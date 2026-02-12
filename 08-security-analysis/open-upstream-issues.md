@@ -4,7 +4,7 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 12-02-2026 (04:46 AEST)
+> **Last checked:** 12-02-2026 (11:05 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -77,7 +77,7 @@
 | [#13683](https://github.com/openclaw/openclaw/issues/13683) | HIGH | CLI `config get` returns unredacted secrets to sandboxed agents | `src/cli/config-cli.ts:269-270` — reads `snapshot.config` without `redactConfigObject()`; gateway RPC at `server-methods/config.ts:108` correctly redacts |
 | [#13786](https://github.com/openclaw/openclaw/issues/13786) | HIGH | BlueBubbles webhook auth bypass via loopback proxy trust | `extensions/bluebubbles/src/monitor.ts:1537` — loopback remoteAddress bypasses shared-secret check; relates to #8512 |
 | [#13718](https://github.com/openclaw/openclaw/issues/13718) | HIGH | Unauthenticated Nostr profile API allows remote config tampering | `extensions/nostr/src/nostr-profile-http.ts:322-331` — GET/PUT/POST with no auth; relates to #8512 |
-| [#13937](https://github.com/openclaw/openclaw/issues/13937) | MEDIUM | HTML not escaped in Control UI webchat (XSS) | `ui/` webchat renders raw HTML in messages instead of escaping |
+| [#13937](https://github.com/openclaw/openclaw/issues/13937) | ~~MEDIUM~~ FIXED | HTML not escaped in Control UI webchat (XSS) | Closed as COMPLETED 2026-02-11; `ui/` webchat HTML escaping fix applied upstream |
 | [#14137](https://github.com/openclaw/openclaw/issues/14137) | HIGH | Gateway auth has no rate limiting (CWE-307) | `src/gateway/auth.ts` — no brute-force protection; ~645 attempts/sec; fix PR [#13680](https://github.com/openclaw/openclaw/pull/13680) pending; relates to #8594 |
 | [#14117](https://github.com/openclaw/openclaw/issues/14117) | MEDIUM | Session isolation & message attribution failure | Cross-session message leakage between main + remote sessions; raw cron output exposed; relates to #12571 |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
@@ -671,7 +671,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Affected code:**
 - `src/auto-reply/reply/get-reply-directives.ts:66-81` — `resolveExecOverrides()` reads from `directives` (inline `!exec=docker`) and `sessionEntry` only
 - `src/auto-reply/reply/get-reply-directives.ts:93` — `agentCfg: AgentDefaults` is in scope but not consulted for exec settings
-- `src/agents/pi-embedded-runner/run/attempt.ts:211-215` — `execOverrides` passed to tool creation, but populated only from directives/session
+- `src/agents/pi-embedded-runner/run/attempt.ts:212-216` — `execOverrides` passed to tool creation, but populated only from directives/session
 
 **Impact:** If an operator configures per-agent exec restrictions (e.g., `agents.mybot.tools.exec.host = "docker"` for sandboxed execution), those restrictions are silently ignored. The agent runs with global exec defaults. Global config still applies; only per-agent overrides are lost.
 
@@ -784,14 +784,16 @@ All changes take effect immediately via automatic restart.
 
 ### #13937: HTML Not Escaped in Control UI Webchat (XSS)
 
-**Severity:** MEDIUM
+**Status: FIXED** — closed as COMPLETED upstream 2026-02-11
+
+**Severity:** ~~MEDIUM~~ FIXED
 **CWE:** CWE-79 (Cross-Site Scripting)
 
-**Vulnerability:** When HTML content is posted as a message in the Control UI webchat, it is rendered as live HTML rather than escaped as plain text. User-confirmed with screenshot showing rendered `<h1>`, `<p>` tags from a pasted HTML error page.
+**Vulnerability:** When HTML content is posted as a message in the Control UI webchat, it was rendered as live HTML rather than escaped as plain text. User-confirmed with screenshot showing rendered `<h1>`, `<p>` tags from a pasted HTML error page.
 
-**Affected code:** The webchat markdown rendering pipeline in `ui/` passes raw HTML through without sanitization (per CommonMark spec, which allows inline HTML). No explicit `innerHTML`/`dangerouslySetInnerHTML` usage found outside test files — the issue is in the markdown-to-HTML rendering configuration.
+**Affected code:** The webchat markdown rendering pipeline in `ui/` passed raw HTML through without sanitization (per CommonMark spec, which allows inline HTML). No explicit `innerHTML`/`dangerouslySetInnerHTML` usage found outside test files — the issue was in the markdown-to-HTML rendering configuration.
 
-**Impact:** Stored XSS if messages containing HTML are persisted and displayed to other gateway users. Exploitability is reduced because sending messages typically requires gateway authentication.
+**Fix:** Issue closed as COMPLETED on 2026-02-11T23:40:42Z. No directly linked PR, but stateReason=COMPLETED indicates fix was applied. Verify fix lands in next upstream sync.
 
 ### #14137: Gateway Authentication Has No Rate Limiting (CWE-307)
 

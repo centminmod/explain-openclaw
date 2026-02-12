@@ -79,7 +79,7 @@
 **Affected:** < v2026.1.30
 **Credits:** @jasonsutter87
 
-**Description:** The `isValidMedia()` function in `src/media/parse.ts:17-27` accepted arbitrary paths including system files like `/etc/passwd`, `~/.ssh/id_rsa`, and traversal paths like `../../../etc/passwd`. An attacker could craft a message containing a `MEDIA:` reference pointing to sensitive local files.
+**Description:** The `isValidMedia()` function in `src/media/parse.ts` (now at lines 36-64) previously accepted arbitrary paths including system files like `/etc/passwd`, `~/.ssh/id_rsa`, and traversal paths like `../../../etc/passwd`. An attacker could craft a message containing a `MEDIA:` reference pointing to sensitive local files. Fixed: `isValidMedia()` now accepts all path types but `assertLocalMediaAllowed()` (`src/web/media.ts:42-69`) enforces directory root guards at load time.
 
 **Impact:** Exposure of sensitive local files (credentials, configuration, SSH keys) through the media pipeline.
 

@@ -38,6 +38,7 @@
 - [Feb 11 sync 2 (17 commits)](#post-merge-hardening-feb-11-sync-2-17-upstream-commits)
 - [Feb 12 sync 1 (32 commits)](#post-merge-hardening-feb-12-sync-1-32-upstream-commits)
 - [Feb 12 sync 2 (Notes)](#post-merge-notes-feb-12-sync-2-6-upstream-commits)
+- [Feb 12 sync 3 (8 commits)](#post-merge-hardening-feb-12-sync-3-8-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -50,7 +51,7 @@ Four defense-in-depth items were identified across audits:
 1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,976-977`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
-4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:336-342`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:295-305`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
+4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:324-329`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:295-305`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
 
 **Gap status: 1 closed, 3 remain open.**
 
@@ -504,7 +505,7 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 
 **LOW — Data isolation (1):**
 
-- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** `QmdMemoryManager.query()` now passes `-c <collection>` flags via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:987-993`), restricting QMD searches to explicitly configured collections only. If no managed collections are configured, queries return empty results with a warning log. Defense-in-depth for **Gap #4** (bootstrap/memory `.md` scanning) — ensures QMD queries cannot inadvertently access unmanaged collection data.
+- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** `QmdMemoryManager.query()` now passes `-c <collection>` flags via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:972-978`), restricting QMD searches to explicitly configured collections only. If no managed collections are configured, queries return empty results with a warning log. Defense-in-depth for **Gap #4** (bootstrap/memory `.md` scanning) — ensures QMD queries cannot inadvertently access unmanaged collection data.
 
 **Other notable changes:**
 
@@ -632,5 +633,35 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 **Line number shifts in this sync:** NONE. No documented security source files were modified.
 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Hardening (Feb 12 sync 3, 8 upstream commits)
+
+**Merge commit:** `8518d876a` | **Range:** `d0b825593..8518d876a`
+
+**MEDIUM — Injection prevention & LFI defense (3):**
+
+1. **`1d2c5783f`** (PR [#13830](https://github.com/openclaw/openclaw/pull/13830)) — **fix(agents): enable tool call ID sanitization for Anthropic provider:** `resolveTranscriptPolicy()` in `src/agents/transcript-policy.ts:98` now includes `isAnthropic` in the `sanitizeToolCallIds` condition (was only Google + Mistral). Prevents injection via malformed tool call IDs in Anthropic API sessions. Tests added for all 4 provider policies.
+
+2. **`bebba124e`** (PR [#13952](https://github.com/openclaw/openclaw/pull/13952)) — **fix(ui): escape raw HTML in chat messages:** Added `htmlEscapeRenderer` to `marked.parse()` in `ui/src/ui/markdown.ts:132-133`. Raw HTML in messages is now displayed as escaped text instead of rendered output. DOMPurify already handled XSS, but this prevents confusing UX from pasted HTML (e.g., error pages appearing as formatted content). References #13937.
+
+3. **`4baa43384`** — **fix(media): guard local media reads + accept all path types:** Major refactor of LFI defense for CVE-2026-25475 (GHSA-r8g4-86fx-92mq). `isValidMedia()` (`src/media/parse.ts:36-64`) now accepts all local path types (absolute, tilde, traversal, Windows, UNC, bare filenames). Security validation moved from parse layer to load layer: new `assertLocalMediaAllowed()` (`src/web/media.ts:42-69`) enforces directory root guards (default: `/tmp`, `~/.openclaw/media`, `~/.openclaw/agents`), resolves symlinks before checking. Pre-validated callers pass `localRoots: "any"` to skip the check. Helper `isLikelyLocalPath()` (`src/media/parse.ts:24-33`) extracted. 40+ test lines added.
+
+**LOW — Robustness (3):**
+
+4. **`729181bd0`** (PR [#13747](https://github.com/openclaw/openclaw/pull/13747)) — **fix(agents): exclude rate limit errors from context overflow classification:** Added `isRateLimitErrorMessage()` check before context overflow heuristics in `src/agents/pi-embedded-helpers/errors.ts`. Prevents incorrect truncation/compaction when rate limited (429, "exceeded quota", "rate limit exceeded"). Tests added for 5 rate limit patterns.
+
+5. **`43818e158`** (PR [#13926](https://github.com/openclaw/openclaw/pull/13926)) — **fix(agents): re-run tool_use pairing repair after history truncation:** `limitHistoryTurns()` can orphan `tool_result` blocks by removing the assistant message that contained the matching `tool_use`. Now calls `sanitizeToolUseResultPairing()` after truncation in both `src/agents/pi-embedded-runner/compact.ts:433-438` and `src/agents/pi-embedded-runner/run/attempt.ts:562-567`. Defense-in-depth against malformed conversation state.
+
+6. **`2f1f82674`** + **`3d343932c`** — **Memory/QMD: harden no-results parsing:** QMD query JSON parsing extracted to `src/memory/qmd-query-parser.ts` (47 lines). `parseQmdQueryJson()` is now a standalone function (was `QmdMemoryManager.parseQmdQueryJson()`). Same logic, better isolation. `QmdQueryResult` type also exported. `qmd-manager.ts` reduced by ~36 lines.
+
+**Non-security (1):**
+
+- **`9df89ceda`** — chore: Update deps (pnpm-lock.yaml, package.json version bumps).
+
+**Line number shifts in this sync:** `qmd-manager.ts` -12 lines at 336 (old 336-342→324-329 for `.md` validation), -15 lines at 987 (old 987-993→972-978 for `buildCollectionFilterArgs`). `media/parse.ts` refactored: old `isValidMedia()` 17-33→36-64, new `isLikelyLocalPath()` at 24-33. `attempt.ts` +1 (211-215→212-216, new import). All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing. Commit `4baa43384` strengthens the fix for CVE-2026-25475 (LFI via MEDIA tokens) by moving validation to load layer with directory root guards.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).

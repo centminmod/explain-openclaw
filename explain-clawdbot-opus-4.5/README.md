@@ -487,7 +487,7 @@ One security-adjacent commit (reliability/hardening focus):
 
 ### Post-Merge Hardening (Feb 10 sync 7) — 6 upstream commits
 
-One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:987-993`). Defense-in-depth for Gap #4 (memory `.md` scanning). Other: gateway QMD eager-init, legacy `memorySearch` config migration, test mock fix.
+One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:972-978`). Defense-in-depth for Gap #4 (memory `.md` scanning). Other: gateway QMD eager-init, legacy `memorySearch` config migration, test mock fix.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
@@ -514,6 +514,14 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 ### Post-Merge Notes (Feb 12 sync 2) — 6 upstream commits
 
 **Merge commit:** `d0b825593` | **Security relevance: LOW** — custom provider non-interactive onboarding (`029b77c85`, PR [#14223](https://github.com/openclaw/openclaw/pull/14223)). New `--custom-*` flags for unattended setup. **Credential hygiene:** prefer `CUSTOM_API_KEY` env var over `--custom-api-key` flag (process list visibility). No line shifts. No new CVEs.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Hardening (Feb 12 sync 3) — 8 upstream commits
+
+**Merge commit:** `8518d876a` | **Security relevance: MEDIUM** — 3 injection/LFI hardening + 3 robustness fixes. Tool call ID sanitization extended to Anthropic provider (`1d2c5783f`, PR #13830). Raw HTML escaping in UI chat messages (`bebba124e`, PR #13952). Major LFI defense refactor: `isValidMedia()` now accepts all path types, validation moved to load layer with `assertLocalMediaAllowed()` root directory guards (`4baa43384`). Rate limit error exclusion from overflow classification (`729181bd0`). Tool_use pairing repair after truncation (`43818e158`). QMD query parsing extracted + hardened (`2f1f82674` + `3d343932c`).
+
+**Line shifts:** `qmd-manager.ts` 336-342→324-329, 987-993→972-978. `media/parse.ts` refactored (17-33→36-64). `attempt.ts` 211-215→212-216.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
