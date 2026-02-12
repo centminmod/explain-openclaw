@@ -784,3 +784,27 @@ Merge commit `7cca0e0da` — 17 upstream commits (`bca0652de..afbce7357`). Mostl
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+
+### Post-Merge Hardening (Feb 13 sync 3, 26 commits)
+
+**Upstream range:** `e9dea98f7..a10f228a5` (26 commits — Discord/Signal channel improvements, dependency updates, model additions)
+
+**Security-relevant: NONE.** No commits address the 16 audit claims or remaining gaps. This merge is primarily channel-layer improvements (Discord DM reactions, Signal mention normalization, thread cache LRU eviction) plus MiniMax M2.5 model support and token accounting fixes.
+
+**Notable changes:**
+
+1. **`b02c88d3e`** — **Browser/Logging: share default openclaw tmp dir resolver:** Extracts the `resolveDefaultLogDir()` function from `src/logging/logger.ts` into a new shared module `src/infra/tmp-openclaw-dir.ts:24-50`. Follow-up refactor to PR [#14985](https://github.com/openclaw/openclaw/pull/14985) (`afbce7357`). No security posture change — same logic, now reusable across browser downloads, logging, and debug trace.
+
+2. **`5882cf2f5`** — **fix(discord): add TTL and LRU eviction to thread starter cache:** Adds bounded lifetime (TTL) and LRU eviction to the Discord thread starter cache in `src/discord/monitor/threading.ts`. Prevents unbounded memory growth from long-running bot instances — mild DoS mitigation.
+
+3. **`01e4e1536`**, **`cfec19df5`**, **`051c57404`** — **fix(signal): normalize mention placeholders:** New `src/signal/monitor/mentions.ts` (56 lines) replaces the object replacement character (U+FFFC) in Signal messages with `@uuid` or `@phone` from mention metadata before processing. Input normalization improvement — ensures mention text is visible in agent context.
+
+4. **`abdceedaf`** (PR [#14983](https://github.com/openclaw/openclaw/pull/14983)) — **fix: respect session model override in agent runtime:** Ensures `session.modelOverride` is honored when selecting the model for agent turns in `src/auto-reply/reply/agent-runner.ts`. Previously the override could be silently ignored.
+
+5. **`a10f228a5`** (PR [#15018](https://github.com/openclaw/openclaw/pull/15018)) — **fix: update totalTokens after compaction:** Corrects token accounting after auto-compaction in `src/auto-reply/reply/session-usage.ts` so that session usage reflects the compacted context size.
+
+**Line number shifts in this sync:** `logger.ts` −11 lines (removed `resolveDefaultLogDir` function, extracted to `tmp-openclaw-dir.ts`): old 112-119→101-108 (buildLogger file transport), old 28→17 (MAX_LOG_AGE_MS), old 237-261→226-250 (pruneOldRollingLogs). `models-config.providers.ts` +36 lines at 317+ (new MiniMax M2.5 models) — Ollama constants at 77-86 unchanged. All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
