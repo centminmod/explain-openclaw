@@ -54,6 +54,9 @@
   - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(27 examples)*
   - [Misconfiguration examples](./05-worst-case-security/misconfiguration-examples.md)
   - [AI self-misconfiguration](./05-worst-case-security/ai-self-misconfiguration.md)
+- **Social media coverage:**
+  - [Overview](./09-social-media-coverage/README.md)
+  - [Lex Fridman Podcast #491 — Peter Steinberger interview](./09-social-media-coverage/lex-fridman-interview.md)
 
 ---
 
@@ -71,6 +74,7 @@ This folder is a **living knowledge base** for the OpenClaw framework — active
 | **Worst-Case Scenarios** | Attack catalogs, prompt injection examples, supply chain threats, incident response |
 | **Optimizations** | Resource usage analysis (CPU/memory/disk), cost/token reduction, model routing |
 | **AI Model Comparison** | Accuracy benchmarks across five AI models' analyses |
+| **Social Media Coverage** | YouTube interviews, podcasts, notable community content |
 
 **What started as** a synthesis of five AI models' analyses has expanded through continuous upstream tracking and independent code verification. It reconciles analyses from [Copilot GPT-5.2](./explain-clawdbot-copilot-gpt-5.2/), [Gemini 3.0 Pro](./explain-clawdbot-gemini-3.0-pro/), [GLM 4.7](./explain-clawdbot-glm-4.7/), [Opus 4.5](./explain-clawdbot-opus-4.5/), and [Kimi K2.5](./explain-clawdbot-kilocode-kimi-k2.5/) — with an [accuracy comparison](./08-security-analysis/ai-model-analysis-comparison.md) showing which models verified claims against source code and which accepted them at face value.
 
@@ -489,6 +493,12 @@ Based on source code review of:
 | [Incident Response](./05-worst-case-security/incident-response.md) | Containment, credential rotation, recovery procedures |
 
 📚 **Key resource:** The [Prompt Injection Attacks](./05-worst-case-security/prompt-injection-attacks.md) guide (27 examples with defenses) is referenced throughout this documentation. If you read one security document beyond the threat model, read that one.
+
+---
+
+## Social Media OpenClaw Coverage
+
+> **See:** [Social Media Coverage overview](./09-social-media-coverage/README.md)
 
 ---
 
