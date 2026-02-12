@@ -45,7 +45,7 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 
 **Child process stdout/stderr accumulation:**
 - `src/process/exec.ts:114-141` — unbounded string concatenation of process output
-- `src/memory/qmd-manager.ts:548-565` — same pattern for QMD processing
+- `src/memory/qmd-manager.ts:553-575` — same pattern for QMD processing
 
 **Media fetch buffering:**
 - `src/media/fetch.ts:131-133` — full response body buffered into memory before processing
@@ -134,7 +134,7 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 |----------|-------|----------|
 | Media files | 2min TTL auto-cleanup | `src/media/store.ts:15,67-83` |
 | Rolling logs | 24h age pruning | `src/logging/logger.ts:18,227-251` |
-| Session store | 500 entries, 30d prune, 10MB rotation, 3 backups | `src/config/sessions/store.ts:209-211` |
+| Session store | 500 entries, 30d prune, 10MB rotation, 3 backups | `src/config/sessions/store.ts:208-210` |
 | Cron run logs | 2MB/2000 lines self-pruning | `src/cron/run-log.ts:26-57` |
 | TTS temp files | 5min delayed cleanup | `src/tts/tts.ts:42,989-998` |
 | Pairing requests | 3/channel, 1h TTL | `src/pairing/pairing-store.ts:14-15` |

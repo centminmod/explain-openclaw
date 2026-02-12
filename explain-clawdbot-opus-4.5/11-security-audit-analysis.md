@@ -770,7 +770,7 @@ One security-relevant fix:
 
 **LOW (1):**
 
-- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** New `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:972-978`) restricts QMD searches to configured collections only. Returns empty results if no managed collections exist. Defense-in-depth for Gap #4 (bootstrap/memory `.md` scanning).
+- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** New `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:1006-1012`) restricts QMD searches to configured collections only. Returns empty results if no managed collections exist. Defense-in-depth for Gap #4 (bootstrap/memory `.md` scanning).
 
 Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memorySearch` config migration (`868873016`, `a76dea0d2`), changelog update (`8d80212f9`), test mock fix (`40919b1fc`).
 
@@ -843,6 +843,22 @@ No line shifts. No new CVEs.
 **Line shifts:** `qmd-manager.ts` -12 (336-342→324-329), -15 (987-993→972-978). `media/parse.ts` refactored (17-33→36-64). `attempt.ts` +1 (211-215→212-216).
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Hardening (Feb 12 sync 5) — 33 upstream commits
+
+**Merge commit:** `24224da4c` | **Security relevance: LOW** — 1 session isolation fix, 1 error resilience fix, 6 cron robustness fixes.
+
+**LOW (2):**
+- **`631102e71`** (PR [#4887](https://github.com/openclaw/openclaw/pull/4887)) — Process/exec tool scope now prefers `sessionKey` over `agentId` (`src/agents/pi-tools.ts:215-217`). Prevents cross-session process visibility/killing. Defense-in-depth for session isolation.
+- **`b912d3992`** (PR [#13500](https://github.com/openclaw/openclaw/pull/13500)) — Cloudflare 521 and transient 5xx HTML errors detected via `isCloudflareOrHtmlErrorPage()`, sanitized to clean message. Model fallback triggers on transient 5xx. Prevents raw HTML leakage in error messages.
+
+**Cron robustness (6):** Schedule error isolation with auto-disable after 3 failures (`04f695e56`). Timer re-arm during active execution (`ace5e33ce`). Prevent `nextRunAtMs` silent advancement (#13992 fix, `39e3d58fe`). One-shot `at` job re-fire prevention (`a88ea42ec`). Correct agentId for isolated job auth (`b0dfb8395`). Heartbeat agentId pass-through (`04e3a66f9`).
+
+**Non-security (18):** Config schema fix, plugin-sdk types, sessions.json JSON5→JSON (~35x faster), Telegram reaction/model-picker fixes, Slack replyToMode default, WhatsApp formatting + media-only sends, 6 Feishu fixes, QMD configurable search mode, cron duplicate fire prevention, CI autolabeler.
+
+**Line shifts:** `qmd-manager.ts` 324-329→346-352, 972-978→1006-1012. `backend-config.ts` 223-242→233-252. `run.ts` 310-315→303-310, 321-327→316-322. `store.ts` 209-211→208-210.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
 
 ---
 

@@ -487,7 +487,7 @@ One security-adjacent commit (reliability/hardening focus):
 
 ### Post-Merge Hardening (Feb 10 sync 7) — 6 upstream commits
 
-One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:972-978`). Defense-in-depth for Gap #4 (memory `.md` scanning). Other: gateway QMD eager-init, legacy `memorySearch` config migration, test mock fix.
+One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:1006-1012`). Defense-in-depth for Gap #4 (memory `.md` scanning). Other: gateway QMD eager-init, legacy `memorySearch` config migration, test mock fix.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
@@ -524,6 +524,14 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 **Line shifts:** `qmd-manager.ts` 336-342→324-329, 987-993→972-978. `media/parse.ts` refactored (17-33→36-64). `attempt.ts` 211-215→212-216.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
+
+### Post-Merge Hardening (Feb 12 sync 5) — 33 upstream commits
+
+**Security relevance: LOW** — 1 session isolation fix (`631102e71`, PR #4887 — process/exec scope uses sessionKey for cross-session isolation), 1 error resilience fix (`b912d3992`, PR #13500 — Cloudflare 521/5xx HTML detection + sanitization), 6 cron robustness fixes (schedule error isolation, timer re-arm, nextRunAtMs advancement, one-shot re-fire, agentId auth, heartbeat passthrough). 18 non-security: config schema, sessions.json perf, Telegram/Slack/WhatsApp/Feishu fixes, QMD search mode, CI.
+
+**Line shifts:** `qmd-manager.ts` 324-329→346-352, 972-978→1006-1012. `backend-config.ts` 223-242→233-252. `run.ts` 310-315→303-310, 321-327→316-322. `store.ts` 209-211→208-210.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 

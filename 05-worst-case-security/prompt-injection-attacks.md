@@ -954,8 +954,8 @@ Alice
 
 **OpenClaw's Defense:**
 OpenClaw wraps external hook content (including emails) with security boundaries:
-- `buildSafeExternalPrompt()` at `src/cron/isolated-agent/run.ts:321-327`
-- Suspicious pattern detection and logging at `src/cron/isolated-agent/run.ts:310-315`
+- `buildSafeExternalPrompt()` at `src/cron/isolated-agent/run.ts:316-322`
+- Suspicious pattern detection and logging at `src/cron/isolated-agent/run.ts:303-310`
 - External content wrapped with `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers and security warnings (`src/security/external-content.ts:47-64`)
 
 **Additional Defense:**
@@ -988,7 +988,7 @@ Attack #21 hides instructions in **skill files** (SKILL.md) that are loaded when
 
 1. **Bootstrap files** (system prompt injection): Nine named `.md` files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md) are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) and injected into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:162-191`) at up to 20,000 characters each. **Total unscanned attack surface: 180,000 characters of trusted system context.**
 
-2. **Memory directory files** (`memory/*.md`): Accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget. Goes through a separate pipeline (`src/memory/internal.ts:78-107`, `src/memory/backend-config.ts:223-242`) — not injected into the system prompt. QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:324-329`) but does not scan content.
+2. **Memory directory files** (`memory/*.md`): Accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget. Goes through a separate pipeline (`src/memory/internal.ts:78-107`, `src/memory/backend-config.ts:233-252`) — not injected into the system prompt. QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:346-352`) but does not scan content.
 
 **Scenario 1 — Malicious skill writes to MEMORY.md:**
 
