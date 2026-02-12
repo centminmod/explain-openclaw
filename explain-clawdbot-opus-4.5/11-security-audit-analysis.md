@@ -615,7 +615,7 @@ Fourteen security-relevant commits:
 
 - **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:96-130` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
 
-- **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** `config.get` previously exposed all secrets (tokens, API keys) to any connected gateway client. New `redactConfigSnapshot()` function in `src/config/redact-snapshot.ts:117-126` strips sensitive values from config snapshots before returning them over the gateway wire protocol. Partially addresses tracked issues [#5995](https://github.com/openclaw/openclaw/issues/5995), [#9627](https://github.com/openclaw/openclaw/issues/9627), [#9813](https://github.com/openclaw/openclaw/issues/9813). Tests: `src/config/redact-snapshot.test.ts` (335 lines).
+- **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** `config.get` previously exposed all secrets (tokens, API keys) to any connected gateway client. New `redactConfigSnapshot()` function in `src/config/redact-snapshot.ts:136-145` strips sensitive values from config snapshots before returning them over the gateway wire protocol. Partially addresses tracked issues [#5995](https://github.com/openclaw/openclaw/issues/5995), [#9627](https://github.com/openclaw/openclaw/issues/9627), [#9813](https://github.com/openclaw/openclaw/issues/9813). Tests: `src/config/redact-snapshot.test.ts` (335 lines).
 
 - **`bc88e58fc`** (PR [#9806](https://github.com/openclaw/openclaw/pull/9806)) — **Skill/plugin code safety scanner:** New `src/security/skill-scanner.ts` (441 lines) provides static analysis of skill/plugin source code for dangerous patterns (eval, child_process, network listeners, credential access). `scanDirectoryWithSummary()` at `:415` returns severity-bucketed findings. Integrated into skill installation flow via `collectSkillInstallScanWarnings()` in `src/agents/skills-install.ts:104-131` and into `openclaw security audit --deep` via `collectPluginsCodeSafetyFindings()` and `collectInstalledSkillsCodeSafetyFindings()` in `src/security/audit-extra.ts:1131,1235`. Tests: `src/security/skill-scanner.test.ts` (345 lines).
 
@@ -859,6 +859,26 @@ No line shifts. No new CVEs.
 **Line shifts:** `qmd-manager.ts` 324-329→346-352, 972-978→1006-1012. `backend-config.ts` 223-242→233-252. `run.ts` 310-315→303-310, 321-327→316-322. `store.ts` 209-211→208-210.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
+
+### Post-Merge Hardening (Feb 13 sync 1) — 35 upstream commits
+
+**Merge commit:** `dd3a303d4` | **Security relevance: HIGH** — 2 critical supply chain/auth fixes, 2 high auth bypass fixes, 5 medium credential handling fixes, 5 low.
+
+**CRITICAL (2):**
+- **`d3aee8449`** (PR [#14659](https://github.com/openclaw/openclaw/pull/14659)) — Skills install `--ignore-scripts`: Completes the supply chain fix from `92702af7a` (plugins+hooks) by adding `--ignore-scripts` to skills install in `src/agents/skills-install.ts:147-157`. **FIXES** tracked issue #11431.
+- **`647d929c9`** (PR [#13719](https://github.com/openclaw/openclaw/pull/13719)) — Nostr profile API auth: Gateway-auth required for `/api/channels/` plugin routes (`src/gateway/server-http.ts:351-367`). **FIXES** tracked issue #13718.
+
+**HIGH (2):**
+- **`f836c385f`** (PR [#13787](https://github.com/openclaw/openclaw/pull/13787)) — BlueBubbles loopback auth bypass removed. All requests now require password auth. **FIXES** tracked issue #13786.
+- **`4c86010b0`** (PR [#14757](https://github.com/openclaw/openclaw/pull/14757)) — Soul-evil hook completely removed (-981 lines). **FIXES** tracked issue #8776.
+
+**MEDIUM (5):** Antigravity thinking block sanitization bypass (`6f7478638`, PR #14218). Twilio auth token via Parameter instead of query string (`f8cad44cd`, PR #14029). Undefined gateway auth token guard (`f8c91b3c5`, PR #13809). Auto-generate token during gateway install (`94d685816`, PR #13813). MEDIA: path disclosure prevention (`94bc62ad4`, PR #14399 — CVE-2026-25475 defense-in-depth).
+
+**LOW (5):** Config redaction whitelist for maxTokens (`f7e05d013`). File descriptor leak prevention in process cleanup (`4c350bc4c`). WebSocket max payload increased to 5MB (`626a1d069`). New `.agents/skills/` directory for cross-agent skill discovery (`d85150357` — **new attack surface**: skills loaded without install-flow scanning). Node.js v23+ deprecation guard (`971ac0886`).
+
+**Line shifts:** `redact-snapshot.ts` +16 (whitelist: 15→31, 48-50→67-69, 117-126→136-145). `server-http.ts` +18 at 350 (plugin auth: 350→368, 374-394→393-412, 443→461, 436-458→454-476).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 note: `.agents/skills/` adds unscanned skill loading path).
 
 ---
 

@@ -571,7 +571,7 @@ openclaw config get models.providers
 # - https://api.openai.com (OpenAI)
 ```
 
-**How to fix:** Remove or correct `baseUrl` entries. API keys in the config are redacted via `__OPENCLAW_REDACTED__` in `config.get` responses (`src/config/redact-snapshot.ts:15-50`), but this only prevents the AI from reading keys — it doesn't prevent it from changing the `baseUrl` to route them elsewhere.
+**How to fix:** Remove or correct `baseUrl` entries. API keys in the config are redacted via `__OPENCLAW_REDACTED__` in `config.get` responses (`src/config/redact-snapshot.ts:31-66`), but this only prevents the AI from reading keys — it doesn't prevent it from changing the `baseUrl` to route them elsewhere.
 
 **Does `openclaw security audit` catch this?** No — does not validate provider URLs against known-good endpoints.
 
@@ -977,7 +977,7 @@ OpenClaw has several built-in protections. Understanding them helps you build on
 |-----------|-------------|--------|
 | **Config backup rotation** | Keeps 5 `.bak` files before each config write | `src/config/io.ts:95-112` |
 | **baseHash optimistic locking** | Prevents concurrent config overwrites (not a security control — AI reads the hash first) | `src/gateway/server-methods/config.ts:152-459` |
-| **Credential redaction** | API keys replaced with `__OPENCLAW_REDACTED__` in `config.get` responses | `src/config/redact-snapshot.ts:15-50` |
+| **Credential redaction** | API keys replaced with `__OPENCLAW_REDACTED__` in `config.get` responses | `src/config/redact-snapshot.ts:31-66` |
 | **Dangerous env var blocklist** | Blocks `LD_PRELOAD`, `NODE_OPTIONS`, etc. from being set via exec tools | `src/agents/bash-tools.exec.ts:61-78` |
 | **Small model risk audit** | Warns when small/older models have tool access | `src/security/audit-extra.sync.ts:502-532` |
 | **ALLOWED_FILE_NAMES** | Restricts which agent bootstrap files can be modified via `agents.files.set` | `src/gateway/server-methods/agents.ts:454-506` |

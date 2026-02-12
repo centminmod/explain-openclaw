@@ -4,7 +4,7 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 12-02-2026 (22:22 AEST)
+> **Last checked:** 13-02-2026 (04:12 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
@@ -40,11 +40,15 @@
 | [#2580](https://github.com/openclaw/openclaw/pull/2580) | OPEN | security-fix | SSRF, path traversal, shell injection, and rate limiting protections | — | OPEN/PENDING |
 | [#2544](https://github.com/openclaw/openclaw/pull/2544) | OPEN | security-fix | XSS vulnerability in Canvas Host | — | OPEN/PENDING |
 | [#14222](https://github.com/openclaw/openclaw/pull/14222) | OPEN | hardening | Add `needsApproval` to `before_tool_call` hook; move AgentShield to extension | — | OPEN/PENDING |
-| [#14218](https://github.com/openclaw/openclaw/pull/14218) | OPEN | security-fix | Antigravity opus 4.6 forward-compat + thinking signature sanitization bypass | [#13765](https://github.com/openclaw/openclaw/issues/13765) | OPEN/PENDING |
+| [#14843](https://github.com/openclaw/openclaw/pull/14843) | OPEN | security-fix | Strip `apiKey` from `models.json` cache to prevent credential exposure | [#14808](https://github.com/openclaw/openclaw/issues/14808) | OPEN/PENDING |
+| [#14665](https://github.com/openclaw/openclaw/pull/14665) | OPEN | security-fix | Handle additional Unicode angle bracket homoglyphs in content sanitization | — | OPEN/PENDING |
+| [#14662](https://github.com/openclaw/openclaw/pull/14662) | OPEN | security-fix | Escape `<` in inline JSON to prevent script tag XSS | — | OPEN/PENDING |
+| [#14814](https://github.com/openclaw/openclaw/pull/14814) | OPEN | hardening | Use timing-safe comparison for hook token auth | — | OPEN/PENDING |
+| [#14661](https://github.com/openclaw/openclaw/pull/14661) | OPEN | hardening | Restrict canvas IP-based auth to private networks | — | OPEN/PENDING |
+| [#14655](https://github.com/openclaw/openclaw/pull/14655) | OPEN | hardening | Allow trusted clients to request unredacted config via `includeSecrets` | [#14586](https://github.com/openclaw/openclaw/issues/14586) | OPEN/PENDING |
 | [#14197](https://github.com/openclaw/openclaw/pull/14197) | OPEN | security-fix | Harden browser API auth, token comparisons (7 locations), and hook tokens | — | OPEN/PENDING |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | OPEN | hardening | Sanitize JSON tool-call payload text to prevent leak via Ollama/local providers | — | OPEN/PENDING |
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | OPEN | security-fix | Docker gateway auth bypass via Host header spoofing — verify client IP matches Docker gateway | — | OPEN/PENDING |
-| [#14029](https://github.com/openclaw/openclaw/pull/14029) | OPEN | security-fix | Pass Twilio stream auth token via `<Parameter>` instead of query string | — | OPEN/PENDING |
 | [#14512](https://github.com/openclaw/openclaw/pull/14512) | OPEN | hardening | Allow Docker bridge connections to extension relay via `OPENCLAW_RELAY_ALLOW_PRIVATE` | [#14433](https://github.com/openclaw/openclaw/issues/14433) | OPEN/PENDING |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | OPEN | hardening | Add `--harden` CLI flag for security-hardened gateway mode (loopback bind, token auth, no Tailscale) | — | OPEN/PENDING |
 | [#14318](https://github.com/openclaw/openclaw/pull/14318) | OPEN | hardening | Enforce outbound allowlist on Discord send functions (blocks agent writes to non-allowed channels) | — | OPEN/PENDING |
@@ -53,7 +57,6 @@
 | [#13894](https://github.com/openclaw/openclaw/pull/13894) | OPEN | hardening | Add manifest scanner for SKILL.md trust analysis (8 threat categories) | — | OPEN/PENDING |
 | [#13876](https://github.com/openclaw/openclaw/pull/13876) | OPEN | hardening | Auth & security enhancements — CLI sync, guard models, config protection | [#13196](https://github.com/openclaw/openclaw/issues/13196), [#13236](https://github.com/openclaw/openclaw/issues/13236) | OPEN/PENDING |
 | [#13817](https://github.com/openclaw/openclaw/pull/13817) | DRAFT | hardening | Configurable prompt injection monitor for tool results | — | OPEN/PENDING |
-| [#13787](https://github.com/openclaw/openclaw/pull/13787) | OPEN | security-fix | BlueBubbles webhook auth bypass via loopback proxy trust (CVSS 8.6) | [#13786](https://github.com/openclaw/openclaw/issues/13786) | OPEN/PENDING |
 | [#13777](https://github.com/openclaw/openclaw/pull/13777) | OPEN | security-fix | Redact sensitive values in CLI `config get` output | [#13683](https://github.com/openclaw/openclaw/issues/13683) | OPEN/PENDING |
 | [#13767](https://github.com/openclaw/openclaw/pull/13767) | OPEN | security-fix | Reject literal "undefined" and "null" gateway auth tokens | [#13756](https://github.com/openclaw/openclaw/issues/13756) | OPEN/PENDING |
 | [#13737](https://github.com/openclaw/openclaw/pull/13737) | OPEN | hardening | Docker UID/GID remap hardening and docker-setup privilege isolation | — | OPEN/PENDING |
@@ -94,8 +97,12 @@
 | [#9518](https://github.com/openclaw/openclaw/pull/9518) | MERGED | security-fix | Add `authorizeCanvasRequest()` for canvas/A2UI auth | [#9517](https://github.com/openclaw/openclaw/issues/9517) | SYNC NEEDED |
 | [#11093](https://github.com/openclaw/openclaw/pull/11093) | MERGED | security-fix | Add `sanitizeFilename()` to BlueBubbles attachments | [#10333](https://github.com/openclaw/openclaw/issues/10333) | SYNC NEEDED |
 | [#13182](https://github.com/openclaw/openclaw/pull/13182) | MERGED | hardening | Split oversized security audit files using dot-naming convention | — | ALREADY SYNCED |
+| [#13787](https://github.com/openclaw/openclaw/pull/13787) | MERGED | security-fix | BlueBubbles webhook auth bypass via loopback proxy trust (CVSS 8.6) | [#13786](https://github.com/openclaw/openclaw/issues/13786) | SYNC NEEDED |
+| [#14029](https://github.com/openclaw/openclaw/pull/14029) | MERGED | security-fix | Pass Twilio stream auth token via `<Parameter>` instead of query string | — | ALREADY SYNCED |
+| [#14218](https://github.com/openclaw/openclaw/pull/14218) | MERGED | security-fix | Antigravity thinking signature sanitization bypass via orphaned user-message repair | [#13765](https://github.com/openclaw/openclaw/issues/13765) | SYNC NEEDED |
+| [#14659](https://github.com/openclaw/openclaw/pull/14659) | MERGED | hardening | Add `--ignore-scripts` to skills install commands | — | ALREADY SYNCED |
 
-**Total:** 79 tracked PRs (11 merged, 66 open, 2 draft)
+**Total:** 86 tracked PRs (15 merged, 69 open, 2 draft)
 
 ### Cross-Reference: PRs and Tracked Issues
 
@@ -124,15 +131,21 @@
 | [#13521](https://github.com/openclaw/openclaw/pull/13521) | [#13116](https://github.com/openclaw/openclaw/issues/13116) (HIGH) | HIGH | OPEN | Fail-close webhook secret enforcement; related to #13170 and #13117 |
 | [#13474](https://github.com/openclaw/openclaw/pull/13474) | [#13466](https://github.com/openclaw/openclaw/issues/13466) (LOW) | LOW | OPEN | Split `hooks:` → `hooks.webhooks:` + `hooks.internal:` at `audit-extra.sync.ts:294-317` |
 | [#8718](https://github.com/openclaw/openclaw/pull/8718) | [#8696](https://github.com/openclaw/openclaw/issues/8696) (HIGH) | HIGH | OPEN | Sanitizes download filenames to prevent path traversal (CWE-22) |
-| [#13787](https://github.com/openclaw/openclaw/pull/13787) | [#13786](https://github.com/openclaw/openclaw/issues/13786) (HIGH) | HIGH | OPEN | Loopback bypass in BlueBubbles webhook auth (CVSS 8.6); related to #11742 |
+| [#13787](https://github.com/openclaw/openclaw/pull/13787) | [#13786](https://github.com/openclaw/openclaw/issues/13786) (HIGH) | HIGH | MERGED | Loopback bypass in BlueBubbles webhook auth (CVSS 8.6); related to #11742; merged 2026-02-12 |
 | [#13777](https://github.com/openclaw/openclaw/pull/13777) | [#13683](https://github.com/openclaw/openclaw/issues/13683) (HIGH) | HIGH | OPEN | Sandboxed agent credential exfil via `openclaw config get` — no redaction in CLI path |
 | [#13767](https://github.com/openclaw/openclaw/pull/13767) | [#13756](https://github.com/openclaw/openclaw/issues/13756) (MEDIUM) | MEDIUM | OPEN | `normalizeGatewayTokenInput()` accepts "undefined"/"null" strings as valid tokens |
 | [#13876](https://github.com/openclaw/openclaw/pull/13876) | [#13196](https://github.com/openclaw/openclaw/issues/13196), [#13236](https://github.com/openclaw/openclaw/issues/13236) | HIGH | OPEN | CLI credential sync + config redaction regex fix + guard model |
-| [#14029](https://github.com/openclaw/openclaw/pull/14029) | (token leakage in URL) | MEDIUM | OPEN | Twilio stream auth token passed via query string; same class as #9436 |
+| [#14029](https://github.com/openclaw/openclaw/pull/14029) | (token leakage in URL) | MEDIUM | MERGED | Twilio stream auth token via `<Parameter>` instead of query string; merged 2026-02-12; ALREADY SYNCED locally |
 | [#14222](https://github.com/openclaw/openclaw/pull/14222) | (maintainer feedback on #8727) | MEDIUM | OPEN | Core `before_tool_call` hook extended with `needsApproval`; AgentShield moved to extension with encrypted approval store |
 | [#14197](https://github.com/openclaw/openclaw/pull/14197) | (Codex CLI audit) | MEDIUM | OPEN | Shared `safeEqual()`, browser API auth (30+ unauthenticated endpoints), 7 timing-unsafe token comparisons, `hooks.allowQueryToken` deprecation |
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | (Docker auth bypass) | HIGH | OPEN | Container on same Docker network can spoof `Host: localhost` to bypass `isLocalDirectRequest()` — adds `readDockerGatewayIp()` client IP verification |
-| [#14218](https://github.com/openclaw/openclaw/pull/14218) | [#13765](https://github.com/openclaw/openclaw/issues/13765) | LOW | OPEN | Thinking block sanitization bypass via orphaned user-message repair path in `attempt.ts` |
+| [#14218](https://github.com/openclaw/openclaw/pull/14218) | [#13765](https://github.com/openclaw/openclaw/issues/13765) | LOW | MERGED | Thinking block sanitization bypass via orphaned user-message repair path in `attempt.ts`; merged 2026-02-12 |
+| [#14843](https://github.com/openclaw/openclaw/pull/14843) | [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM | OPEN | `apiKey` credential exposure in `models.json` cache; local `models-config.ts:130` has same pattern |
+| [#14665](https://github.com/openclaw/openclaw/pull/14665) | (homoglyph bypass) | MEDIUM | OPEN | Additional Unicode angle bracket homoglyphs bypass `foldMarkerChar()` at `external-content.ts:89-107` |
+| [#14662](https://github.com/openclaw/openclaw/pull/14662) | (XSS in control UI) | MEDIUM | OPEN | `JSON.stringify` in `<script>` tag at `control-ui.ts:173-179` does not escape `<` |
+| [#14661](https://github.com/openclaw/openclaw/pull/14661) | (canvas IP auth) | MEDIUM | OPEN | Canvas IP-based auth fallback at `server-http.ts:129` has no private network restriction; Greptile flags IPv6 `fe80::/10` misclass |
+| [#14655](https://github.com/openclaw/openclaw/pull/14655) | [#14586](https://github.com/openclaw/openclaw/issues/14586) | LOW | OPEN | `includeSecrets` for config.get; Greptile flags Control UI client also gets access |
+| [#14814](https://github.com/openclaw/openclaw/pull/14814) | (timing attack) | LOW | OPEN | Hook token at `server-http.ts:164` uses `!==` while `auth.ts:256` uses `safeEqual()` |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | (tool-call JSON leak) | LOW | OPEN | `stripJsonToolCallText()` prevents Ollama/local providers from leaking raw tool-call JSON to user surfaces |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | OPEN | `--harden` flag forces loopback bind + token auth + no Tailscale; no equivalent exists locally |
 | [#14318](https://github.com/openclaw/openclaw/pull/14318) | (outbound channel control) | MEDIUM | OPEN | `enforceOutboundAllowlist()` blocks Discord sends to non-allowed channels; local `send.outbound.ts` has zero guards |
@@ -227,8 +240,8 @@
 
 **Changes:**
 - `src/gateway/server-http.ts:96-130` — new `authorizeCanvasRequest()` function
-- `src/gateway/server-http.ts:374-394` — canvas HTTP handler now auth-wrapped
-- `src/gateway/server-http.ts:443` — canvas WebSocket upgrade now auth-wrapped
+- `src/gateway/server-http.ts:393-412` — canvas HTTP handler now auth-wrapped
+- `src/gateway/server-http.ts:461` — canvas WebSocket upgrade now auth-wrapped
 
 **Local Impact:** SYNC NEEDED — local canvas endpoints may still be unauthenticated
 
@@ -242,3 +255,49 @@
 - `extensions/bluebubbles/src/attachments.ts:26-30` — `sanitizeFilename()` now strips `"`, `\r`, `\n`, and other Content-Disposition-dangerous characters beyond just `path.basename()`
 
 **Local Impact:** SYNC NEEDED — local `sanitizeFilename()` may still use only `path.basename()`
+
+### #13787: BlueBubbles Webhook Auth Bypass via Loopback Proxy Trust
+
+**PR Status:** MERGED (2026-02-12)
+**Category:** security-fix
+**Closes:** [#13786](https://github.com/openclaw/openclaw/issues/13786) (HIGH — CVSS 8.6 loopback bypass)
+
+**Changes:**
+- `extensions/bluebubbles/src/monitor.ts` — removes 4 lines of loopback trust bypass logic from webhook handler
+- `extensions/bluebubbles/src/monitor.test.ts` — updated test coverage
+
+**Local Impact:** SYNC NEEDED — local `extensions/bluebubbles/src/monitor.ts` may still have the loopback auth bypass path
+
+### #14029: Pass Twilio Stream Auth Token via Parameter
+
+**PR Status:** MERGED (2026-02-12)
+**Category:** security-fix
+
+**Changes:**
+- `extensions/voice-call/src/providers/twilio.ts:431-440` — `getStreamConnectXml()` extracts token from URL, passes via TwiML `<Parameter>` instead of query string
+- `extensions/voice-call/src/media-stream.ts:149-152` — reads token from `customParameters` with query string fallback
+
+**Local Impact:** ALREADY SYNCED — local `twilio.ts:431-440` already uses `<Parameter>` approach; tests at `twilio.test.ts:34,59` verify
+
+### #14218: Thinking Signature Sanitization Bypass
+
+**PR Status:** MERGED (2026-02-12)
+**Category:** security-fix
+**Closes:** [#13765](https://github.com/openclaw/openclaw/issues/13765) (LOW — thinking block sanitization bypass)
+
+**Changes:**
+- `src/agents/pi-embedded-runner/run/attempt.ts` — fixes orphaned user-message repair path that could strip thinking block sanitization
+- `src/agents/pi-embedded-runner/model.ts` — new opus 4.6 forward-compat model handling
+- `src/agents/pi-embedded-runner/model.test.ts` — test coverage
+
+**Local Impact:** SYNC NEEDED — local `attempt.ts:765-782` has the orphaned user-message repair path but may lack the sanitization fix
+
+### #14659: Add --ignore-scripts to Skills Install Commands
+
+**PR Status:** MERGED (2026-02-12)
+**Category:** hardening
+
+**Changes:**
+- `src/agents/skills-install.ts` — adds `--ignore-scripts` to all package manager commands in `buildNodeInstallCommand()`
+
+**Local Impact:** ALREADY SYNCED — `--ignore-scripts` already present at lines 150, 152, 154, 156 for pnpm/yarn/bun/npm

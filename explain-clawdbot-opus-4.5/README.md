@@ -364,7 +364,7 @@ Fourteen security-relevant commits:
 
 - **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue #9517. New `authorizeCanvasRequest()` in `src/gateway/server-http.ts:96-130`. Thanks @coygeek.
 
-- **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** New `redactConfigSnapshot()` in `src/config/redact-snapshot.ts:117-126`. Partially addresses #5995, #9627, #9813.
+- **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** New `redactConfigSnapshot()` in `src/config/redact-snapshot.ts:136-145`. Partially addresses #5995, #9627, #9813.
 
 - **`bc88e58fc`** (PR [#9806](https://github.com/openclaw/openclaw/pull/9806)) — **Skill/plugin code safety scanner:** New `src/security/skill-scanner.ts` (441 lines). Integrated into skill install and `openclaw security audit --deep`.
 
@@ -532,6 +532,14 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 **Line shifts:** `qmd-manager.ts` 324-329→346-352, 972-978→1006-1012. `backend-config.ts` 223-242→233-252. `run.ts` 310-315→303-310, 321-327→316-322. `store.ts` 209-211→208-210.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
+
+### Post-Merge Hardening (Feb 13 sync 1) — 35 upstream commits
+
+**Security relevance: HIGH** — 2 critical supply chain/auth fixes, 2 high auth bypass removals, 5 medium credential fixes. CRITICAL: skills install `--ignore-scripts` (`d3aee8449`, PR #14659 — completes #11431 fix), Nostr plugin auth (`647d929c9`, PR #13719 — fixes #13718). HIGH: BlueBubbles loopback auth bypass removed (`f836c385f`, PR #13787 — fixes #13786), soul-evil hook completely removed (`4c86010b0`, PR #14757 — fixes #8776). MEDIUM: antigravity thinking sanitization bypass, Twilio token via Parameter, undefined gateway token guard, auto-generate token on install, MEDIA path disclosure prevention. LOW: maxTokens redaction whitelist, FD leak fix, WebSocket 5MB payload, `.agents/skills/` cross-agent discovery (new attack surface), Node.js v23+ guard.
+
+**Line shifts:** `redact-snapshot.ts` +16 (117-126→136-145). `server-http.ts` +18 (374-394→393-412, 443→461).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 note: `.agents/skills/` adds unscanned path).
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 

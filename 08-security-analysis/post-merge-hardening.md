@@ -39,6 +39,7 @@
 - [Feb 12 sync 1 (32 commits)](#post-merge-hardening-feb-12-sync-1-32-upstream-commits)
 - [Feb 12 sync 2 (Notes)](#post-merge-notes-feb-12-sync-2-6-upstream-commits)
 - [Feb 12 sync 3 (8 commits)](#post-merge-hardening-feb-12-sync-3-8-upstream-commits)
+- [Feb 13 sync 1 (35 commits)](#post-merge-hardening-feb-13-sync-1-35-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -596,7 +597,7 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 
 **MEDIUM — Config correctness (1):**
 
-3. **`66ca5746c`** — **fix(config): avoid redacting maxTokens-like fields:** Anchored sensitive-key regex from `/token/i` to `/token$/i` in `src/config/redact-snapshot.ts:15`, `schema.field-metadata.ts`, `schema.hints.ts`. Prevents false-positive redaction of legitimate numeric fields (`maxTokens`, `contextTokens`). Avoids config round-trip validation failures.
+3. **`66ca5746c`** — **fix(config): avoid redacting maxTokens-like fields:** Anchored sensitive-key regex from `/token/i` to `/token$/i` in `src/config/redact-snapshot.ts:31`, `schema.field-metadata.ts`, `schema.hints.ts`. Prevents false-positive redaction of legitimate numeric fields (`maxTokens`, `contextTokens`). Avoids config round-trip validation failures.
 
 **Other notable changes:**
 
@@ -711,3 +712,49 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
+
+### Post-Merge Hardening (Feb 13 sync 1, 35 upstream commits)
+
+**Merge commit:** `dd3a303d4` | **Range:** `01876f7f7..d3aee8449`
+
+**CRITICAL — Supply chain & auth bypass (2):**
+
+1. **`d3aee8449`** (PR [#14659](https://github.com/openclaw/openclaw/pull/14659)) — **fix(security): add --ignore-scripts to skills install commands:** `buildNodeInstallCommand()` in `src/agents/skills-install.ts:147-157` now passes `--ignore-scripts` to all package managers (npm, pnpm, yarn, bun) during global skill installation. Prevents RCE via malicious postinstall/preinstall lifecycle scripts. Completes the supply chain fix from `92702af7a` (Feb 12 sync 1) which added `--ignore-scripts` to plugin and hook installs but overlooked skills.
+
+2. **`647d929c9`** (PR [#13719](https://github.com/openclaw/openclaw/pull/13719)) — **fix: Unauthenticated Nostr profile API allows remote config tampering:** Gateway now requires `authorizeGatewayConnect` for `/api/channels/` plugin HTTP routes (`src/gateway/server-http.ts:351-367`). Channel plugin endpoints are gateway-auth protected by default; non-channel plugin routes remain plugin-owned. New `server.plugin-http-auth.test.ts` (174 lines). **FIXES** tracked issue [#13718](https://github.com/openclaw/openclaw/issues/13718). Also adds UI-side Nostr profile management in `ui/src/ui/app-channels.ts` (+23 lines).
+
+**HIGH — Auth bypass & hook removal (2):**
+
+3. **`f836c385f`** (PR [#13787](https://github.com/openclaw/openclaw/pull/13787)) — **fix: BlueBubbles webhook auth bypass via loopback proxy trust:** Removes the `isLoopback(remoteAddress)` bypass in BlueBubbles monitor that allowed unauthenticated local requests to skip shared-secret webhook verification (`extensions/bluebubbles/src/monitor.ts`). All requests now require password authentication regardless of source IP. **FIXES** tracked issue [#13786](https://github.com/openclaw/openclaw/issues/13786).
+
+4. **`4c86010b0`** (PR [#14757](https://github.com/openclaw/openclaw/pull/14757)) — **fix: remove bundled soul-evil hook:** Completely removes the soul-evil hook that could silently hijack agent behavior. Deletes `src/hooks/soul-evil.ts` (280 lines), `src/hooks/soul-evil.test.ts` (252 lines), bundled handler, docs, and package.json references. **FIXES** tracked issue [#8776](https://github.com/openclaw/openclaw/issues/8776). Thanks @Imccccc.
+
+**MEDIUM — Credential handling & sanitization (5):**
+
+5. **`6f7478638`** (PR [#14218](https://github.com/openclaw/openclaw/pull/14218)) — **fix(antigravity): opus 4.6 forward-compat model + thinking signature sanitization bypass:** Fixes a code path in `src/agents/pi-embedded-runner/run/attempt.ts` that bypassed `sanitizeAntigravityThinkingBlocks()` by reading directly from disk. The API rejects unsigned thinking blocks on replay; the existing sanitizer strips them, but the orphaned-user-message recovery path skipped it. New `resolveAntigravityOpus46ForwardCompatModel()` in `src/agents/pi-embedded-runner/model.ts` (43 lines). Fixes [#13765](https://github.com/openclaw/openclaw/issues/13765).
+
+6. **`f8cad44cd`** (PR [#14029](https://github.com/openclaw/openclaw/pull/14029)) — **fix(voice-call): pass Twilio stream auth token via Parameter instead of query string:** Auth token now sent as `<Parameter>` element inside `<Stream>` TwiML instead of `?token=` query string. Media stream handler extracts token from `customParameters` with query string fallback (`extensions/voice-call/src/media-stream.ts`, `extensions/voice-call/src/providers/twilio.ts`). Same class as CWE-598 fix in PR #9436.
+
+7. **`f8c91b3c5`** (PR [#13809](https://github.com/openclaw/openclaw/pull/13809)) — **fix: prevent undefined token in gateway auth config:** Guards `buildGatewayAuthConfig()` against undefined/empty/whitespace token input. Auto-generates random token when input is invalid (`src/commands/configure.gateway-auth.ts:5`). Prevents `JSON.stringify` from writing literal `"undefined"` string as gateway token. 39 lines of test coverage.
+
+8. **`94d685816`** (PR [#13813](https://github.com/openclaw/openclaw/pull/13813)) — **fix(gateway): auto-generate token during gateway install:** When gateway is installed as macOS launch agent and no token is configured, auto-generates a token during `gateway install` when auth mode is `token` (`src/cli/daemon-cli/install.ts`). Token persisted to config file and embedded in plist EnvironmentVariables. Prevents launchd restart loop from missing auth.
+
+9. **`94bc62ad4`** (PR [#14399](https://github.com/openclaw/openclaw/pull/14399)) — **fix(media): strip MEDIA: lines with local paths instead of leaking as text:** When `isValidMedia()` rejects MEDIA: lines with local paths, the rejected line was kept as visible text. Now strips these lines to prevent path disclosure to users (`src/media/parse.ts:+4`). Defense-in-depth for CVE-2026-25475.
+
+**LOW — Resource management & config correctness (5):**
+
+10. **`f7e05d013`** (PR [#13342](https://github.com/openclaw/openclaw/pull/13342)) — **fix: exclude maxTokens from config redaction:** New `SENSITIVE_KEY_WHITELIST` in `src/config/redact-snapshot.ts:15-25` exempts non-sensitive fields (`maxTokens`, `contextTokens`, etc.) from redaction. Prevents config round-trip validation failures. Also honors `deleteAfterRun` on skipped cron jobs.
+
+11. **`4c350bc4c`** (PR [#13565](https://github.com/openclaw/openclaw/pull/13565)) — **fix: prevent file descriptor leaks in child process cleanup:** Destroys stdio streams and removes event listeners after process exit in `src/agents/bash-process-registry.ts` (+34 lines). Fixes EBADF errors from accumulated FDs in sub-agent spawns.
+
+12. **`626a1d069`** (PR [#14486](https://github.com/openclaw/openclaw/pull/14486)) — **fix(gateway): increase WebSocket max payload to 5 MB for image uploads:** `src/gateway/server-constants.ts` increased from 1MB default to 5MB. Allows larger image uploads via WebSocket.
+
+13. **`d85150357`** (PR [#9966](https://github.com/openclaw/openclaw/pull/9966)) — **feat: support .agents/skills/ directory for cross-agent skill discovery:** New skill loading from `~/.agents/skills/` (personal) and `.agents/skills/` (project) directories in `src/agents/skills/workspace.ts:151-173`. Precedence: extra < bundled < managed < agents-skills-personal < agents-skills-project < workspace. **New attack surface** — skills from these directories are loaded without explicit install flow or code scanning.
+
+14. **`971ac0886`** (PR [#14152](https://github.com/openclaw/openclaw/pull/14152)) — **fix(cli): guard against read-only process.noDeprecation on Node.js v23+:** New `src/cli/update-cli/suppress-deprecations.ts` wraps `process.noDeprecation` assignment in try/catch for environments where it's read-only.
+
+**Line number shifts in this sync:** `redact-snapshot.ts` +16 lines (whitelist insertion): old 15→31 (SENSITIVE_KEY_PATTERNS), old 48-50→67-69 (`redactConfigObject` export), old 117-126→136-145 (`redactConfigSnapshot` function). `server-http.ts` +18 lines at 350 (plugin auth for `/api/channels/`): old 350→368 (plugin dispatch), old 374-394→393-412 (canvas handler), old 443→461 (canvas WS auth), old 436-458→454-476 (upgrade handler). All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge. Commit `94bc62ad4` strengthens CVE-2026-25475 defense (MEDIA: path disclosure).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 note: `.agents/skills/` directories add a new unscanned skill loading path).
