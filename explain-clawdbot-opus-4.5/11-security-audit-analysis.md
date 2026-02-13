@@ -912,6 +912,14 @@ No line shifts. No new CVEs.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
 
+### Post-Merge Hardening (Feb 14 sync 6) — 33 upstream commits
+
+**Security relevance: HIGH** — Two critical exec approval fixes: two-phase approval protocol prevents approval ID race condition (`1af0edf7f`), nodes-tool gains exec approval flow for `system.run` (`6bc6cdad9`). Centralized bounded webhook body handling across all extensions (`3cbcba10c` — new `src/infra/http-body.ts`). SSRF blocklist applied to link-understanding URL detection (`649826e43`). Config writes now preserve `${VAR}` env references (`f59df9589`). `proper-lockfile` replaced with lightweight `withFileLock()` (`201ac2b72`). Control-char regex replaced with explicit sanitizer (`e84318e4b`).
+
+**Line shifts:** `server-methods.ts` +4, `server-http.ts` +7, `config/io.ts` +178-223, `hooks.ts` restructured, `oauth.ts` -10.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 further mitigated by nodes-tool approval flow, bootstrap/memory .md scanning — unchanged).
+
 ---
 
 ## Recommended Hardening Measures

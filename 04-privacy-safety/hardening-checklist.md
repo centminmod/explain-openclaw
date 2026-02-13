@@ -311,7 +311,7 @@ cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
 openclaw gateway restart
 ```
 
-Source: `src/config/io.ts:95-112` (backup rotation)
+Source: `src/config/io.ts:273-290` (backup rotation)
 
 **Consider version-controlling your config** for change tracking:
 

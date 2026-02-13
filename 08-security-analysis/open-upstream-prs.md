@@ -4,13 +4,15 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 14-02-2026 (03:12 AEST)
+> **Last checked:** 14-02-2026 (05:24 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
-| [#15592](https://github.com/openclaw/openclaw/pull/15592) | OPEN | hardening | Sanitize and truncate untrusted WebSocket header values before logging | — | OPEN/PENDING |
+| [#15652](https://github.com/openclaw/openclaw/pull/15652) | OPEN | hardening | Constrain browser trace/download output paths to OpenClaw temp roots | — | OPEN/PENDING |
+| [#15615](https://github.com/openclaw/openclaw/pull/15615) | OPEN | security-fix | Restrict PATH override to exact match in node-host sanitizeEnv | — | OPEN/PENDING |
+| [#15608](https://github.com/openclaw/openclaw/pull/15608) | OPEN | hardening | Prune expired hook auth failure entries instead of clearing all rate-limit state | — | OPEN/PENDING |
 | [#15379](https://github.com/openclaw/openclaw/pull/15379) | OPEN | hardening | Strip unsigned thinking blocks in agent loop via `transformContext` hook | [#13826](https://github.com/openclaw/openclaw/issues/13826) | OPEN/PENDING |
 | [#15360](https://github.com/openclaw/openclaw/pull/15360) | OPEN | hardening | Prevent subagent announce from leaking internal prompts and stats | [#6669](https://github.com/openclaw/openclaw/issues/6669) | OPEN/PENDING |
 | [#15296](https://github.com/openclaw/openclaw/pull/15296) | OPEN | hardening | Harden config redaction defaults; add explicit `--show-secrets` opt-in | — | OPEN/PENDING |
@@ -78,6 +80,8 @@
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#15604](https://github.com/openclaw/openclaw/pull/15604) | MERGED | security-fix | Block private/loopback/metadata IPs in link-understanding URL detection (SSRF hardening) | — | ALREADY SYNCED |
+| [#15592](https://github.com/openclaw/openclaw/pull/15592) | MERGED | hardening | Sanitize and truncate untrusted WebSocket header values before logging (merged 2026-02-13) | — | ALREADY SYNCED |
 | [#1795](https://github.com/openclaw/openclaw/pull/1795) | MERGED | security-fix | Prevent auth bypass when behind unconfigured reverse proxy | — | ALREADY SYNCED |
 | [#2016](https://github.com/openclaw/openclaw/pull/2016) | MERGED | enhancement | Add gateway network exposure check to `openclaw doctor` | [#2015](https://github.com/openclaw/openclaw/issues/2015) | ALREADY SYNCED |
 | [#2568](https://github.com/openclaw/openclaw/pull/2568) | MERGED | docs | Add formal verification page | — | ALREADY SYNCED |
@@ -121,8 +125,10 @@
 | [#11152](https://github.com/openclaw/openclaw/pull/11152) | CLOSED | security-fix | Add `place_id` validation to prevent path traversal SSRF (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | CLOSED | hardening | Add `--harden` CLI flag for security-hardened gateway mode (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 
-**Total:** 100 tracked PRs (28 merged, 61 open, 2 draft, 9 closed)
+**Total:** 104 tracked PRs (30 merged, 64 open, 2 draft, 9 closed)
 
+> **Status change log (14-02-2026 05:24 AEST):** 1 state change detected. #15592 OPEN->MERGED (ALREADY SYNCED). 4 new PRs added: #15604 (MERGED, link-understanding SSRF hardening, ALREADY SYNCED), #15615 (OPEN, PATH override restriction), #15652 (OPEN, browser output path constraint), #15608 (OPEN, hook auth failure pruning).
+>
 > **Status change log (14-02-2026 03:12 AEST):** 6 state changes detected. #13129 OPEN->MERGED, #13184 OPEN->MERGED, #13185 OPEN->MERGED, #13767 OPEN->MERGED, #14661 OPEN->MERGED (all ALREADY SYNCED). #14350 OPEN->CLOSED (no replacement). 1 new PR added: #15592 (WebSocket log header sanitization, OPEN).
 >
 > **Status change log (14-02-2026 01:33 AEST):** 7 state changes detected. #15390 OPEN->MERGED, #14665 OPEN->MERGED, #13073 OPEN->MERGED, #15384 OPEN->CLOSED, #15314 OPEN->CLOSED, #13680 OPEN->CLOSED (superseded by #15035), #11152 OPEN->CLOSED. 5 new PRs added: #15035, #10525, #10529, #4026 (newly merged security PRs), #3926 (replacement for closed #15314).
@@ -137,7 +143,7 @@
 | [#8241](https://github.com/openclaw/openclaw/pull/8241) | (Matrix thread isolation) | MEDIUM | MERGED | `:thread:${threadRootId}` suffix at `extensions/matrix/src/matrix/monitor/handler.ts:446-447` |
 | [#8513](https://github.com/openclaw/openclaw/pull/8513) | [#8512](https://github.com/openclaw/openclaw/issues/8512) (CRITICAL) | CRITICAL | OPEN | Adds auth requirement for plugin HTTP routes in gateway |
 | [#9436](https://github.com/openclaw/openclaw/pull/9436) | [#9435](https://github.com/openclaw/openclaw/issues/9435) (HIGH), [#5120](https://github.com/openclaw/openclaw/issues/5120) (MEDIUM) | HIGH | MERGED | Query token acceptance removed from `extractHookToken()` in `src/gateway/hooks.ts`; server returns HTTP 400 when `?token=` present |
-| [#9518](https://github.com/openclaw/openclaw/pull/9518) | [#9517](https://github.com/openclaw/openclaw/issues/9517) (HIGH) | HIGH | MERGED | New `authorizeCanvasRequest()` at `src/gateway/server-http.ts:109-150` wraps canvas/A2UI endpoints |
+| [#9518](https://github.com/openclaw/openclaw/pull/9518) | [#9517](https://github.com/openclaw/openclaw/issues/9517) (HIGH) | HIGH | MERGED | New `authorizeCanvasRequest()` at `src/gateway/server-http.ts:109-155` wraps canvas/A2UI endpoints |
 | [#9529](https://github.com/openclaw/openclaw/pull/9529) | [#3277](https://github.com/openclaw/openclaw/issues/3277) (HIGH) | HIGH | OPEN | Validates archive entries against Zip Slip path traversal |
 | [#9513](https://github.com/openclaw/openclaw/pull/9513) | [#9512](https://github.com/openclaw/openclaw/issues/9512) (HIGH) | HIGH | OPEN | Adds path traversal checks to skill download archive extraction |
 | [#11054](https://github.com/openclaw/openclaw/pull/11054) | [#6609](https://github.com/openclaw/openclaw/issues/6609) (HIGH) | HIGH | OPEN | Adds auth token to sandbox browser bridge |
@@ -168,7 +174,7 @@
 | [#14662](https://github.com/openclaw/openclaw/pull/14662) | (XSS in control UI) | MEDIUM | OPEN | `JSON.stringify` in `<script>` tag at `control-ui.ts:173-179` does not escape `<` |
 | [#14661](https://github.com/openclaw/openclaw/pull/14661) | (canvas IP auth) | MEDIUM | OPEN | Canvas IP-based auth fallback at `server-http.ts:146` has no private network restriction; Greptile flags IPv6 `fe80::/10` misclass |
 | [#14655](https://github.com/openclaw/openclaw/pull/14655) | [#14586](https://github.com/openclaw/openclaw/issues/14586) | LOW | CLOSED | `includeSecrets` for config.get; author banned; no replacement PR identified |
-| [#14814](https://github.com/openclaw/openclaw/pull/14814) | (timing attack) | LOW | OPEN | Hook token at `server-http.ts:247` uses `!==` while `auth.ts:256` uses `safeEqual()` |
+| [#14814](https://github.com/openclaw/openclaw/pull/14814) | (timing attack) | LOW | OPEN | Hook token at `server-http.ts:254` uses `safeEqualSecret()` while `auth.ts:256` uses `safeEqual()` |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | (tool-call JSON leak) | LOW | OPEN | `stripJsonToolCallText()` prevents Ollama/local providers from leaking raw tool-call JSON to user surfaces |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | OPEN | `--harden` flag forces loopback bind + token auth + no Tailscale; no equivalent exists locally |
 | [#14318](https://github.com/openclaw/openclaw/pull/14318) | (outbound channel control) | MEDIUM | OPEN | `enforceOutboundAllowlist()` blocks Discord sends to non-allowed channels; local `send.outbound.ts` has zero guards |
@@ -196,7 +202,11 @@
 | [#13767](https://github.com/openclaw/openclaw/pull/13767) | [#13756](https://github.com/openclaw/openclaw/issues/13756) | MEDIUM | MERGED | Reject "undefined"/"null" token strings; local `onboard-helpers.ts:79` already rejects; ALREADY SYNCED |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | CLOSED | `--harden` flag closed without merge 2026-02-13; no replacement PR |
 | [#14661](https://github.com/openclaw/openclaw/pull/14661) | (canvas IP auth) | MEDIUM | MERGED | Canvas IP auth restricted to private networks; local `server-http.ts:150` uses `isPrivateOrLoopbackAddress()`; ALREADY SYNCED |
-| [#15592](https://github.com/openclaw/openclaw/pull/15592) | (log injection) | LOW | OPEN | Sanitize WebSocket log headers; local `ws-connection.ts:72-78` reads raw headers without sanitization |
+| [#15592](https://github.com/openclaw/openclaw/pull/15592) | (log injection) | LOW | MERGED | Sanitize WebSocket log headers; local `ws-connection.ts:39-54` has `sanitizeLogValue()`; ALREADY SYNCED |
+| [#15604](https://github.com/openclaw/openclaw/pull/15604) | (link-understanding SSRF) | MEDIUM | MERGED | Block private/loopback/metadata IPs in link-understanding; local `detect.ts:35-42` has `isBlockedHost()`; ALREADY SYNCED |
+| [#15615](https://github.com/openclaw/openclaw/pull/15615) | (PATH shadow attack) | MEDIUM | OPEN | Restrict PATH override to exact match; local `runner.ts:230-233` allows prepending via `endsWith()` |
+| [#15652](https://github.com/openclaw/openclaw/pull/15652) | (browser path traversal) | MEDIUM | OPEN | Constrain browser trace/download output paths; no `resolvePathWithinRoot` exists locally |
+| [#15608](https://github.com/openclaw/openclaw/pull/15608) | (rate-limit state reset) | LOW | OPEN | Prune expired hook auth failure entries instead of `clear()`; local `server-http.ts` may have same pattern |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
 
@@ -268,7 +278,7 @@
 
 **Changes:**
 - `src/gateway/hooks.ts` — `extractHookToken()` no longer reads `url.searchParams` for token
-- `src/gateway/server-http.ts:236-243` — returns HTTP 400 when `?token=` query parameter is present
+- `src/gateway/server-http.ts:243-249` — returns HTTP 400 when `?token=` query parameter is present
 - `src/commands/dashboard.ts` — no longer constructs `?token=` URLs
 - `src/commands/onboard-helpers.ts` — no longer passes token in URL
 
@@ -281,9 +291,9 @@
 **Closes:** [#9517](https://github.com/openclaw/openclaw/issues/9517) (HIGH — canvas host auth bypass)
 
 **Changes:**
-- `src/gateway/server-http.ts:109-150` — new `authorizeCanvasRequest()` function
-- `src/gateway/server-http.ts:514-531` — canvas HTTP handler now auth-wrapped
-- `src/gateway/server-http.ts:584` — canvas WebSocket upgrade now auth-wrapped
+- `src/gateway/server-http.ts:109-155` — new `authorizeCanvasRequest()` function
+- `src/gateway/server-http.ts:527-539` — canvas HTTP handler now auth-wrapped
+- `src/gateway/server-http.ts:596` — canvas WebSocket upgrade now auth-wrapped
 
 **Local Impact:** SYNC NEEDED — local canvas endpoints may still be unauthenticated
 
@@ -641,11 +651,11 @@
 - `src/gateway/server-http.ts` — IP-based auth fallback restricted to private/loopback addresses
 - `src/gateway/net.ts` — `isPrivateOrLoopbackAddress()` utility function
 
-**Local Impact:** ALREADY SYNCED — `server-http.ts:147-152` with `isPrivateOrLoopbackAddress(clientIp)` check; test at `server.canvas-auth.e2e.test.ts:84` confirms behavior
+**Local Impact:** ALREADY SYNCED — `server-http.ts:150-155` with `isPrivateOrLoopbackAddress(clientIp)` check; test at `server.canvas-auth.e2e.test.ts:84` confirms behavior
 
 ### #15592: Gateway: Sanitize WebSocket Log Headers
 
-**PR Status:** OPEN (2026-02-13)
+**PR Status:** MERGED (2026-02-13T17:11:54Z)
 **Category:** hardening
 
 **Changes:**
@@ -654,10 +664,10 @@
 **Greptile Review:** Flags that `sanitizeLogValue` only strips C0/C1 control characters; Unicode bidi overrides (U+202E, U+2066-U+2069) still pass through and could produce misleading log output.
 
 **Local Validation:**
-- `src/gateway/server/ws-connection.ts:72-78` — local code reads raw headers via `headerValue()` helper with no sanitization
-- No `sanitizeLogValue` function exists locally
+- `src/gateway/server/ws-connection.ts:39-54` — local code has `sanitizeLogValue()` function with control character stripping, format regex, whitespace normalization, and UTF-16-safe truncation
+- Lines 195-199 — applied to `forwardedFor`, `requestOrigin`, `requestHost`, `requestUserAgent`, and `reason`
 
-**Local Impact:** OPEN/PENDING — PR not yet merged. Local code logs raw WebSocket header values without sanitization.
+**Local Impact:** ALREADY SYNCED — `sanitizeLogValue()` present locally with full sanitization pipeline
 
 ### #14350: Add --harden CLI Flag for Security-Hardened Gateway Mode
 
@@ -667,3 +677,78 @@
 **Description:** Proposed `--harden` CLI flag that would force loopback bind, token auth, and disable Tailscale. Closed without merge; no replacement PR identified.
 
 **Local Impact:** NOT AFFECTED — PR closed without merge
+
+### #15604: Block Private/Loopback/Metadata IPs in Link-Understanding URL Detection
+
+**PR Status:** MERGED (2026-02-13T17:38:40Z)
+**Category:** security-fix
+
+**Security Impact:** `isAllowedUrl()` in `src/link-understanding/detect.ts` only blocked `127.0.0.1`. Missing blocks for `localhost`, `0.0.0.0`, `[::1]`, RFC1918 private ranges, link-local (`169.254.x.x`), cloud metadata (`169.254.169.254`), and CGNAT (`100.64.0.0/10`). URLs extracted here are passed to CLI tools for fetching, creating an SSRF vector.
+
+**Changes:**
+- `src/link-understanding/detect.ts` — adds `isBlockedHost()` that checks loopback hostnames, IPv6 loopback, all private IPv4 ranges, link-local, and CGNAT
+- `src/link-understanding/detect.test.ts` — tests for localhost, private ranges, link-local, metadata, CGNAT
+
+**Greptile Review:** Confidence 2/5. Flags that `isBlockedHost()` only blocks private IP literals, not hostnames that resolve/redirect to private IPs (DNS-based SSRF still possible). The repo's existing SSRF guard (`fetch-guard.ts`/`ssrf.ts`) handles DNS resolution but is not used here.
+
+**Local Validation:**
+- `src/link-understanding/detect.ts:1` — imports `isBlockedHostname`, `isPrivateIpAddress` from `../infra/net/ssrf.js`
+- `src/link-understanding/detect.ts:35-42` — `isBlockedHost()` uses both `isBlockedHostname()` and `isPrivateIpAddress()` with `localhost.localdomain` check
+
+**Local Impact:** ALREADY SYNCED — local `detect.ts` has complete `isBlockedHost()` implementation
+
+### #15615: Restrict PATH Override to Exact Match in node-host sanitizeEnv
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** security-fix
+
+**Security Impact:** `sanitizeEnv()` accepted any PATH value ending with the current base PATH via `endsWith()` check, allowing prepending arbitrary directories (e.g., `/tmp/evil:/usr/local/bin:/usr/bin`). An authenticated caller could shadow allowlisted binaries with attacker-controlled executables.
+
+**Changes:**
+- `src/node-host/runner.ts` — only accept PATH overrides that exactly match the current base PATH; reject any prepending or modification
+
+**Greptile Review:** Confidence 4/5. Flags that empty or undefined PATH overrides are silently ignored, which may leave inherited PATH in effect.
+
+**Local Validation:**
+- `src/node-host/runner.ts:221-234` — local `sanitizeEnv()` has the vulnerable pattern:
+  - Line 226: `if (!basePath || trimmed === basePath)` — exact match OK
+  - Lines 230-233: `if (trimmed.endsWith(suffix))` — allows prepending arbitrary directories
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Local `sanitizeEnv()` at `runner.ts:230-233` allows PATH prepending.
+
+### #15652: Constrain Browser Trace/Download Output Paths to OpenClaw Temp Roots
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** hardening
+
+**Security Impact:** Browser file-output routes (`POST /trace/stop`, `POST /wait/download`, `POST /download`) accept arbitrary paths, creating a path traversal/escape vector. This PR constrains them to OpenClaw temp roots.
+
+**Changes:**
+- `src/browser/routes/path-output.ts` (NEW) — shared helper for route-level output path resolution
+- `src/browser/routes/agent.debug.ts`, `src/browser/routes/agent.act.ts` — wired into browser routes
+- Tests, CLI, docs updated
+
+**Greptile Review:** Confidence 4/5. Flags edge case where `resolvePathWithinRoot` rejects paths that resolve exactly to the root directory.
+
+**Local Validation:**
+- No `resolvePathWithinRoot` or `path-output.ts` module exists locally (grep confirmed)
+- Browser routes at `agent.debug.ts` and `agent.act.ts` lack output path constraints
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Local browser routes accept arbitrary output paths.
+
+### #15608: Prune Expired Hook Auth Failure Entries Instead of Clearing All State
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** hardening
+
+**Security Impact:** Hook auth failure tracking used `hookAuthFailures.clear()` when at capacity (2048 entries), resetting ALL rate limiting state. Previously-throttled clients could bypass limits by triggering the capacity clear. The fix prunes expired entries first, then evicts the oldest half.
+
+**Changes:**
+- `src/gateway/server-http.ts` — replaces `clear()` with prune-then-evict logic
+
+**Greptile Review:** Confidence 3/5. Flags that eviction by Map insertion order does not reflect recent activity for existing keys, so active/throttled clients can be evicted under sustained traffic.
+
+**Local Validation:**
+- `src/gateway/server-http.ts` — local hook auth failure handling exists; would need to check if `clear()` pattern is present at capacity
+
+**Local Impact:** OPEN/PENDING — PR not yet merged.
