@@ -121,6 +121,9 @@ openclaw status --all | grep -E "(requests|tokens)"
 # "After each major step, stop and ask if I want you to continue."
 
 # 3. Use checkpoints for multi-step workflows
+# Checkpoints save the agent's progress at each major step, so if something
+# goes wrong partway through, the agent can pick up where it left off
+# instead of starting over (and losing context).
 openclaw config set agents.defaults.checkpoints true
 
 # 4. Monitor for context drift symptoms
@@ -167,10 +170,14 @@ openclaw config set agents.defaults.checkpoints true
 # RIGHT: "First, do A. When complete, ask me and I'll tell you the next step."
 
 # 2. Use checkpoints for multi-stage workflows
+# Checkpoints save the agent's progress at each major step, so if something
+# goes wrong partway through, it can resume instead of starting over.
 openclaw config set agents.defaults.checkpoints true
 
 # 3. Configure tool policy to prevent parallel runaway
-openclaw config set tools.maxConcurrent 3  # Limit parallel ops
+# Without this, the agent might fire off 10+ tool calls at once, overwhelming
+# the system and burning through your API budget. This caps it at 3 at a time.
+openclaw config set tools.maxConcurrent 3
 
 # 4. After agent completes a step, verify before proceeding
 # Get confirmation: "Step 1 done. Ready for step 2?"
