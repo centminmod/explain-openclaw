@@ -184,7 +184,7 @@ The security analysis in this guide is based on verified source code review:
 |-----------|-------------|---------------------|
 | Network binding | `src/gateway/net.ts:197-247` | Fallback chain with silent 0.0.0.0 fallback |
 | Authentication | `src/gateway/auth.ts` | Token and password validation |
-| File permissions | `src/config/io.ts:720,736` | 0o700 directories, 0o600 files |
+| File permissions | `src/config/io.ts:720,749` | 0o700 directories, 0o600 files |
 | SSRF protection | `src/infra/net/ssrf.ts:253-305` | DNS pinning (Mac/VPS only) |
 | Shell execution | `src/agents/bash-tools.exec.ts` | Allowlist and human approval |
 | Security audit | `src/security/audit.ts:334-353` | Critical flag detection |
@@ -204,4 +204,5 @@ Choose your deployment type and continue to the detailed guide:
 - **[AI Self-Misconfiguration](./ai-self-misconfiguration.md)** - When AI modifies its own security config
 - **[Prompt Injection Attacks](./prompt-injection-attacks.md)** - 30 attack examples with data exfiltration
 - **[Misconfiguration Examples](./misconfiguration-examples.md)** - Real mistakes and how to fix them
+- **[Operational Gotchas](./operational-gotchas.md)** - Real-world usage patterns that go wrong (from external articles)
 - **[Incident Response Playbook](./incident-response.md)** - What to do when things go wrong

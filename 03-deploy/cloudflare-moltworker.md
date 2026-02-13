@@ -2,7 +2,7 @@
 
 > **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot). Moltworker is a proof-of-concept serverless deployment — not an official Cloudflare product.
 
-> **Supplementary resource:** [Kimi K2.5 Cloudflare Guide](../explain-clawdbot-kilocode-kimi-k2.5/cloudflare-moltworker.md) provides additional explanations for D1 Database, KV, and Queues with beginner-friendly analogies. Note: it does not cover Sandbox SDK (the core runtime) and its security analysis contains inaccuracies -- use this guide for actual deployment.
+> **Supplementary resource:** [Kimi K2.5 Cloudflare Guide](../../explain-clawdbot-kilocode-kimi-k2.5/cloudflare-moltworker.md) provides additional explanations for D1 Database, KV, and Queues with beginner-friendly analogies. Note: it does not cover Sandbox SDK (the core runtime) and its security analysis contains inaccuracies -- use this guide for actual deployment.
 
 ## Table of contents (Explain OpenClaw)
 
@@ -53,6 +53,21 @@ Related official docs:
 - [Cloudflare R2](https://developers.cloudflare.com/r2/)
 - [AI Gateway](https://developers.cloudflare.com/ai-gateway/)
 - [Browser Rendering](https://developers.cloudflare.com/browser-rendering/)
+
+---
+
+## Post-Deployment: Read This First
+
+> **Before you start using OpenClaw daily**, read these operational gotchas from real users:
+>
+> - **The 60% Success Rule** — Tasks with >10 steps fail 40% of the time due to context drift
+> - **"Draft vs Send" Ambiguity** — Agents may interpret "draft" as "create and send"
+> - **Browser Profile Bleed** — Using your daily Chrome profile gives agent access to ALL your logged-in accounts
+> - **Dormancy Trap** — Long sessions cause agent to freeze or lose track of context
+> - **Always-On Cost** — Running 24/7 costs more than expected (473 requests/day = $847/month in one case)
+> - **Moltworker-Specific** — No egress filtering means successful prompt injection can exfiltrate to any server
+>
+> See: [Operational Gotchas](../05-worst-case-security/operational-gotchas.md) for 10 real-world usage patterns that go wrong and how to fix them.
 
 ---
 

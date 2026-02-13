@@ -6,6 +6,7 @@
 
 # Explain OpenClaw (formerly Moltbot/Clawdbot) - Integrated Beginner + Technical Guide
 
+> **Public repo:** This documentation is also available at [github.com/centminmod/explain-openclaw](https://github.com/centminmod/explain-openclaw)
 
 ## Table of contents
 
@@ -53,6 +54,7 @@
   - [Skills.sh risks](./05-worst-case-security/skills-sh-risks.md) *(supply chain)*
   - [Prompt injection attacks](./05-worst-case-security/prompt-injection-attacks.md) *(27 examples)*
   - [Misconfiguration examples](./05-worst-case-security/misconfiguration-examples.md)
+  - [Operational gotchas](./05-worst-case-security/operational-gotchas.md) *(Real-world usage patterns)*
   - [AI self-misconfiguration](./05-worst-case-security/ai-self-misconfiguration.md)
 - **Social media coverage:**
   - [Overview](./09-social-media-coverage/README.md)
@@ -76,7 +78,7 @@ This folder is a **living knowledge base** for the OpenClaw framework — active
 | **AI Model Comparison** | Accuracy benchmarks across five AI models' analyses |
 | **Social Media Coverage** | YouTube interviews, podcasts, notable community content |
 
-**What started as** a synthesis of five AI models' analyses has expanded through continuous upstream tracking and independent code verification. It reconciles analyses from [Copilot GPT-5.2](./explain-clawdbot-copilot-gpt-5.2/), [Gemini 3.0 Pro](./explain-clawdbot-gemini-3.0-pro/), [GLM 4.7](./explain-clawdbot-glm-4.7/), [Opus 4.5](./explain-clawdbot-opus-4.5/), and [Kimi K2.5](./explain-clawdbot-kilocode-kimi-k2.5/) — with an [accuracy comparison](./08-security-analysis/ai-model-analysis-comparison.md) showing which models verified claims against source code and which accepted them at face value.
+**What started as** a synthesis of five AI models' analyses has expanded through continuous upstream tracking and independent code verification. It reconciles analyses from [Copilot GPT-5.2](../explain-clawdbot-copilot-gpt-5.2/), [Gemini 3.0 Pro](../explain-clawdbot-gemini-3.0-pro/), [GLM 4.7](../explain-clawdbot-glm-4.7/), [Opus 4.5](../explain-clawdbot-opus-4.5/), and [Kimi K2.5](../explain-clawdbot-kilocode-kimi-k2.5/) — with an [accuracy comparison](./08-security-analysis/ai-model-analysis-comparison.md) showing which models verified claims against source code and which accepted them at face value.
 
 > **Repo docs + code win.** Model summaries are supporting material.
 
