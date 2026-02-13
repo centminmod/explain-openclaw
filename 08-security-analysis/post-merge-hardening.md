@@ -42,6 +42,7 @@
 - [Feb 13 sync 1 (35 commits)](#post-merge-hardening-feb-13-sync-1-35-upstream-commits)
 - [Feb 13 sync 4 (20 commits)](#post-merge-hardening-feb-13-sync-4-20-upstream-commits)
 - [Feb 13 sync 5 (35 commits)](#post-merge-hardening-feb-13-sync-5-35-upstream-commits)
+- [Feb 14 sync 1 (16 commits)](#post-merge-hardening-feb-14-sync-1-16-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -905,4 +906,36 @@ Merge commit `82021fa43` — 35 upstream commits. Version bump to 2026.2.13. Mul
 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 
-**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+**Gap status (Feb 13 sync 5): 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+
+### Post-merge hardening (Feb 14 sync 1, 16 upstream commits)
+
+**SECURITY-RELEVANT (4):**
+
+1. **`749e28dec`** — **fix(security): block dangerous tools from HTTP gateway and fix ACP auto-approval (OC-02):** Two critical RCE vector closures.
+   - **Gateway HTTP tool deny list:** New `DEFAULT_GATEWAY_HTTP_TOOL_DENY` at `src/gateway/tools-invoke-http.ts:42-51` blocks `sessions_spawn`, `sessions_send`, `gateway`, `whatsapp_login` from HTTP `/tools/invoke` endpoint. Deny filter applied at `:316-322` after policy cascade, before tool lookup. Configurable via `gateway.tools.{allow,deny}` in `openclaw.json` (schema: `src/config/zod-schema.ts`, types: `src/config/types.gateway.ts`).
+   - **ACP permission hardening:** New `DANGEROUS_ACP_TOOLS` set at `src/acp/client.ts:19-30` requires explicit interactive confirmation for `exec`, `spawn`, `shell`, `sessions_spawn`, `sessions_send`, `gateway`, `fs_write`, `fs_delete`, `fs_move`, `apply_patch`. Safe tools auto-approve (`:171-178`). Empty options array now returns cancel (`:162-165`, was hardcoded allow). **Directly addresses Audit 2 Claim 5** (self-approving agent / no RBAC) — ACP sessions can no longer auto-approve dangerous tool executions.
+
+2. **`ee31cd47b`** (PR [#15390](https://github.com/openclaw/openclaw/pull/15390)) — **fix: close OC-02 gaps in ACP permission + gateway HTTP deny config:** Follow-up to `749e28dec`. Adds `gateway.tools` configuration schema, test coverage for deny list in `src/gateway/tools-invoke-http.test.ts` and `src/acp/client.test.ts`, and upstream documentation in `docs/gateway/configuration-reference.md` and `docs/gateway/tools-invoke-http-api.md`. Thanks @aether-ai-agent.
+
+3. **`604dc700a`** — **MSTeams: fix regex injection in mention name formatting:** `extensions/msteams/src/mentions.ts:108` — escapes regex metacharacters (`[.*+?^${}()|[\]\\]`) in display names before constructing RegExp. Prevents runtime errors from crafted display names containing regex metacharacters. Hardened further in `106d60551` with fallback link formatting.
+
+4. **`25950bcbb`** — **fix(sessions): normalize absolute sessionFile paths for v2026.2.12 compatibility:** `src/config/sessions/paths.ts:77-87` — `resolvePathWithinSessionsDir()` now normalizes legacy absolute paths within the sessions directory to relative before containment validation. Fixes 6 issues (#15283, #15214, #15237, #15216, #15152, #15213) caused by the v2026.2.12 path traversal security fix rejecting previously-valid absolute paths.
+
+**NON-SECURITY (notable):**
+
+5. **`7c6d6ce06`** + **`73c6c80b7`** + **`106d60551`** — **MS Teams: user mention support:** New `extensions/msteams/src/mentions.ts` (114 lines) with `parseMentions()` and `formatMentionsInText()`. Adds `User.Read.All` permission requirement.
+
+6. **`edfdd12d3`** (PR [#11020](https://github.com/openclaw/openclaw/pull/11020)) — **TTS: add missing OpenAI voices:** Adds ballad, cedar, juniper, marin, verse to `src/tts/tts.ts`. Thanks @lailoo.
+
+7. **`eb4a0a84f`** + **`771c7ba14`** + **`8307f9738`** — **fix: use Homebrew for signal-cli install on non-x64 architectures:** Architecture-aware signal-cli installation via Homebrew on arm64/arm hosts. Thanks @jogvan-k.
+
+8. **`990413534`** (PRs [#15103](https://github.com/openclaw/openclaw/pull/15103), [#15448](https://github.com/openclaw/openclaw/pull/15448)) — **fix: multi-agent session path resolution:** Fixes `agentId` propagation through status/usage paths.
+
+9. **`9131b22a2`** — **test: migrate suites to e2e coverage layout:** 376 test files renamed `.test.ts` to `.e2e.test.ts`. No functional changes.
+
+**Line number shifts in this sync:** None. No changes to files referenced in existing documentation line numbers.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged). Note: The OC-02 ACP fix significantly strengthens the defense-in-depth posture for Audit 2 Claim 5 (agent self-approval) but does not close any of the 3 tracked gaps directly.

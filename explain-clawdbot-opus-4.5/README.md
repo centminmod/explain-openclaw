@@ -549,6 +549,12 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
 
+### Post-Merge Hardening (Feb 14 sync 1) — 16 upstream commits
+
+**Security relevance: HIGH** — 2 critical OC-02 audit response commits. Gateway HTTP tool deny list (`749e28dec` — blocks `sessions_spawn`, `sessions_send`, `gateway`, `whatsapp_login` from `/tools/invoke`). ACP dangerous tool gating (`749e28dec` — `DANGEROUS_ACP_TOOLS` requires interactive confirmation for `exec`, `spawn`, `shell`, `sessions_spawn`, `sessions_send`, `gateway`, `fs_write`, `fs_delete`, `fs_move`, `apply_patch`; empty options → cancel). Follow-up `ee31cd47b` (PR #15390) adds config schema + tests. **Directly addresses Audit 2 Claim 5** (self-approving agent). MS Teams regex injection fix (`604dc700a`). Session path normalization (`25950bcbb`).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---

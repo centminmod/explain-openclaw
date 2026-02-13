@@ -888,6 +888,14 @@ No line shifts. No new CVEs.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
 
+### Post-Merge Hardening (Feb 14 sync 1) — 16 upstream commits
+
+**Security relevance: HIGH** — 2 critical OC-02 audit response commits closing RCE vectors, 1 regex injection fix, 1 session path backward-compatibility fix. CRITICAL: Gateway HTTP tool deny list (`749e28dec` — `DEFAULT_GATEWAY_HTTP_TOOL_DENY` blocks `sessions_spawn`, `sessions_send`, `gateway`, `whatsapp_login` at `src/gateway/tools-invoke-http.ts:42-51`, configurable via `gateway.tools.{allow,deny}`). CRITICAL: ACP dangerous tool gating (`749e28dec` — `DANGEROUS_ACP_TOOLS` set at `src/acp/client.ts:19-30` requires interactive confirmation for `exec`, `spawn`, `shell`, `sessions_spawn`, `sessions_send`, `gateway`, `fs_write`, `fs_delete`, `fs_move`, `apply_patch`; empty options → cancel; safe tools auto-approve). Follow-up `ee31cd47b` (PR #15390) adds config schema + test coverage. **Directly addresses Audit 2 Claim 5** (self-approving agent). MS Teams regex injection fix (`604dc700a`). Session path normalization (`25950bcbb` — backward compat for v2026.2.12 path traversal fix).
+
+**Line shifts:** None. No changes to files referenced in existing documentation.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+
 ---
 
 ## Recommended Hardening Measures
