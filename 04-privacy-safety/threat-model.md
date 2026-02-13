@@ -98,8 +98,8 @@ If you run a reverse proxy (e.g. nginx, Caddy, Traefik) in front of the Gateway,
 2. **IP checks see the proxy IP:** The Gateway sees the proxy's IP instead of the real client IP, breaking rate limiting and access controls.
 
 The Gateway solves this with a trust chain:
-- `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:98-104`)
-- `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:106-120`)
+- `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:142-148`)
+- `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:150-164`)
 - `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:96-117`)
 
 **Configuration:**

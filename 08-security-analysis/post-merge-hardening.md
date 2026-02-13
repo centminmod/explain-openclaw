@@ -1146,3 +1146,39 @@ Thanks @jogvan-k.
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge. New rate limiting (`30b6eccae`) adds defense-in-depth against brute-force attacks on gateway credentials.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+
+### Post-merge hardening (Feb 14 sync 3, 35 upstream commits)
+
+**SECURITY-RELEVANT (7):**
+
+1. **`14fc74200`** — **fix(security): restrict canvas IP-based auth to private networks (#14661):** New `isPrivateOrLoopbackAddress()` in `src/gateway/net.ts:51-90` validates that IP-based canvas authentication only accepts connections from private network ranges (RFC1918: 10.x, 172.16-31.x, 192.168.x; link-local: 169.254.x; CGNAT: 100.64-127.x; IPv6 ULA fc/fd, link-local fe80). Prevents spoofed internet addresses from exploiting IP-based device pairing. Used in `src/gateway/server-http.ts` canvas auth path.
+
+2. **`767fd9f22` + `f788de30c`** — **fix: classify /tools/invoke errors and sanitize 500s (#13185, #5):** Error response sanitization across 4 gateway endpoints (`src/gateway/tools-invoke-http.ts`, `openai-http.ts`, `openresponses-http.ts`). Raw error messages (including stack traces and module names) were being sent to clients — an attacker could use these to map the codebase. Errors are now classified by severity and redacted for client responses; full details remain in server-side logs. Thanks @davidrudduck.
+
+3. **`59733a02c`** — **fix(configure): reject literal "undefined" and "null" gateway auth tokens (#13767):** `src/commands/configure.gateway-auth.ts` and `src/commands/onboard-helpers.ts` now reject the literal strings `"undefined"` and `"null"` as gateway tokens, forcing real token entry or random generation. Prevents configuration bugs that would leave the gateway effectively unprotected.
+
+4. **`5643a9347`** — **fix(security): default standalone servers to loopback bind (#13184):** Canvas host (`src/canvas-host/server.ts`) and Telegram webhook (`src/telegram/monitor.ts`) now default to `127.0.0.1` instead of `0.0.0.0`. Prevents unintended network exposure when users run standalone servers without explicit bind configuration. Users must now explicitly override to enable LAN access.
+
+5. **`29d783958`** — **fix: execute sandboxed file ops inside containers (#4026):** **[CRITICAL]** New `src/agents/sandbox/fs-bridge.ts` (257 lines) provides `SandboxFsBridge` that routes file operations (read, write, copy, stat) through Docker `exec` instead of executing on the host. `src/agents/sandbox/docker.ts:345-358` wires this into the sandbox context. `src/agents/pi-tools.read.ts` and `src/web/media.ts` updated to use the bridge. Previously, sandboxed agents' file tool calls executed with host-level filesystem access — a container escape path. **Deepens Medium Audit Claim 2 mitigation** (outPath arbitrary write) — file operations now execute in the container namespace. **Gap #3 partially mitigated** — container isolation adds a layer; explicit path validation still missing.
+
+6. **`96318641d`** — **fix: Finish credential redaction that was merged unfinished (#13073):** Major refactor of `src/config/redact-snapshot.ts` (+516 lines). New `buildRedactionLookup()` at `:51-79` builds a Set of all sensitive config paths from `ConfigUiHints`. New `isSensitivePath()`, `isEnvVarPlaceholder()`, `isExtensionPath()` helpers. `redactConfigObject()` at `:273` and `redactConfigSnapshot()` at `:277` now perform comprehensive credential redaction using hint-driven sensitivity detection. All API keys, tokens, passwords, and webhook secrets are replaced with `__OPENCLAW_REDACTED__` (`:42`). New `src/config/schema.labels.ts` (+298 lines) provides field labels. **Strengthens Issue #1796 Claim 1 mitigation** (plaintext credential storage).
+
+7. **`6c4c53581`** — **fix(security): handle additional Unicode angle bracket homoglyphs in content sanitization (#14665):** `src/security/external-content.ts:89-103` adds `ANGLE_BRACKET_MAP` with 12 Unicode homoglyphs: mathematical angle brackets (27E8/27E9), CJK angle brackets (3008/3009), left/right-pointing angle brackets (2329/232A), single angle quotation marks (2039/203A), small less-than/greater-than (FE64/FE65), plus existing fullwidth (FF1C/FF1E). `foldMarkerChar()` at `:105-118` and `foldMarkerText()` regex at `:122` now normalize all 12 homoglyphs. Hardens prompt injection defense against Unicode-based marker escape attacks.
+
+**NON-SECURITY (notable):**
+
+8. **`08b7932df`** — **feat(agents): Hugging Face Inference provider first-class support (#13472):** New `src/agents/huggingface-models.ts` (229 lines), `src/commands/auth-choice.apply.huggingface.ts` (165 lines), `docs/providers/huggingface.md` (209 lines). Adds Hugging Face as a first-class model provider with proper token handling and model discovery.
+
+9. **`4c86821ac`** — **fix: allow device-paired clients to retrieve TTS API keys (#14613):** New `src/gateway/server-methods/talk.ts` (97 lines) adds `talk.config` GET endpoint. TTS API keys scoped to device-paired clients with proper scope validation.
+
+10. **`1def8c544`** — **fix(security): extend audit hardening checks:** `src/security/audit-extra.async.ts` +210 lines and `audit-extra.sync.ts` +213 lines add 4 new audit checks for config/sandbox/tool policy consistency.
+
+11. **`ca3c83acd`** + **`4337fa209`** + **`f612e3590`** — **fix(security): clarify dmScope remediation path:** `src/security/audit.ts` now shows explicit `openclaw config set` CLI command in dmScope remediation guidance. New test coverage for dmScope guidance regression.
+
+---
+
+**Line number shifts in this sync:** `net.ts` +44 lines at line 46 (`isPrivateOrLoopbackAddress` insertion): old 98→142 (`isTrustedProxyAddress`), old 106→150 (`resolveGatewayClientIp`), old 153→197 (`resolveGatewayBindHost`), old 212→256 (`canBindToHost`), old 263→307 (`isLoopbackHost`). `docker.ts` +91 lines (fs-bridge integration + new functions): old 147→238 (`readOnlyRoot`), old 153→245 (`--network`), old 164-166→256-258 (`capDrop`), old 167→259 (`no-new-privileges`), old 169-172→260-264 (seccomp/apparmor), old 176-181→266-274 (DNS/hosts), old 184-197→279-293 (resource limits), old 206-210→296-300 (binds), old 233-242→322-332 (workspace mount), old 248-249→338-339 (`setupCommand`). `server-methods.ts` +2 lines (talk.config endpoint): old 93→95 (`authorizeGatewayMethod`), old 93-163→95-165 (full RBAC function). `external-content.ts` +15 lines (homoglyph expansion): old 87-110→89-125 (ANGLE_BRACKET_MAP + foldMarkerChar), old 112-152→127-167 (`replaceMarkers`). `redact-snapshot.ts` +516 lines (major refactor): old 31-66→42,273-310 (REDACTED_SENTINEL + redaction functions), old 67-69→273-275 (`redactConfigObject` export). `audit-extra.sync.ts` +213 lines (4 new checks): old 167-172→177 (`isClaude45OrHigher`), old 294-317→389-391 (hooks split labels), old 505-535→713-760 (small model risk). `audit-extra.async.ts` +210 lines: old 547-720→770-933 (plugin code safety). `bash-tools.exec.ts` +18 lines: old 938-947→955-962 (elevatedMode), old 972→982 (baseEnv), old 976-977→987-988 (validateHostEnv call), old 1278→1288 (bypassApprovals). `nodes-tool.ts` +27 lines: old 344-347→356-357 (outPath). All references updated and LSP-verified.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge. Credential redaction completion (`96318641d`) deepens defense-in-depth for all CVEs involving credential handling.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format — Gap #2 unchanged, outPath validation — Gap #3 further mitigated by container-level file ops isolation `29d783958`, bootstrap/memory .md scanning — Gap #4 unchanged).

@@ -4,12 +4,13 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 14-02-2026 (01:33 AEST)
+> **Last checked:** 14-02-2026 (03:12 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#15592](https://github.com/openclaw/openclaw/pull/15592) | OPEN | hardening | Sanitize and truncate untrusted WebSocket header values before logging | — | OPEN/PENDING |
 | [#15379](https://github.com/openclaw/openclaw/pull/15379) | OPEN | hardening | Strip unsigned thinking blocks in agent loop via `transformContext` hook | [#13826](https://github.com/openclaw/openclaw/issues/13826) | OPEN/PENDING |
 | [#15360](https://github.com/openclaw/openclaw/pull/15360) | OPEN | hardening | Prevent subagent announce from leaking internal prompts and stats | [#6669](https://github.com/openclaw/openclaw/issues/6669) | OPEN/PENDING |
 | [#15296](https://github.com/openclaw/openclaw/pull/15296) | OPEN | hardening | Harden config redaction defaults; add explicit `--show-secrets` opt-in | — | OPEN/PENDING |
@@ -45,11 +46,9 @@
 | [#3926](https://github.com/openclaw/openclaw/pull/3926) | OPEN | security-fix | Disable `browser.evaluateEnabled` by default (ACE via browser evaluate endpoint) | — | OPEN/PENDING |
 | [#14662](https://github.com/openclaw/openclaw/pull/14662) | OPEN | security-fix | Escape `<` in inline JSON to prevent script tag XSS | — | OPEN/PENDING |
 | [#14814](https://github.com/openclaw/openclaw/pull/14814) | OPEN | hardening | Use timing-safe comparison for hook token auth | — | OPEN/PENDING |
-| [#14661](https://github.com/openclaw/openclaw/pull/14661) | OPEN | hardening | Restrict canvas IP-based auth to private networks | — | OPEN/PENDING |
 | [#14197](https://github.com/openclaw/openclaw/pull/14197) | OPEN | security-fix | Harden browser API auth, token comparisons (7 locations), and hook tokens | — | OPEN/PENDING |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | OPEN | hardening | Sanitize JSON tool-call payload text to prevent leak via Ollama/local providers | — | OPEN/PENDING |
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | OPEN | security-fix | Docker gateway auth bypass via Host header spoofing — verify client IP matches Docker gateway | — | OPEN/PENDING |
-| [#14350](https://github.com/openclaw/openclaw/pull/14350) | OPEN | hardening | Add `--harden` CLI flag for security-hardened gateway mode (loopback bind, token auth, no Tailscale) | — | OPEN/PENDING |
 | [#14318](https://github.com/openclaw/openclaw/pull/14318) | OPEN | hardening | Enforce outbound allowlist on Discord send functions (blocks agent writes to non-allowed channels) | — | OPEN/PENDING |
 | [#14224](https://github.com/openclaw/openclaw/pull/14224) | OPEN | hardening | Telegram member-info action exposes chat administrators (admin enumeration) | — | OPEN/PENDING |
 | [#14112](https://github.com/openclaw/openclaw/pull/14112) | OPEN | hardening | Test verifying `--ignore-scripts` blocks postinstall execution in plugin archive install | [#13132](https://github.com/openclaw/openclaw/issues/13132) | OPEN/PENDING |
@@ -57,7 +56,6 @@
 | [#13876](https://github.com/openclaw/openclaw/pull/13876) | OPEN | hardening | Auth & security enhancements — CLI sync, guard models, config protection | [#13196](https://github.com/openclaw/openclaw/issues/13196), [#13236](https://github.com/openclaw/openclaw/issues/13236) | OPEN/PENDING |
 | [#13817](https://github.com/openclaw/openclaw/pull/13817) | DRAFT | hardening | Configurable prompt injection monitor for tool results | — | OPEN/PENDING |
 | [#13777](https://github.com/openclaw/openclaw/pull/13777) | OPEN | security-fix | Redact sensitive values in CLI `config get` output | [#13683](https://github.com/openclaw/openclaw/issues/13683) | OPEN/PENDING |
-| [#13767](https://github.com/openclaw/openclaw/pull/13767) | OPEN | security-fix | Reject literal "undefined" and "null" gateway auth tokens | [#13756](https://github.com/openclaw/openclaw/issues/13756) | OPEN/PENDING |
 | [#13737](https://github.com/openclaw/openclaw/pull/13737) | OPEN | hardening | Docker UID/GID remap hardening and docker-setup privilege isolation | — | OPEN/PENDING |
 | [#13521](https://github.com/openclaw/openclaw/pull/13521) | OPEN | security-fix | Require webhook secret in Telegram runtime webhook mode | [#13116](https://github.com/openclaw/openclaw/issues/13116) | OPEN/PENDING |
 | [#13321](https://github.com/openclaw/openclaw/pull/13321) | OPEN | hardening | Android gateway device identity hardening and A2UI UX improvements | — | OPEN/PENDING |
@@ -65,11 +63,8 @@
 | [#13290](https://github.com/openclaw/openclaw/pull/13290) | OPEN | docs | Warn against storing secrets in injected workspace files (TOOLS.md enters model context) | — | OPEN/PENDING |
 | [#13293](https://github.com/openclaw/openclaw/pull/13293) | OPEN | hardening | Block tainted sink calls from untrusted tool outputs | — | OPEN/PENDING |
 | [#13254](https://github.com/openclaw/openclaw/pull/13254) | OPEN | hardening | Harden archive extraction and plugin update rollback | — | OPEN/PENDING |
-| [#13185](https://github.com/openclaw/openclaw/pull/13185) | OPEN | hardening | Sanitize error responses to prevent information leakage | — | OPEN/PENDING |
-| [#13184](https://github.com/openclaw/openclaw/pull/13184) | OPEN | hardening | Default standalone servers to loopback bind | — | OPEN/PENDING |
 | [#13169](https://github.com/openclaw/openclaw/pull/13169) | OPEN | hardening | Add `--ignore-scripts` to npm install during plugin/hook installation | — | OPEN/PENDING |
 | [#13144](https://github.com/openclaw/openclaw/pull/13144) | OPEN | hardening | Harden archive extraction, auth tokens, hook transforms, and queue limits | — | OPEN/PENDING |
-| [#13129](https://github.com/openclaw/openclaw/pull/13129) | OPEN | hardening | Clarify dmScope remediation with explicit `openclaw config set` CLI command | — | OPEN/PENDING |
 | [#13090](https://github.com/openclaw/openclaw/pull/13090) | OPEN | security-fix | Device-pair extension leaks gateway credentials in chat messages | — | OPEN/PENDING |
 | [#13042](https://github.com/openclaw/openclaw/pull/13042) | OPEN | hardening | Add guard model for prompt injection sanitization | — | OPEN/PENDING |
 | [#12958](https://github.com/openclaw/openclaw/pull/12958) | OPEN | hardening | Block agent read access to sensitive config and credential files | — | OPEN/PENDING |
@@ -106,6 +101,11 @@
 | [#15035](https://github.com/openclaw/openclaw/pull/15035) | MERGED | hardening | Auth rate-limiting & brute-force protection (CWE-307) | — | ALREADY SYNCED |
 | [#10525](https://github.com/openclaw/openclaw/pull/10525) | MERGED | hardening | Use `openFileWithinRoot` for A2UI file serving | — | ALREADY SYNCED |
 | [#10529](https://github.com/openclaw/openclaw/pull/10529) | MERGED | hardening | Enforce `0o600` permissions on WhatsApp credential files | — | ALREADY SYNCED |
+| [#13129](https://github.com/openclaw/openclaw/pull/13129) | MERGED | hardening | Clarify dmScope remediation with explicit `openclaw config set` CLI command (merged 2026-02-13) | — | ALREADY SYNCED |
+| [#13184](https://github.com/openclaw/openclaw/pull/13184) | MERGED | hardening | Default standalone servers (Telegram webhook, canvas host) to loopback bind (merged 2026-02-13) | — | ALREADY SYNCED |
+| [#13185](https://github.com/openclaw/openclaw/pull/13185) | MERGED | hardening | Sanitize error responses to prevent information leakage across gateway HTTP endpoints (merged 2026-02-13) | — | ALREADY SYNCED |
+| [#13767](https://github.com/openclaw/openclaw/pull/13767) | MERGED | security-fix | Reject literal "undefined" and "null" gateway auth tokens (merged 2026-02-13) | [#13756](https://github.com/openclaw/openclaw/issues/13756) | ALREADY SYNCED |
+| [#14661](https://github.com/openclaw/openclaw/pull/14661) | MERGED | hardening | Restrict canvas IP-based auth to private networks (merged 2026-02-13) | — | ALREADY SYNCED |
 
 ### CLOSED PRs (not merged)
 
@@ -119,9 +119,12 @@
 | [#15314](https://github.com/openclaw/openclaw/pull/15314) | CLOSED | security-fix | Arbitrary Code Execution via Browser Evaluate Endpoint (closed 2026-02-13; #3926 still OPEN) | [#15313](https://github.com/openclaw/openclaw/issues/15313) | NOT AFFECTED |
 | [#13680](https://github.com/openclaw/openclaw/pull/13680) | CLOSED | hardening | Per-IP rate limiting for gateway auth (closed 2026-02-13; superseded by #15035 MERGED) | — | NOT AFFECTED |
 | [#11152](https://github.com/openclaw/openclaw/pull/11152) | CLOSED | security-fix | Add `place_id` validation to prevent path traversal SSRF (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
+| [#14350](https://github.com/openclaw/openclaw/pull/14350) | CLOSED | hardening | Add `--harden` CLI flag for security-hardened gateway mode (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 
-**Total:** 99 tracked PRs (23 merged, 66 open, 2 draft, 8 closed)
+**Total:** 100 tracked PRs (28 merged, 61 open, 2 draft, 9 closed)
 
+> **Status change log (14-02-2026 03:12 AEST):** 6 state changes detected. #13129 OPEN->MERGED, #13184 OPEN->MERGED, #13185 OPEN->MERGED, #13767 OPEN->MERGED, #14661 OPEN->MERGED (all ALREADY SYNCED). #14350 OPEN->CLOSED (no replacement). 1 new PR added: #15592 (WebSocket log header sanitization, OPEN).
+>
 > **Status change log (14-02-2026 01:33 AEST):** 7 state changes detected. #15390 OPEN->MERGED, #14665 OPEN->MERGED, #13073 OPEN->MERGED, #15384 OPEN->CLOSED, #15314 OPEN->CLOSED, #13680 OPEN->CLOSED (superseded by #15035), #11152 OPEN->CLOSED. 5 new PRs added: #15035, #10525, #10529, #4026 (newly merged security PRs), #3926 (replacement for closed #15314).
 
 ### Cross-Reference: PRs and Tracked Issues
@@ -149,7 +152,7 @@
 | [#13182](https://github.com/openclaw/openclaw/pull/13182) | (refactor) | LOW | MERGED | Barrel re-export at `src/security/audit-extra.ts` → `.sync.ts` + `.async.ts` |
 | [#13680](https://github.com/openclaw/openclaw/pull/13680) | (CWE-307 brute force) | MEDIUM | CLOSED | Superseded by #15035 (MERGED); rate limiter at `src/gateway/auth-rate-limit.ts` ALREADY SYNCED |
 | [#13521](https://github.com/openclaw/openclaw/pull/13521) | [#13116](https://github.com/openclaw/openclaw/issues/13116) (HIGH) | HIGH | OPEN | Fail-close webhook secret enforcement; related to #13170 and #13117 |
-| [#13474](https://github.com/openclaw/openclaw/pull/13474) | [#13466](https://github.com/openclaw/openclaw/issues/13466) (LOW) | LOW | MERGED | Split `hooks:` → `hooks.webhooks:` + `hooks.internal:` at `audit-extra.sync.ts:294-317`; merged 2026-02-13; ALREADY SYNCED |
+| [#13474](https://github.com/openclaw/openclaw/pull/13474) | [#13466](https://github.com/openclaw/openclaw/issues/13466) (LOW) | LOW | MERGED | Split `hooks:` → `hooks.webhooks:` + `hooks.internal:` at `audit-extra.sync.ts:389-391`; merged 2026-02-13; ALREADY SYNCED |
 | [#8718](https://github.com/openclaw/openclaw/pull/8718) | [#8696](https://github.com/openclaw/openclaw/issues/8696) (HIGH) | HIGH | OPEN | Sanitizes download filenames to prevent path traversal (CWE-22) |
 | [#13787](https://github.com/openclaw/openclaw/pull/13787) | [#13786](https://github.com/openclaw/openclaw/issues/13786) (HIGH) | HIGH | MERGED | Loopback bypass in BlueBubbles webhook auth (CVSS 8.6); related to #11742; merged 2026-02-12 |
 | [#13777](https://github.com/openclaw/openclaw/pull/13777) | [#13683](https://github.com/openclaw/openclaw/issues/13683) (HIGH) | HIGH | OPEN | Sandboxed agent credential exfil via `openclaw config get` — no redaction in CLI path |
@@ -187,7 +190,13 @@
 | [#15360](https://github.com/openclaw/openclaw/pull/15360) | [#6669](https://github.com/openclaw/openclaw/issues/6669) | LOW | OPEN | `statsLine` with token counts, session IDs, file paths, costs in user-visible `message` at `subagent-announce.ts:479-506` |
 | [#15296](https://github.com/openclaw/openclaw/pull/15296) | (config secret hardening) | MEDIUM | OPEN | No `--show-secrets` opt-in for CLI `config get`; gateway `config.get` returns unredacted by default |
 | [#8757](https://github.com/openclaw/openclaw/pull/8757) | (MS Teams SSRF redirect) | MEDIUM | CLOSED | Closed without merge 2026-02-13; MS Teams redirect validation SSRF fix; no replacement PR identified |
-| [#13129](https://github.com/openclaw/openclaw/pull/13129) | (dmScope UX) | LOW | OPEN | Uses `formatCliCommand()` for dmScope remediation; local `audit.ts:547` still uses plain string |
+| [#13129](https://github.com/openclaw/openclaw/pull/13129) | (dmScope UX) | LOW | MERGED | Uses `formatCliCommand()` for dmScope remediation; local `audit.ts:603` already uses it; ALREADY SYNCED |
+| [#13184](https://github.com/openclaw/openclaw/pull/13184) | (standalone bind hardening) | LOW | MERGED | Default standalone servers to loopback bind; local `webhook.ts:36` and `canvas-host/server.ts:452` already default to `127.0.0.1`; ALREADY SYNCED |
+| [#13185](https://github.com/openclaw/openclaw/pull/13185) | (error info leakage) | MEDIUM | MERGED | Sanitize error responses across gateway HTTP; local `tools-invoke-http.ts:382-384` returns generic "tool execution failed"; ALREADY SYNCED |
+| [#13767](https://github.com/openclaw/openclaw/pull/13767) | [#13756](https://github.com/openclaw/openclaw/issues/13756) | MEDIUM | MERGED | Reject "undefined"/"null" token strings; local `onboard-helpers.ts:79` already rejects; ALREADY SYNCED |
+| [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | CLOSED | `--harden` flag closed without merge 2026-02-13; no replacement PR |
+| [#14661](https://github.com/openclaw/openclaw/pull/14661) | (canvas IP auth) | MEDIUM | MERGED | Canvas IP auth restricted to private networks; local `server-http.ts:150` uses `isPrivateOrLoopbackAddress()`; ALREADY SYNCED |
+| [#15592](https://github.com/openclaw/openclaw/pull/15592) | (log injection) | LOW | OPEN | Sanitize WebSocket log headers; local `ws-connection.ts:72-78` reads raw headers without sanitization |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
 
@@ -246,8 +255,8 @@
 
 **Changes:**
 - `src/security/audit-extra.ts` — converted to barrel re-export (31 lines)
-- `src/security/audit-extra.sync.ts` — config-only checks (559 lines)
-- `src/security/audit-extra.async.ts` — I/O-based checks (668 lines)
+- `src/security/audit-extra.sync.ts` — config-only checks (884 lines)
+- `src/security/audit-extra.async.ts` — I/O-based checks (933 lines)
 
 **Local Impact:** ALREADY SYNCED — barrel re-export at `src/security/audit-extra.ts:1-31`
 
@@ -335,7 +344,7 @@
 - `src/security/audit-extra.sync.ts` — splits `hooks:` summary into `hooks.webhooks:` and `hooks.internal:` in attack surface output
 - `src/security/audit-extra.sync.test.ts` — updated test coverage
 
-**Local Impact:** ALREADY SYNCED — `hooks.webhooks:` at `src/security/audit-extra.sync.ts:315` and `hooks.internal:` at line 317 already present in local code
+**Local Impact:** ALREADY SYNCED — `hooks.webhooks:` at `src/security/audit-extra.sync.ts:389` and `hooks.internal:` at line 391 already present in local code
 
 ### #15390: OC-02 Block sessions_spawn via HTTP Gateway + Fix ACP Auto-Approval
 
@@ -374,7 +383,7 @@
 **Note:** This PR was closed without merge. The same vulnerability is still addressed by [#8186](https://github.com/openclaw/openclaw/pull/8186) which remains OPEN.
 
 **Local Validation:**
-- `src/agents/sandbox/docker.ts:248-249` — `cfg.setupCommand` passed directly to `["exec", "-i", name, "sh", "-lc", cfg.setupCommand]` with only `?.trim()` check
+- `src/agents/sandbox/docker.ts:338-339` — `cfg.setupCommand` passed directly to `["exec", "-i", name, "sh", "-lc", cfg.setupCommand]` with only `?.trim()` check
 - No `validateSetupCommand` function exists locally
 
 **Local Impact:** NOT AFFECTED (PR closed) — vulnerability remains; monitor #8186 for fix.
@@ -493,9 +502,9 @@
 - `foldMarkerText()` regex expanded to match all new Unicode ranges
 
 **Local Validation:**
-- `src/security/external-content.ts:91-106` — `foldMarkerChar()` only handles fullwidth ASCII and fullwidth angle brackets (FF1C/FF1E)
-- No `ANGLE_BRACKET_MAP` lookup table exists locally
-- `foldMarkerText()` regex at line 109 only matches `[\uFF21-\uFF3A\uFF41-\uFF5A\uFF1C\uFF1E]`
+- `src/security/external-content.ts:89-125` — `foldMarkerChar()` now handles fullwidth ASCII and 12 Unicode angle bracket homoglyphs via `ANGLE_BRACKET_MAP`
+- `ANGLE_BRACKET_MAP` lookup table at lines 90-103 covers FF1C/FF1E, 2329/232A, 3008/3009, 2039/203A, 27E8/27E9, FE64/FE65
+- `foldMarkerText()` regex at line 122 matches `[\uFF21-\uFF3A\uFF41-\uFF5A\uFF1C\uFF1E\u2329\u232A\u3008\u3009\u2039\u203A\u27E8\u27E9\uFE64\uFE65]`
 
 **Local Impact:** SYNC NEEDED — local code only handles fullwidth homoglyphs; 10 additional Unicode angle bracket variants can bypass sanitization
 
@@ -574,3 +583,87 @@
 - `src/web/session.ts` — `chmodSync` on session backup and credentials file
 
 **Local Impact:** ALREADY SYNCED — `0o600` chmod at `auth-store.ts:72`, `session.ts:77`, `session.ts:91`
+
+### #13129: Clarify dmScope Remediation with Explicit CLI Command
+
+**PR Status:** MERGED (2026-02-13)
+**Category:** hardening
+
+**Changes:**
+- `src/security/audit.ts` — uses `formatCliCommand('openclaw config set session.dmScope "per-channel-peer"')` in audit warning remediation text
+
+**Local Impact:** ALREADY SYNCED — `formatCliCommand()` already at `src/security/audit.ts:603`, `src/commands/doctor-security.ts:128`, `src/commands/onboard-channels.ts:198,254`
+
+### #13184: Default Standalone Servers to Loopback Bind
+
+**PR Status:** MERGED (2026-02-13)
+**Category:** hardening
+
+**Changes:**
+- `src/telegram/webhook.ts` — default bind host to `127.0.0.1` instead of all interfaces
+- `src/canvas-host/server.ts` — default bind host to `127.0.0.1`
+- `extensions/telegram/src/channel.ts`, `docs/channels/telegram.md` — updated config and documentation
+
+**Local Impact:** ALREADY SYNCED — `src/telegram/webhook.ts:36` has `opts.host ?? "127.0.0.1"`, `src/canvas-host/server.ts:452` has `opts.listenHost?.trim() || "127.0.0.1"`
+
+### #13185: Sanitize Error Responses to Prevent Information Leakage
+
+**PR Status:** MERGED (2026-02-13)
+**Category:** hardening
+
+**Changes:**
+- `src/gateway/tools-invoke-http.ts` — sanitize error messages in HTTP responses
+- `src/gateway/openai-http.ts` — generic "internal error" for 500 responses
+- `src/gateway/openresponses-http.ts` — generic "internal error" for 500 responses
+- `src/agents/tools/common.ts` — error message formatting
+
+**Local Impact:** ALREADY SYNCED — `tools-invoke-http.ts:382-384` returns generic "tool execution failed" for 500; `openai-http.ts:270` and `openresponses-http.ts:629,930` return "internal error"
+
+### #13767: Reject Literal "undefined" and "null" Gateway Auth Tokens
+
+**PR Status:** MERGED (2026-02-13)
+**Category:** security-fix
+**Closes:** [#13756](https://github.com/openclaw/openclaw/issues/13756) (MEDIUM)
+
+**Changes:**
+- `src/commands/onboard-helpers.ts` — `normalizeGatewayTokenInput()` rejects literal "undefined" and "null" strings
+- `src/commands/configure.gateway-auth.ts` — comment documenting the behavior
+- Test coverage for both rejected values
+
+**Local Impact:** ALREADY SYNCED — `onboard-helpers.ts:79` has `if (trimmed === "undefined" || trimmed === "null") return ""`, tests at `onboard-helpers.e2e.test.ts:127,131`
+
+### #14661: Restrict Canvas IP-Based Auth to Private Networks
+
+**PR Status:** MERGED (2026-02-13)
+**Category:** hardening
+
+**Changes:**
+- `src/gateway/server-http.ts` — IP-based auth fallback restricted to private/loopback addresses
+- `src/gateway/net.ts` — `isPrivateOrLoopbackAddress()` utility function
+
+**Local Impact:** ALREADY SYNCED — `server-http.ts:147-152` with `isPrivateOrLoopbackAddress(clientIp)` check; test at `server.canvas-auth.e2e.test.ts:84` confirms behavior
+
+### #15592: Gateway: Sanitize WebSocket Log Headers
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** hardening
+
+**Changes:**
+- `src/gateway/server/ws-connection.ts` — adds `sanitizeLogValue()` to truncate and strip control characters from untrusted header values (host, origin, user-agent, x-forwarded-for) and close reasons before logging
+
+**Greptile Review:** Flags that `sanitizeLogValue` only strips C0/C1 control characters; Unicode bidi overrides (U+202E, U+2066-U+2069) still pass through and could produce misleading log output.
+
+**Local Validation:**
+- `src/gateway/server/ws-connection.ts:72-78` — local code reads raw headers via `headerValue()` helper with no sanitization
+- No `sanitizeLogValue` function exists locally
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Local code logs raw WebSocket header values without sanitization.
+
+### #14350: Add --harden CLI Flag for Security-Hardened Gateway Mode
+
+**PR Status:** CLOSED (2026-02-13, without merge)
+**Category:** hardening
+
+**Description:** Proposed `--harden` CLI flag that would force loopback bind, token auth, and disable Tailscale. Closed without merge; no replacement PR identified.
+
+**Local Impact:** NOT AFFECTED — PR closed without merge

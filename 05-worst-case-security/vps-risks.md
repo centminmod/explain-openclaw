@@ -500,7 +500,7 @@ Additionally, set up **billing alerts** on whatever account runs OpenClaw. Unusu
 
 | Security Control | Source File | Lines |
 |------------------|-------------|-------|
-| Network binding modes | `src/gateway/net.ts` | 98-122 |
+| Network binding modes | `src/gateway/net.ts` | 142-166 |
 | File permissions (0o700) | `src/config/io.ts` | 477 |
 | File permissions (0o600) | `src/config/io.ts` | 489 |
 | Gateway auth | `src/gateway/auth.ts` | Authentication logic |
