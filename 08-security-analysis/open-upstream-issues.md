@@ -4,7 +4,7 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 13-02-2026 (09:16 AEST)
+> **Last checked:** 13-02-2026 (12:10 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -27,13 +27,13 @@
 | [#8776](https://github.com/openclaw/openclaw/issues/8776) | ~~HIGH~~ FIXED | soul-evil hook silently hijacks agent | Fixed in PR [#14757](https://github.com/openclaw/openclaw/pull/14757) — soul-evil hook completely removed |
 | [#9435](https://github.com/openclaw/openclaw/issues/9435) | ~~HIGH~~ FIXED | Gateway auth token exposed in URL query params | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token acceptance removed from `src/gateway/hooks.ts`, dashboard URL no longer passes `?token=` |
 | [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:267,274` |
-| [#9517](https://github.com/openclaw/openclaw/issues/9517) | ~~HIGH~~ FIXED | Gateway canvas host auth bypass | Fixed in PR [#9518](https://github.com/openclaw/openclaw/pull/9518) — new `authorizeCanvasRequest()` at `src/gateway/server-http.ts:96-130` |
+| [#9517](https://github.com/openclaw/openclaw/issues/9517) | ~~HIGH~~ FIXED | Gateway canvas host auth bypass | Fixed in PR [#9518](https://github.com/openclaw/openclaw/pull/9518) — new `authorizeCanvasRequest()` at `src/gateway/server-http.ts:102-136` |
 | [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON after update/doctor | `src/config/io.ts:482-539` — partially mitigated by `redactConfigSnapshot()` (PR #9858) |
 | [#9813](https://github.com/openclaw/openclaw/issues/9813) | HIGH (DUPLICATE #9627) | Gateway expands ${ENV_VAR} on meta writeback | `src/config/io.ts:498` — partially mitigated by `redactConfigSnapshot()` (PR #9858) |
 | [#11126](https://github.com/openclaw/openclaw/issues/11126) | HIGH (DUPLICATE #9627) | Config write paths resolve ${VAR} to cleartext | Same as #9627/#9813 — `src/config/io.ts:482-539`; partially mitigated by `redactConfigSnapshot()` (PR #9858) |
 | [#9795](https://github.com/openclaw/openclaw/issues/9795) | LOW | sanitizeMimeType regex not end-anchored (by design) | `src/media-understanding/apply.ts:96-106` |
 | [#9792](https://github.com/openclaw/openclaw/issues/9792) | INVALID | validateHostEnv skips baseEnv (by design) | `src/agents/bash-tools.exec.ts:972-980` |
-| [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:110-148` |
+| [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:112-150` |
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check) |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` (note: upstream issue still OPEN) |
@@ -67,7 +67,7 @@
 | [#3086](https://github.com/openclaw/openclaw/issues/3086) | ~~LOW~~ FIXED | Windows ACL false flag as mode=666 | `src/security/audit-fs.ts:86-116` + `src/security/windows-acl.ts` — icacls-based ACL checks implemented |
 | [#10521](https://github.com/openclaw/openclaw/issues/10521) | INVALID | Security audit flags claude-opus-4-6 as below 4.5 | `src/security/audit-extra.sync.ts:167-172` (`isClaude45OrHigher` regex) correctly matches `claude-opus-4-6` in current code (2026.2.6) |
 | [#10033](https://github.com/openclaw/openclaw/issues/10033) | ENHANCEMENT | Feature: secrets management integration | Enhancement request; current state: plaintext creds with 0o600 perms |
-| [#10927](https://github.com/openclaw/openclaw/issues/10927) | ENHANCEMENT | Random IDs for external content wrapper tags | `src/security/external-content.ts:47-48` — static tags; `replaceMarkers()` at `:110-150` already sanitizes injected markers |
+| [#10927](https://github.com/openclaw/openclaw/issues/10927) | ENHANCEMENT | Random IDs for external content wrapper tags | `src/security/external-content.ts:47-48` — static tags; `replaceMarkers()` at `:112-152` already sanitizes injected markers |
 | [#10890](https://github.com/openclaw/openclaw/issues/10890) | ENHANCEMENT | RFC: Skill Security Framework (manifests, signing, sandboxing) | Comprehensive proposal for phased skill security; relates to #9512 (skill path traversal) |
 | [#11437](https://github.com/openclaw/openclaw/issues/11437) | CRITICAL | CWD .env → config path override → plugin code exec via jiti | `src/infra/dotenv.ts:10`, `src/config/paths.ts:87-105`, `src/plugins/config-state.ts:73,194` |
 | [#11434](https://github.com/openclaw/openclaw/issues/11434) | CRITICAL | CWD .env → arbitrary dynamic import via OPENCLAW_BROWSER_CONTROL_MODULE | `src/gateway/server-browser.ts:13-14` — raw `await import(override)` |
@@ -215,8 +215,8 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Gateway HTTP server serves Canvas host and A2UI endpoints without enforcing gateway auth, allowing unauthenticated access to canvas files.
 
 **Affected code:**
-- `src/gateway/server-http.ts:393-412` - Canvas/A2UI handler dispatch (now auth-wrapped via `authorizeCanvasRequest()` at `:96-130`, PR #9518)
-- `src/gateway/server-http.ts:454-476` - WebSocket upgrade for canvas (now auth-wrapped via `authorizeCanvasRequest()` at `:461`, PR #9518)
+- `src/gateway/server-http.ts:444-462` - Canvas/A2UI handler dispatch (now auth-wrapped via `authorizeCanvasRequest()` at `:102-136`, PR #9518)
+- `src/gateway/server-http.ts:505-527` - WebSocket upgrade for canvas (now auth-wrapped via `authorizeCanvasRequest()` at `:512`, PR #9518)
 
 **Verification:**
 - No `authorizeGatewayConnect` call before `canvasHost.handleHttpRequest(req, res)`
@@ -231,7 +231,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** Webhook endpoint accepted authentication tokens via URL query parameters, causing credential leakage through logs, browser history, and Referer headers.
 
-**Fix:** Query token extraction removed entirely from `src/gateway/hooks.ts`. `extractHookToken()` now only accepts `Authorization: Bearer` header and `X-OpenClaw-Token` header. Server returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:154-161`).
+**Fix:** Query token extraction removed entirely from `src/gateway/hooks.ts`. `extractHookToken()` now only accepts `Authorization: Bearer` header and `X-OpenClaw-Token` header. Server returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:193-199`).
 
 ### #4949: Browser Control Server DNS Rebinding
 
@@ -305,10 +305,10 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Gateway auth correctly uses `safeEqual` (timing-safe), but hook tokens, node pairing, and device pairing use direct `===`/`!==` comparisons vulnerable to timing attacks.
 
 **Affected code:**
-- `src/gateway/auth.ts:40-45` - `safeEqual` uses `timingSafeEqual` (correct)
-- `src/gateway/server-http.ts:164` - hook token uses direct `!==` (vulnerable)
+- `src/security/secret-equal.ts:3-16` - `safeEqualSecret` uses `timingSafeEqual` (correct)
+- `src/gateway/server-http.ts:204` - hook token now uses `safeEqualSecret()` (fixed in Feb 13 sync 4, commit `113ebfd6a`)
 - `src/infra/node-pairing.ts:277` - node token uses direct `===` (vulnerable)
-- `src/infra/device-pairing.ts:434` - device token uses direct `!==` (vulnerable)
+- `src/infra/device-pairing.ts:435` - device token now uses `safeEqualSecret()` (fixed in Feb 13 sync 4, commit `113ebfd6a`)
 
 ### #6606: Telegram Webhook Binds to 0.0.0.0 with Optional Secret
 
@@ -439,7 +439,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** Gateway authentication tokens were passed via URL query parameters (`?token=...`) in dashboard and onboarding flows, exposing credentials through logs, browser history, and Referer headers.
 
-**Fix:** Query token acceptance completely removed. `extractHookToken()` in `src/gateway/hooks.ts:92-109` no longer reads `url.searchParams`. `src/commands/dashboard.ts` no longer constructs `?token=` URLs. `src/commands/onboard-helpers.ts` no longer passes token in URL. Server now returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:154-161`).
+**Fix:** Query token acceptance completely removed. `extractHookToken()` in `src/gateway/hooks.ts:92-109` no longer reads `url.searchParams`. `src/commands/dashboard.ts` no longer constructs `?token=` URLs. `src/commands/onboard-helpers.ts` no longer passes token in URL. Server now returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:193-199`).
 
 ### #9627: Config Secrets Exposed in JSON After Update/Doctor
 
@@ -497,7 +497,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability claimed:** Fullwidth Unicode characters (e.g., `＜` U+FF1C) could bypass marker detection in `replaceMarkers`, causing index misalignment when mapping between folded and original strings.
 
 **Affected code:**
-- `src/security/external-content.ts:110-148` - `replaceMarkers` and `foldMarkerChar`
+- `src/security/external-content.ts:112-150` - `replaceMarkers` and `foldMarkerChar`
 
 **Our analysis:** `foldMarkerChar` maps each fullwidth character to a single ASCII character (`\uFF21`→`A`, `\uFF1C`→`<`, etc.). Both fullwidth characters and their ASCII replacements are **single BMP UTF-16 code units**, so the fold is **length-preserving**. Indices from `pattern.regex.exec(folded)` map correctly back to `content.slice()` positions on the original string. The reporter suggests "perform all operations on folded string" — this would **lose original content** between markers, which is the opposite of correct behavior. This is a Qodo AI automated finding.
 
@@ -634,7 +634,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Proposal:** Add random 16-char IDs to external content wrapper tags (`<<<EXTERNAL_UNTRUSTED_CONTENT id="a7f3b2c1...">>>`) to prevent tag spoofing by malicious content.
 
-**Current defense:** `replaceMarkers()` at `src/security/external-content.ts:110-150` already sanitizes injected `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` tags (case-insensitive, including fullwidth Unicode variants) to `[[MARKER_SANITIZED]]`. The existing defense is functional; random IDs would add defense-in-depth and improve content correlation for debugging.
+**Current defense:** `replaceMarkers()` at `src/security/external-content.ts:112-152` already sanitizes injected `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` tags (case-insensitive, including fullwidth Unicode variants) to `[[MARKER_SANITIZED]]`. The existing defense is functional; random IDs would add defense-in-depth and improve content correlation for debugging.
 
 **Related:** #8027 (web_fetch hidden text prompt injection)
 
@@ -780,8 +780,8 @@ All changes take effect immediately via automatic restart.
 **Vulnerability:** `authorizeGatewayConnect()` accepts unlimited failed authentication attempts with no rate limiting, lockout, or backoff. A PoC using 50 concurrent WebSocket connections achieves ~645 brute-force attempts/second with zero resistance. `safeEqual()` correctly uses `timingSafeEqual` (timing attacks mitigated), but the lack of attempt throttling means weak tokens can be brute-forced in seconds.
 
 **Affected code:**
-- `src/gateway/auth.ts:40-45` — `safeEqual()` present but no rate limiting mechanism
-- `src/gateway/server-http.ts` — no rate limiting middleware on any endpoint
+- `src/security/secret-equal.ts:3-16` — `safeEqualSecret()` (extracted from auth.ts, timing-safe)
+- `src/gateway/server-http.ts:146-183` — hook auth failure rate limiting added (Feb 13 sync 4, commit `113ebfd6a`): 20 failures/60s per client IP, HTTP 429 response
 - `src/gateway/server/ws-connection/message-handler.ts` — no per-connection attempt limiting
 
 **Fix available:** PR [#13680](https://github.com/openclaw/openclaw/pull/13680) (OPEN, not merged) — per-IP sliding window: 10 failures in 60s → IP blocked for 5 minutes; HTTP 429 with Retry-After; localhost exempt.

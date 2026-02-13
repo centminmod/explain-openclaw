@@ -4,7 +4,7 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 13-02-2026 (09:16 AEST)
+> **Last checked:** 13-02-2026 (12:13 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
@@ -41,12 +41,12 @@
 | [#2544](https://github.com/openclaw/openclaw/pull/2544) | OPEN | security-fix | XSS vulnerability in Canvas Host | — | OPEN/PENDING |
 | [#14689](https://github.com/openclaw/openclaw/pull/14689) | OPEN | hardening | Auto-set `per-channel-peer` dmScope default during multi-channel onboarding | [#14688](https://github.com/openclaw/openclaw/issues/14688) | OPEN/PENDING |
 | [#14222](https://github.com/openclaw/openclaw/pull/14222) | OPEN | hardening | Add `needsApproval` to `before_tool_call` hook; move AgentShield to extension | — | OPEN/PENDING |
-| [#14843](https://github.com/openclaw/openclaw/pull/14843) | OPEN | security-fix | Strip `apiKey` from `models.json` cache to prevent credential exposure | [#14808](https://github.com/openclaw/openclaw/issues/14808) | OPEN/PENDING |
+| [#14843](https://github.com/openclaw/openclaw/pull/14843) | CLOSED | security-fix | Strip `apiKey` from `models.json` cache to prevent credential exposure (closed: author banned) | [#14808](https://github.com/openclaw/openclaw/issues/14808) | NOT AFFECTED |
 | [#14665](https://github.com/openclaw/openclaw/pull/14665) | OPEN | security-fix | Handle additional Unicode angle bracket homoglyphs in content sanitization | — | OPEN/PENDING |
 | [#14662](https://github.com/openclaw/openclaw/pull/14662) | OPEN | security-fix | Escape `<` in inline JSON to prevent script tag XSS | — | OPEN/PENDING |
 | [#14814](https://github.com/openclaw/openclaw/pull/14814) | OPEN | hardening | Use timing-safe comparison for hook token auth | — | OPEN/PENDING |
 | [#14661](https://github.com/openclaw/openclaw/pull/14661) | OPEN | hardening | Restrict canvas IP-based auth to private networks | — | OPEN/PENDING |
-| [#14655](https://github.com/openclaw/openclaw/pull/14655) | OPEN | hardening | Allow trusted clients to request unredacted config via `includeSecrets` | [#14586](https://github.com/openclaw/openclaw/issues/14586) | OPEN/PENDING |
+| [#14655](https://github.com/openclaw/openclaw/pull/14655) | CLOSED | hardening | Allow trusted clients to request unredacted config via `includeSecrets` (closed: author banned) | [#14586](https://github.com/openclaw/openclaw/issues/14586) | NOT AFFECTED |
 | [#14197](https://github.com/openclaw/openclaw/pull/14197) | OPEN | security-fix | Harden browser API auth, token comparisons (7 locations), and hook tokens | — | OPEN/PENDING |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | OPEN | hardening | Sanitize JSON tool-call payload text to prevent leak via Ollama/local providers | — | OPEN/PENDING |
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | OPEN | security-fix | Docker gateway auth bypass via Host header spoofing — verify client IP matches Docker gateway | — | OPEN/PENDING |
@@ -104,7 +104,7 @@
 | [#14218](https://github.com/openclaw/openclaw/pull/14218) | MERGED | security-fix | Antigravity thinking signature sanitization bypass via orphaned user-message repair | [#13765](https://github.com/openclaw/openclaw/issues/13765) | SYNC NEEDED |
 | [#14659](https://github.com/openclaw/openclaw/pull/14659) | MERGED | hardening | Add `--ignore-scripts` to skills install commands | — | ALREADY SYNCED |
 
-**Total:** 88 tracked PRs (15 merged, 70 open, 2 draft, 1 closed)
+**Total:** 88 tracked PRs (15 merged, 68 open, 2 draft, 3 closed)
 
 ### Cross-Reference: PRs and Tracked Issues
 
@@ -116,7 +116,7 @@
 | [#8241](https://github.com/openclaw/openclaw/pull/8241) | (Matrix thread isolation) | MEDIUM | MERGED | `:thread:${threadRootId}` suffix at `extensions/matrix/src/matrix/monitor/handler.ts:446-447` |
 | [#8513](https://github.com/openclaw/openclaw/pull/8513) | [#8512](https://github.com/openclaw/openclaw/issues/8512) (CRITICAL) | CRITICAL | OPEN | Adds auth requirement for plugin HTTP routes in gateway |
 | [#9436](https://github.com/openclaw/openclaw/pull/9436) | [#9435](https://github.com/openclaw/openclaw/issues/9435) (HIGH), [#5120](https://github.com/openclaw/openclaw/issues/5120) (MEDIUM) | HIGH | MERGED | Query token acceptance removed from `extractHookToken()` in `src/gateway/hooks.ts`; server returns HTTP 400 when `?token=` present |
-| [#9518](https://github.com/openclaw/openclaw/pull/9518) | [#9517](https://github.com/openclaw/openclaw/issues/9517) (HIGH) | HIGH | MERGED | New `authorizeCanvasRequest()` at `src/gateway/server-http.ts:96-130` wraps canvas/A2UI endpoints |
+| [#9518](https://github.com/openclaw/openclaw/pull/9518) | [#9517](https://github.com/openclaw/openclaw/issues/9517) (HIGH) | HIGH | MERGED | New `authorizeCanvasRequest()` at `src/gateway/server-http.ts:102-136` wraps canvas/A2UI endpoints |
 | [#9529](https://github.com/openclaw/openclaw/pull/9529) | [#3277](https://github.com/openclaw/openclaw/issues/3277) (HIGH) | HIGH | OPEN | Validates archive entries against Zip Slip path traversal |
 | [#9513](https://github.com/openclaw/openclaw/pull/9513) | [#9512](https://github.com/openclaw/openclaw/issues/9512) (HIGH) | HIGH | OPEN | Adds path traversal checks to skill download archive extraction |
 | [#11054](https://github.com/openclaw/openclaw/pull/11054) | [#6609](https://github.com/openclaw/openclaw/issues/6609) (HIGH) | HIGH | OPEN | Adds auth token to sandbox browser bridge |
@@ -142,11 +142,11 @@
 | [#14197](https://github.com/openclaw/openclaw/pull/14197) | (Codex CLI audit) | MEDIUM | OPEN | Shared `safeEqual()`, browser API auth (30+ unauthenticated endpoints), 7 timing-unsafe token comparisons, `hooks.allowQueryToken` deprecation |
 | [#14061](https://github.com/openclaw/openclaw/pull/14061) | (Docker auth bypass) | HIGH | OPEN | Container on same Docker network can spoof `Host: localhost` to bypass `isLocalDirectRequest()` — adds `readDockerGatewayIp()` client IP verification |
 | [#14218](https://github.com/openclaw/openclaw/pull/14218) | [#13765](https://github.com/openclaw/openclaw/issues/13765) | LOW | MERGED | Thinking block sanitization bypass via orphaned user-message repair path in `attempt.ts`; merged 2026-02-12 |
-| [#14843](https://github.com/openclaw/openclaw/pull/14843) | [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM | OPEN | `apiKey` credential exposure in `models.json` cache; local `models-config.ts:130` has same pattern |
+| [#14843](https://github.com/openclaw/openclaw/pull/14843) | [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM | CLOSED | `apiKey` credential exposure in `models.json` cache; author banned; duplicate #14836 still OPEN |
 | [#14665](https://github.com/openclaw/openclaw/pull/14665) | (homoglyph bypass) | MEDIUM | OPEN | Additional Unicode angle bracket homoglyphs bypass `foldMarkerChar()` at `external-content.ts:89-107` |
 | [#14662](https://github.com/openclaw/openclaw/pull/14662) | (XSS in control UI) | MEDIUM | OPEN | `JSON.stringify` in `<script>` tag at `control-ui.ts:173-179` does not escape `<` |
 | [#14661](https://github.com/openclaw/openclaw/pull/14661) | (canvas IP auth) | MEDIUM | OPEN | Canvas IP-based auth fallback at `server-http.ts:129` has no private network restriction; Greptile flags IPv6 `fe80::/10` misclass |
-| [#14655](https://github.com/openclaw/openclaw/pull/14655) | [#14586](https://github.com/openclaw/openclaw/issues/14586) | LOW | OPEN | `includeSecrets` for config.get; Greptile flags Control UI client also gets access |
+| [#14655](https://github.com/openclaw/openclaw/pull/14655) | [#14586](https://github.com/openclaw/openclaw/issues/14586) | LOW | CLOSED | `includeSecrets` for config.get; author banned; no replacement PR identified |
 | [#14814](https://github.com/openclaw/openclaw/pull/14814) | (timing attack) | LOW | OPEN | Hook token at `server-http.ts:164` uses `!==` while `auth.ts:256` uses `safeEqual()` |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | (tool-call JSON leak) | LOW | OPEN | `stripJsonToolCallText()` prevents Ollama/local providers from leaking raw tool-call JSON to user surfaces |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | OPEN | `--harden` flag forces loopback bind + token auth + no Tailscale; no equivalent exists locally |
@@ -229,7 +229,7 @@
 
 **Changes:**
 - `src/gateway/hooks.ts` — `extractHookToken()` no longer reads `url.searchParams` for token
-- `src/gateway/server-http.ts:154-161` — returns HTTP 400 when `?token=` query parameter is present
+- `src/gateway/server-http.ts:193-199` — returns HTTP 400 when `?token=` query parameter is present
 - `src/commands/dashboard.ts` — no longer constructs `?token=` URLs
 - `src/commands/onboard-helpers.ts` — no longer passes token in URL
 
@@ -242,9 +242,9 @@
 **Closes:** [#9517](https://github.com/openclaw/openclaw/issues/9517) (HIGH — canvas host auth bypass)
 
 **Changes:**
-- `src/gateway/server-http.ts:96-130` — new `authorizeCanvasRequest()` function
-- `src/gateway/server-http.ts:393-412` — canvas HTTP handler now auth-wrapped
-- `src/gateway/server-http.ts:461` — canvas WebSocket upgrade now auth-wrapped
+- `src/gateway/server-http.ts:102-136` — new `authorizeCanvasRequest()` function
+- `src/gateway/server-http.ts:444-462` — canvas HTTP handler now auth-wrapped
+- `src/gateway/server-http.ts:512` — canvas WebSocket upgrade now auth-wrapped
 
 **Local Impact:** SYNC NEEDED — local canvas endpoints may still be unauthenticated
 

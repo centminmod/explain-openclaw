@@ -40,6 +40,7 @@
 - [Feb 12 sync 2 (Notes)](#post-merge-notes-feb-12-sync-2-6-upstream-commits)
 - [Feb 12 sync 3 (8 commits)](#post-merge-hardening-feb-12-sync-3-8-upstream-commits)
 - [Feb 13 sync 1 (35 commits)](#post-merge-hardening-feb-13-sync-1-35-upstream-commits)
+- [Feb 13 sync 4 (20 commits)](#post-merge-hardening-feb-13-sync-4-20-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -804,6 +805,40 @@ Merge commit `7cca0e0da` — 17 upstream commits (`bca0652de..afbce7357`). Mostl
 5. **`a10f228a5`** (PR [#15018](https://github.com/openclaw/openclaw/pull/15018)) — **fix: update totalTokens after compaction:** Corrects token accounting after auto-compaction in `src/auto-reply/reply/session-usage.ts` so that session usage reflects the compacted context size.
 
 **Line number shifts in this sync:** `logger.ts` −11 lines (removed `resolveDefaultLogDir` function, extracted to `tmp-openclaw-dir.ts`): old 112-119→101-108 (buildLogger file transport), old 28→17 (MAX_LOG_AGE_MS), old 237-261→226-250 (pruneOldRollingLogs). `models-config.providers.ts` +36 lines at 317+ (new MiniMax M2.5 models) — Ollama constants at 77-86 unchanged. All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+
+### Post-Merge Hardening (Feb 13 sync 4, 20 commits)
+
+**Upstream range:** `a10f228a5..7b34b4636` (20 commits — 6 security hardening, cron improvements, dependency updates, plugin hook wiring)
+
+**MEDIUM-HIGH — Authentication & Token Security (2):**
+
+1. **`113ebfd6a`** — **fix(security): harden hook and device token auth:** Three changes: (a) Extracted `safeEqual()` from `src/gateway/auth.ts` to new `src/security/secret-equal.ts:3-16` as `safeEqualSecret()` with proper null/undefined handling. (b) `src/infra/device-pairing.ts:435` — switched device token verification from plain `!==` to `safeEqualSecret()`, closing a timing side-channel (relates to tracked issue [#9007](https://github.com/openclaw/openclaw/issues/9007)). (c) `src/gateway/server-http.ts:146-183` — added hook auth failure rate limiting: tracks per-client-IP failures in a sliding 60-second window, returns HTTP 429 after 20 failures with `Retry-After` header. Map bounded to 2048 entries. Addresses Audit 1 claim #8 (token expiry/auth hardening).
+
+2. **`99f28031e`** — **fix: harden OpenResponses URL input fetching:** Two changes: (a) `src/infra/net/ssrf.ts:42-77` — added `hostnameAllowlist` to `SsrFPolicy` with wildcard suffix matching (`*.example.com`) and explicit block of `*`/`*.` patterns. `resolvePinnedHostnameWithPolicy()` at `:267-268` now rejects hostnames not in the allowlist. (b) `src/infra/net/fetch-guard.ts:115-118` — always uses policy-based resolution (removed conditional that skipped policy when no private network/hostname overrides). Added audit logging at `:161-167` for blocked SSRF attempts with context and target info. Strengthens Audit 2 claim #4 (DNS rebinding SSRF) defense.
+
+**MEDIUM — Path Traversal Protection (2):**
+
+3. **`4199f9889`** — **fix: harden session transcript path resolution:** `src/config/sessions/paths.ts:36-72` — added `SAFE_SESSION_ID_RE` regex (`/^[a-z0-9][a-z0-9._-]{0,127}$/i`), `validateSessionId()`, and `resolvePathWithinSessionsDir()` which verifies the resolved path doesn't escape the sessions directory via `path.relative()` check. Prevents path traversal via crafted session IDs or `sessionFile` entries. Relates to Audit 1 claim #6 (path traversal in agent dirs).
+
+4. **`3eb6a31b6`** — **fix: confine sandbox skill sync destinations:** `src/agents/skills/workspace.ts:302-346` — added `resolveSyncedSkillDestinationPath()` which uses `resolveSandboxPath()` to validate skill sync destinations, preventing directory traversal via malicious skill names. Also adds `resolveUniqueSyncedSkillDirName()` for collision handling. Blocks `..`, `.`, and empty directory names. Relates to Audit 1 claim #6 (path traversal).
+
+**LOW-MEDIUM — Content Tagging & Input Validation (2):**
+
+5. **`da55d70fb`** — **fix(security): harden untrusted web tool transcripts:** `src/agents/tools/web-fetch.ts` and `src/agents/tools/web-search.ts` — added `externalContent: { untrusted: true, source: "web_fetch"/"web_search", wrapped: true }` metadata to all tool results. `src/security/external-content.ts:70,80` — added `"browser"` as a new external content source type. Enables downstream consumers to identify and handle untrusted content in tool result metadata.
+
+6. **`4543c401b`** + **`056bda5cb`** — **Signal: harden E.164 validation + account input validation:** `src/channels/plugins/onboarding/signal.ts` — strengthened phone number validation and account input sanitization in Signal channel onboarding.
+
+**NON-SECURITY (notable):**
+
+7. **`2655041f6`** (PR [#14882](https://github.com/openclaw/openclaw/pull/14882)) — **fix: wire 9 unwired plugin hooks to core code:** Connects 9 previously-declared but unwired plugin hooks (after-tool-call, compaction, gateway-connect/disconnect, message-received, session-created, session-ended, session-send) to actual call sites. New test files validate hook wiring. No security posture change — hooks are operator-defined extensions.
+
+8. **`957b88308`** (PR [#14102](https://github.com/openclaw/openclaw/pull/14102)) — **fix(agents): stabilize overflow compaction retries:** Improves session context accounting after compaction in `src/agents/pi-embedded-runner/run.ts` and `src/agents/compaction.ts`. Adds `promptTokens` tracking for accurate token accounting.
+
+**Line number shifts in this sync:** `auth.ts` -7 lines (safeEqual removed, replaced by `src/security/secret-equal.ts`): old 40-45 removed, old 70-90->63-83, old 93-114->86-107. `external-content.ts` +2 lines (browser source): old 85-108->87-110, old 110-150->112-152. `ssrf.ts` +37 lines (hostname allowlist): old 270-307->253-305. `server-http.ts` +51 lines (hook auth rate limiting): old 96-130->102-136, old 154-161->193-199, old 393-412->444-462, old 454-476->505-527. `web-search.ts` +18 lines (externalContent metadata): old 571,592,642,644->577,604,654,656, old 620-625->632-637. `cron/run.ts` +2 lines: old 303-310->328-334, old 316-322->340-346. All references updated in documentation.
 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 

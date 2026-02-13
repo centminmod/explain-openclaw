@@ -184,7 +184,7 @@ Accept: application/json
 X-Subscription-Token: <api_key>
 ```
 
-**Source:** `src/agents/tools/web-search.ts:620-625`
+**Source:** `src/agents/tools/web-search.ts:632-637`
 ```typescript
 headers: {
   Accept: "application/json",
