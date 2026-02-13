@@ -939,7 +939,7 @@ openclaw security audit --deep  # Extended checks
 openclaw security audit --fix   # Auto-fix common issues
 ```
 
-Source: `src/security/audit.ts:953-1031`
+Source: `src/security/audit.ts:966-1044`
 
 ### `openclaw doctor`
 

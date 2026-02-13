@@ -100,7 +100,7 @@ If you run a reverse proxy (e.g. nginx, Caddy, Traefik) in front of the Gateway,
 The Gateway solves this with a trust chain:
 - `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:98-104`)
 - `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:106-120`)
-- `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:86-107`)
+- `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:96-117`)
 
 **Configuration:**
 ```bash
@@ -112,7 +112,7 @@ openclaw config set gateway.trustedProxies '["127.0.0.1"]'
 - No reverse proxy? Leave `trustedProxies` empty (the default)
 - `openclaw security audit` flags this as `gateway.trusted_proxies_missing` when a proxy is detected but not configured
 
-Source: `src/gateway/auth.ts:63-83` (`resolveTailscaleClientIp()`, `resolveRequestClientIp()`), `src/security/audit.ts` (audit check)
+Source: `src/gateway/auth.ts:73-94` (`resolveTailscaleClientIp()`, `resolveRequestClientIp()`), `src/security/audit.ts` (audit check)
 
 ### 4) Local disk + secrets
 OpenClaw stores transcripts and credentials on disk under `~/.openclaw/`.
@@ -183,7 +183,7 @@ Source: `src/infra/bonjour.ts:12-26` (opts type), `src/infra/bonjour.ts:130-146`
 
 ### 7) Persistent memory files
 
-OpenClaw loads nine named workspace `.md` files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md) on every agent turn via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`). These are injected directly into the system prompt as trusted context — they do **not** carry `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers like fetched web pages or webhook payloads do. Each file is truncated at 20,000 characters (`src/agents/pi-embedded-helpers/bootstrap.ts:84`).
+OpenClaw loads nine named workspace `.md` files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md) on every agent turn via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:265-319`). These are injected directly into the system prompt as trusted context — they do **not** carry `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers like fetched web pages or webhook payloads do. Each file is truncated at 20,000 characters (`src/agents/pi-embedded-helpers/bootstrap.ts:84`).
 
 Additionally, `memory/*.md` directory files are accessed via `memory_search`/`memory_get` tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`).
 
@@ -193,7 +193,7 @@ Mitigations:
 - OS-level file permissions (restrict write access to the workspace directory)
 - Periodic content audit: `grep -rn "<!--" .` to detect hidden HTML comments
 - Run Cisco AI Defense scanner against workspace directory for deeper LLM-based analysis
-- Subagent exposure is limited: `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:295-305`) restricts subagents to only AGENTS.md + TOOLS.md
+- Subagent exposure is limited: `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:323-331`) restricts subagents to only AGENTS.md + TOOLS.md
 
 Source: `src/agents/workspace.ts:23-31` (file list), `src/agents/pi-embedded-helpers/bootstrap.ts:84,162-191` (injection), `src/memory/qmd-manager.ts:346-352` (QMD validation)
 

@@ -302,7 +302,7 @@ Use the wizard:
 openclaw onboard --install-daemon
 ```
 
-#### Q: I opened the dashboard and it says “unauthorized” or keeps reconnecting.
+#### Q: I opened the dashboard and it says "unauthorized" or keeps reconnecting
 The Gateway likely has auth enabled and the UI is missing the token/password.
 
 Fast fixes:
@@ -474,7 +474,7 @@ Based on source code review of:
 **Critical vulnerabilities if misconfigured:**
 
 1. **Silent binding fallback** - Loopback failure → 0.0.0.0 exposure (`src/gateway/net.ts:159-164`)
-2. **Dangerous auth flags** - `dangerouslyDisableDeviceAuth` bypasses device verification (`src/config/types.gateway.ts:69-72`)
+2. **Dangerous auth flags** - `dangerouslyDisableDeviceAuth` bypasses device verification (`src/config/types.gateway.ts:73-77`)
 3. **No encryption at rest** - Credentials protected only by file permissions (0o600/0o700)
 4. **Egress-free Moltworker** - Sandbox can exfiltrate to any server
 

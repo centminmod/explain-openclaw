@@ -507,7 +507,7 @@ Four security-relevant commits:
 
 - **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:696,699`). Addresses Audit 2 Claim 7 "shell injection regex" by preventing shell expansion within quoted arguments during allowlist evaluation.
 
-- **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`). Prevents auth bypass when only Tailscale identity is available but no device pairing exists.
+- **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:454-499`). Prevents auth bypass when only Tailscale identity is available but no device pairing exists.
 
 - **`fff59da96`** — Slack fail closed on slash command channel type lookup: Slash command handler now fails closed when Slack API channel type lookup fails (`src/slack/monitor/slash.ts:181-182`). Infers channel type from ID prefix (D*/C*/G*) as fallback. Addresses potential authorization bypass in Slack slash commands.
 
@@ -613,7 +613,7 @@ Fourteen security-relevant commits:
 
 **CRITICAL (3):**
 
-- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:96-130` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
+- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:109-150` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
 
 - **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** `config.get` previously exposed all secrets (tokens, API keys) to any connected gateway client. New `redactConfigSnapshot()` function in `src/config/redact-snapshot.ts:136-145` strips sensitive values from config snapshots before returning them over the gateway wire protocol. Partially addresses tracked issues [#5995](https://github.com/openclaw/openclaw/issues/5995), [#9627](https://github.com/openclaw/openclaw/issues/9627), [#9813](https://github.com/openclaw/openclaw/issues/9813). Tests: `src/config/redact-snapshot.test.ts` (335 lines).
 
@@ -866,7 +866,7 @@ No line shifts. No new CVEs.
 
 **CRITICAL (2):**
 - **`d3aee8449`** (PR [#14659](https://github.com/openclaw/openclaw/pull/14659)) — Skills install `--ignore-scripts`: Completes the supply chain fix from `92702af7a` (plugins+hooks) by adding `--ignore-scripts` to skills install in `src/agents/skills-install.ts:147-157`. **FIXES** tracked issue #11431.
-- **`647d929c9`** (PR [#13719](https://github.com/openclaw/openclaw/pull/13719)) — Nostr profile API auth: Gateway-auth required for `/api/channels/` plugin routes (`src/gateway/server-http.ts:351-367`). **FIXES** tracked issue #13718.
+- **`647d929c9`** (PR [#13719](https://github.com/openclaw/openclaw/pull/13719)) — Nostr profile API auth: Gateway-auth required for `/api/channels/` plugin routes (`src/gateway/server-http.ts:472-485`). **FIXES** tracked issue #13718.
 
 **HIGH (2):**
 - **`f836c385f`** (PR [#13787](https://github.com/openclaw/openclaw/pull/13787)) — BlueBubbles loopback auth bypass removed. All requests now require password auth. **FIXES** tracked issue #13786.

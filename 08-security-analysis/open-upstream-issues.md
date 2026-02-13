@@ -4,7 +4,7 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 13-02-2026 (23:08 AEST)
+> **Last checked:** 14-02-2026 (01:31 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
@@ -21,13 +21,13 @@
 | [#8054](https://github.com/openclaw/openclaw/issues/8054) | ~~HIGH~~ FIXED | Type coercion `"undefined"` credentials | Fixed upstream (COMPLETED 2026-02-13); `src/wizard/onboarding.gateway-config.ts:206` |
 | [#8516](https://github.com/openclaw/openclaw/issues/8516) | HIGH | Browser download/trace endpoints arbitrary file write | `src/browser/routes/agent.act.ts:447-480` |
 | [#8586](https://github.com/openclaw/openclaw/issues/8586) | HIGH | Configurable bypass allows unrestricted command exec | `src/agents/bash-tools.exec.ts:938-947,1278` |
-| [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH | Env vars exposed via shell commands | `src/agents/bash-tools.exec.ts:972,976-980` |
+| [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH (WONTFIX) | Env vars exposed via shell commands | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/agents/bash-tools.exec.ts:972,976-980` |
 | [#8590](https://github.com/openclaw/openclaw/issues/8590) | HIGH | Status endpoint exposes sensitive internal info | `src/gateway/server-methods/health.ts:28-31` |
 | [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal | `src/browser/pw-tools-core.downloads.ts:20-24` |
 | [#8776](https://github.com/openclaw/openclaw/issues/8776) | ~~HIGH~~ FIXED | soul-evil hook silently hijacks agent | Fixed in PR [#14757](https://github.com/openclaw/openclaw/pull/14757) — soul-evil hook completely removed |
 | [#9435](https://github.com/openclaw/openclaw/issues/9435) | ~~HIGH~~ FIXED | Gateway auth token exposed in URL query params | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token acceptance removed from `src/gateway/hooks.ts`, dashboard URL no longer passes `?token=` |
 | [#9512](https://github.com/openclaw/openclaw/issues/9512) | HIGH | Skill download archive path traversal | `src/agents/skills-install.ts:267,274` |
-| [#9517](https://github.com/openclaw/openclaw/issues/9517) | ~~HIGH~~ FIXED | Gateway canvas host auth bypass | Fixed in PR [#9518](https://github.com/openclaw/openclaw/pull/9518) — new `authorizeCanvasRequest()` at `src/gateway/server-http.ts:102-136` |
+| [#9517](https://github.com/openclaw/openclaw/issues/9517) | ~~HIGH~~ FIXED | Gateway canvas host auth bypass | Fixed in PR [#9518](https://github.com/openclaw/openclaw/pull/9518) — new `authorizeCanvasRequest()` at `src/gateway/server-http.ts:109-150` |
 | [#9627](https://github.com/openclaw/openclaw/issues/9627) | HIGH | Config secrets exposed in JSON after update/doctor | `src/config/io.ts:482-539` — partially mitigated by `redactConfigSnapshot()` (PR #9858) |
 | [#9813](https://github.com/openclaw/openclaw/issues/9813) | HIGH (DUPLICATE #9627) | Gateway expands ${ENV_VAR} on meta writeback | `src/config/io.ts:498` — partially mitigated by `redactConfigSnapshot()` (PR #9858) |
 | [#11126](https://github.com/openclaw/openclaw/issues/11126) | HIGH (DUP #9627, WONTFIX) | Config write paths resolve ${VAR} to cleartext | Closed upstream as NOT_PLANNED (2026-02-13); same as #9627/#9813 — `src/config/io.ts:482-539` |
@@ -40,14 +40,14 @@
 | [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:176-222` |
 | [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
 | [#5124](https://github.com/openclaw/openclaw/issues/5124) | MEDIUM | ReDoS in log redaction patterns | `src/logging/redact.ts:47-61` |
-| [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM | Timing attack in non-gateway token comparisons | `src/gateway/server-http.ts:164`, `src/infra/node-pairing.ts:277` |
+| [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM (WONTFIX) | Timing attack in non-gateway token comparisons | Closed upstream as NOT_PLANNED (2026-02-13); partially mitigated locally (hook token + device pairing use `safeEqualSecret`); `src/infra/node-pairing.ts:277` still uses `===` |
 | [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `src/auto-reply/reply/session.ts:87` |
 | [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:31-34` |
 | [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | No detection of encoded/obfuscated commands | `src/infra/exec-safety.ts:1-44` |
 | [#8588](https://github.com/openclaw/openclaw/issues/8588) | MEDIUM | Sensitive config files accessible when sandbox is home dir | `src/agents/sandbox/context.ts:39-46` (workspaceAccess=rw) |
 | [#8589](https://github.com/openclaw/openclaw/issues/8589) | LOW | Sandbox file read lacks content filtering | `src/agents/pi-tools.read.ts:286-302` (no redaction on read) |
 | [#8593](https://github.com/openclaw/openclaw/issues/8593) | MEDIUM | chat.send handler lacks input length validation | `src/gateway/protocol/schema/logs-chat.ts:34-45` |
-| [#8594](https://github.com/openclaw/openclaw/issues/8594) | MEDIUM | No rate limiting on gateway endpoints | `src/gateway/server-constants.ts` (no rate limit controls) |
+| [#8594](https://github.com/openclaw/openclaw/issues/8594) | MEDIUM (WONTFIX) | No rate limiting on gateway endpoints | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/gateway/server-constants.ts` (no rate limit controls) |
 | [#9007](https://github.com/openclaw/openclaw/issues/9007) | LOW | Google Places URL path interpolation (skill, not core) | `skills/local-places/src/local_places/google_places.py:238` |
 | [#9065](https://github.com/openclaw/openclaw/issues/9065) | LOW | ~/.openclaw group-writable after sudo install | Operational - code uses `0o700` but sudo bypasses |
 | [#10324](https://github.com/openclaw/openclaw/issues/10324) | MEDIUM | Memory index multi-write lacks transactions | `src/memory/manager.ts:2198-2301` (DELETEs+INSERTs without BEGIN/COMMIT) |
@@ -76,12 +76,18 @@
 | [#11945](https://github.com/openclaw/openclaw/issues/11945) | HIGH (WONTFIX) | config.patch bypasses commands.restart restriction | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/gateway/server-methods/config.ts:330` |
 | [#13683](https://github.com/openclaw/openclaw/issues/13683) | HIGH | CLI `config get` returns unredacted secrets to sandboxed agents | `src/cli/config-cli.ts:269-270` — reads `snapshot.config` without `redactConfigObject()`; gateway RPC at `server-methods/config.ts:108` correctly redacts |
 | [#13786](https://github.com/openclaw/openclaw/issues/13786) | ~~HIGH~~ FIXED | BlueBubbles webhook auth bypass via loopback proxy trust | Fixed in PR [#13787](https://github.com/openclaw/openclaw/pull/13787) — loopback bypass removed; all requests require password auth |
-| [#13718](https://github.com/openclaw/openclaw/issues/13718) | ~~HIGH~~ FIXED | Unauthenticated Nostr profile API allows remote config tampering | Fixed in PR [#13719](https://github.com/openclaw/openclaw/pull/13719) — gateway-auth required for `/api/channels/` plugin routes (`server-http.ts:351-367`) |
+| [#13718](https://github.com/openclaw/openclaw/issues/13718) | ~~HIGH~~ FIXED | Unauthenticated Nostr profile API allows remote config tampering | Fixed in PR [#13719](https://github.com/openclaw/openclaw/pull/13719) — gateway-auth required for `/api/channels/` plugin routes (`server-http.ts:472-485`) |
 | [#13937](https://github.com/openclaw/openclaw/issues/13937) | ~~MEDIUM~~ FIXED | HTML not escaped in Control UI webchat (XSS) | Closed as COMPLETED 2026-02-11; `ui/` webchat HTML escaping fix applied upstream |
 | [#14137](https://github.com/openclaw/openclaw/issues/14137) | HIGH | Gateway auth has no rate limiting (CWE-307) | `src/gateway/auth.ts` — no brute-force protection; ~645 attempts/sec; fix PR [#13680](https://github.com/openclaw/openclaw/pull/13680) pending; relates to #8594 |
+| [#13274](https://github.com/openclaw/openclaw/issues/13274) | HIGH | SSRF guard bypassed by IPv4-compatible IPv6 addresses | `src/infra/net/ssrf.ts:144-165` — `isPrivateIpAddress()` does not handle `::127.0.0.1` or `::7f00:1` |
+| [#11738](https://github.com/openclaw/openclaw/issues/11738) | HIGH | Canvas authorization IP co-tenancy bypass | `src/gateway/server-http.ts:100-105` — `hasAuthorizedWsClientForIp()` trusts any request from same IP as authenticated WS client; bypasses auth in NAT/proxy environments |
+| [#11793](https://github.com/openclaw/openclaw/issues/11793) | HIGH | HTTP API session keys lack ownership validation | `src/gateway/http-utils.ts:71-73` — `x-openclaw-session-key` header accepted as-is with no ownership check; cross-user session access in multi-user deployments |
+| [#11024](https://github.com/openclaw/openclaw/issues/11024) | HIGH | Gmail push endpoint embeds auth token in URL query string | `src/hooks/gmail-setup-utils.ts:315` — push endpoint constructed as `?token=<secret>`; same CWE-598 as fixed #9435/#5120 but Gmail-specific path |
 | [#14875](https://github.com/openclaw/openclaw/issues/14875) | ~~HIGH~~ FIXED | Feishu channel hardcodes CommandAuthorized bypassing access groups | Fixed upstream (COMPLETED 2026-02-13); `extensions/feishu/src/bot.ts:818,906` |
 | [#14117](https://github.com/openclaw/openclaw/issues/14117) | MEDIUM | Session isolation & message attribution failure | Cross-session message leakage between main + remote sessions; raw cron output exposed; relates to #12571 |
-| [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM (DUPLICATE #9627) | apiKey resolved to plaintext in models.json cache | `src/agents/models-config.ts:126-142` — `normalizeProviders()` includes resolved apiKey; relates to #9627/#13683 |
+| [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM (WONTFIX, DUP #9627) | apiKey resolved to plaintext in models.json cache | Closed upstream as NOT_PLANNED (2026-02-13); `src/agents/models-config.ts:126-142` — `normalizeProviders()` includes resolved apiKey; relates to #9627/#13683 |
+| [#11202](https://github.com/openclaw/openclaw/issues/11202) | MEDIUM | Model catalog apiKeys injected into LLM prompt context every turn | `src/agents/models-config.ts` — `normalizeProviders()` includes resolved `apiKey` in model catalog serialized to LLM; all provider keys sent to active provider |
+| [#12173](https://github.com/openclaw/openclaw/issues/12173) | MEDIUM | apply_patch tool path traversal when sandbox disabled | `src/agents/apply-patch.ts:215-236` — `resolvePatchPath()` falls through to `resolvePathFromCwd()` with no containment when `sandboxRoot` is undefined (default) |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
 | [#11879](https://github.com/openclaw/openclaw/issues/11879) | NOT APPLICABLE | Malicious ClawHub skill exfiltrating to Feishu | Ecosystem/marketplace issue; 13,981 installs; relates to #10890 (Skill Security Framework) |
@@ -163,7 +169,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Verification:**
 - No imports for `authorizeGatewayConnect` or `resolvedAuth` validation in the file
 - Other endpoints (OpenAI, tools-invoke, open-responses) DO call `authorizeGatewayConnect`
-- Plugin HTTP dispatch at `server-http.ts:368` (now gateway-auth protected for `/api/channels/` routes at `:351-367`, PR #13719)
+- Plugin HTTP dispatch at `server-http.ts:486` (now gateway-auth protected for `/api/channels/` routes at `:472-485`, PR #13719)
 
 ### #6609: Browser Bridge Server Optional Authentication
 
@@ -219,8 +225,8 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Gateway HTTP server serves Canvas host and A2UI endpoints without enforcing gateway auth, allowing unauthenticated access to canvas files.
 
 **Affected code:**
-- `src/gateway/server-http.ts:444-462` - Canvas/A2UI handler dispatch (now auth-wrapped via `authorizeCanvasRequest()` at `:102-136`, PR #9518)
-- `src/gateway/server-http.ts:505-527` - WebSocket upgrade for canvas (now auth-wrapped via `authorizeCanvasRequest()` at `:512`, PR #9518)
+- `src/gateway/server-http.ts:514-531` - Canvas/A2UI handler dispatch (now auth-wrapped via `authorizeCanvasRequest()` at `:109-150`, PR #9518)
+- `src/gateway/server-http.ts:577-607` - WebSocket upgrade for canvas (now auth-wrapped via `authorizeCanvasRequest()` at `:584`, PR #9518)
 
 **Verification:**
 - No `authorizeGatewayConnect` call before `canvasHost.handleHttpRequest(req, res)`
@@ -235,7 +241,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** Webhook endpoint accepted authentication tokens via URL query parameters, causing credential leakage through logs, browser history, and Referer headers.
 
-**Fix:** Query token extraction removed entirely from `src/gateway/hooks.ts`. `extractHookToken()` now only accepts `Authorization: Bearer` header and `X-OpenClaw-Token` header. Server returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:193-199`).
+**Fix:** Query token extraction removed entirely from `src/gateway/hooks.ts`. `extractHookToken()` now only accepts `Authorization: Bearer` header and `X-OpenClaw-Token` header. Server returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:236-243`).
 
 ### #4949: Browser Control Server DNS Rebinding
 
@@ -305,14 +311,16 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 ### #6021: Timing Attack in Non-Gateway Token Comparisons
 
-**Severity:** MEDIUM
+**Status: WONTFIX** -- closed upstream as NOT_PLANNED 2026-02-13. Partially mitigated locally.
+
+**Severity:** MEDIUM (WONTFIX)
 **CWE:** CWE-208 (Observable Timing Discrepancy)
 
 **Vulnerability:** Gateway auth correctly uses `safeEqual` (timing-safe), but hook tokens, node pairing, and device pairing use direct `===`/`!==` comparisons vulnerable to timing attacks.
 
 **Affected code:**
 - `src/security/secret-equal.ts:3-16` - `safeEqualSecret` uses `timingSafeEqual` (correct)
-- `src/gateway/server-http.ts:204` - hook token now uses `safeEqualSecret()` (fixed in Feb 13 sync 4, commit `113ebfd6a`)
+- `src/gateway/server-http.ts:247` - hook token now uses `safeEqualSecret()` (fixed in Feb 13 sync 4, commit `113ebfd6a`)
 - `src/infra/node-pairing.ts:277` - node token uses direct `===` (vulnerable)
 - `src/infra/device-pairing.ts:435` - device token now uses `safeEqualSecret()` (fixed in Feb 13 sync 4, commit `113ebfd6a`)
 
@@ -380,7 +388,9 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 ### #8591: Env Vars Exposed via Shell Commands
 
-**Severity:** HIGH
+**Status: WONTFIX** -- closed upstream as NOT_PLANNED 2026-02-13. Vulnerability still present in local code.
+
+**Severity:** HIGH (WONTFIX)
 **CWE:** CWE-526 (Exposure of Sensitive Information Through Environmental Variables)
 
 **Vulnerability:** Full `process.env` is passed as the base environment to child processes. An agent can run `env` or `printenv` to dump all environment variables, including API keys and secrets.
@@ -447,7 +457,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** Gateway authentication tokens were passed via URL query parameters (`?token=...`) in dashboard and onboarding flows, exposing credentials through logs, browser history, and Referer headers.
 
-**Fix:** Query token acceptance completely removed. `extractHookToken()` in `src/gateway/hooks.ts:157-174` no longer reads `url.searchParams`. `src/commands/dashboard.ts` no longer constructs `?token=` URLs. `src/commands/onboard-helpers.ts` no longer passes token in URL. Server now returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:193-199`).
+**Fix:** Query token acceptance completely removed. `extractHookToken()` in `src/gateway/hooks.ts:157-174` no longer reads `url.searchParams`. `src/commands/dashboard.ts` no longer constructs `?token=` URLs. `src/commands/onboard-helpers.ts` no longer passes token in URL. Server now returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:236-243`).
 
 ### #9627: Config Secrets Exposed in JSON After Update/Doctor
 
@@ -561,7 +571,9 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 ### #8594: No Rate Limiting on Gateway Endpoints
 
-**Severity:** MEDIUM
+**Status: WONTFIX** -- closed upstream as NOT_PLANNED 2026-02-13. Vulnerability still present in local code.
+
+**Severity:** MEDIUM (WONTFIX)
 **CWE:** CWE-770 (Allocation of Resources Without Limits or Throttling)
 
 **Vulnerability:** The gateway server lacks rate limiting on all RPC, HTTP, and WebSocket endpoints. No per-client, per-IP, or per-connection request throttling exists. Authenticated clients can send unlimited requests.
@@ -767,7 +779,7 @@ All changes take effect immediately via automatic restart.
 
 **Vulnerability:** The Nostr plugin registered HTTP endpoints for profile management (GET/PUT/POST on `/api/channels/nostr/:accountId/profile`) that accepted unauthenticated requests. The PUT path wrote attacker-controlled profile data directly to the gateway config file and triggered relay publish operations.
 
-**Fix:** Gateway now requires `authorizeGatewayConnect` for all `/api/channels/` plugin HTTP routes (`src/gateway/server-http.ts:351-367`). Channel plugin endpoints are gateway-auth protected by default; non-channel plugin routes remain plugin-owned. New `server.plugin-http-auth.test.ts` (174 lines). Also adds UI-side Nostr profile management in `ui/src/ui/app-channels.ts` (+23 lines).
+**Fix:** Gateway now requires `authorizeGatewayConnect` for all `/api/channels/` plugin HTTP routes (`src/gateway/server-http.ts:472-485`). Channel plugin endpoints are gateway-auth protected by default; non-channel plugin routes remain plugin-owned. New `server.plugin-http-auth.test.ts` (174 lines). Also adds UI-side Nostr profile management in `ui/src/ui/app-channels.ts` (+23 lines).
 
 ### #13937: HTML Not Escaped in Control UI Webchat (XSS)
 
@@ -791,7 +803,7 @@ All changes take effect immediately via automatic restart.
 
 **Affected code:**
 - `src/security/secret-equal.ts:3-16` — `safeEqualSecret()` (extracted from auth.ts, timing-safe)
-- `src/gateway/server-http.ts:146-183` — hook auth failure rate limiting added (Feb 13 sync 4, commit `113ebfd6a`): 20 failures/60s per client IP, HTTP 429 response
+- `src/gateway/server-http.ts:245-257` — hook auth failure rate limiting added (Feb 13 sync 4, commit `113ebfd6a`): 20 failures/60s per client IP, HTTP 429 response
 - `src/gateway/server/ws-connection/message-handler.ts` — no per-connection attempt limiting
 
 **Fix available:** PR [#13680](https://github.com/openclaw/openclaw/pull/13680) (OPEN, not merged) — per-IP sliding window: 10 failures in 60s → IP blocked for 5 minutes; HTTP 429 with Retry-After; localhost exempt.
@@ -818,7 +830,9 @@ All changes take effect immediately via automatic restart.
 
 ### #14808: apiKey Resolved to Plaintext in models.json Cache File
 
-**Severity:** MEDIUM (DUPLICATE of #9627/#13683 family)
+**Status: WONTFIX** -- closed upstream as NOT_PLANNED 2026-02-13.
+
+**Severity:** MEDIUM (WONTFIX, DUPLICATE of #9627/#13683 family)
 **CWE:** CWE-312 (Cleartext Storage of Sensitive Information)
 
 **Vulnerability:** When using `${VAR}` syntax for `apiKey` in `openclaw.json`, OpenClaw resolves the environment variable to plaintext at runtime and writes the resolved value to the agent's `models.json` cache file (`~/.openclaw/agents/main/agent/models.json`). A sandboxed agent with file read access can extract any API key configured via env var substitution.
@@ -857,6 +871,82 @@ All changes take effect immediately via automatic restart.
 - `src/gateway/server-methods/chat.ts:484` also hardcodes `true` but is gateway-auth protected (owner-facing webchat, expected behavior)
 
 **Impact:** Any Feishu user can execute admin/control commands (e.g., `/model`, `/new`, `/reset`, `/elevated`) regardless of access group configuration. Requires Feishu channel to be enabled with access groups configured. Without access groups, all users are already allowed, so this only affects Feishu deployments with access restrictions.
+
+### #13274: SSRF Guard Bypassed by IPv4-Compatible IPv6 Addresses
+
+**Severity:** HIGH
+**CWE:** CWE-918 (Server-Side Request Forgery)
+
+**Vulnerability:** The `isPrivateIpAddress()` function does not recognize IPv4-compatible IPv6 addresses like `::127.0.0.1` or `::7f00:1` as private/loopback. It only handles `::ffff:` mapped addresses and checks `PRIVATE_IPV6_PREFIXES = ["fe80:", "fec0:", "fc", "fd"]`. An attacker controlling DNS can return AAAA records with `::127.0.0.1` to bypass both pre-resolution and post-resolution SSRF checks, reaching internal services.
+
+**Affected code:**
+- `src/infra/net/ssrf.ts:26` — `PRIVATE_IPV6_PREFIXES` does not include `::` prefix patterns for IPv4-compatible addresses
+- `src/infra/net/ssrf.ts:144-173` — `isPrivateIpAddress()` handles `::ffff:` (line 153) and exact `::` / `::1` (line 162) but not `::127.0.0.1`
+- `src/infra/net/ssrf.ts:165` — fallback prefix check misses IPv4-compatible form
+- `src/infra/net/ssrf.ts:276,289` — both pre-resolution and post-resolution checks use same vulnerable function
+
+### #11738: Canvas Authorization IP Co-Tenancy Bypass
+
+**Severity:** HIGH
+**CWE:** CWE-287 (Improper Authentication)
+
+**Vulnerability:** `hasAuthorizedWsClientForIp()` trusts any HTTP request whose source IP matches an already-authenticated WebSocket client. In shared-IP deployments (NAT, corporate proxy, or trusted reverse proxy), one authenticated client implicitly authorizes all other users on the same IP, creating a cross-user auth bypass for Canvas endpoints.
+
+**Affected code:**
+- `src/gateway/server-http.ts:100-105` — `hasAuthorizedWsClientForIp()` does pure IP-based matching with no per-user or per-session distinction
+- `src/gateway/server-http.ts:146` — called in `authorizeCanvasRequest()` as fallback authorization method
+- Relies on `client.clientIp` field which is the same for all users behind NAT
+
+### #11793: HTTP API Session Keys Lack Ownership Validation
+
+**Severity:** HIGH
+**CWE:** CWE-639 (Authorization Bypass Through User-Controlled Key)
+
+**Vulnerability:** Multiple HTTP API endpoints accept user-controlled session keys via the `x-openclaw-session-key` header or request body without ownership validation. In multi-user deployments (Tailscale Serve), any authenticated user can read and write another user's conversation history, memories, and tool execution context by supplying a predictable session key.
+
+**Affected code:**
+- `src/gateway/http-utils.ts:65-79` — `resolveSessionKey()` returns `x-openclaw-session-key` header value as-is (line 71-73) with no ownership check
+- `src/gateway/tools-invoke-http.ts:62-65` — `resolveSessionKeyFromBody()` accepts arbitrary session key from request body
+- Affected endpoints: `/v1/chat/completions`, `/v1/responses`, `/tools/invoke`, `/hooks/agent`
+
+### #11024: Gmail Push Endpoint Embeds Auth Token in URL Query String
+
+**Severity:** HIGH
+**CWE:** CWE-598 (Sensitive Query Strings)
+
+**Vulnerability:** Gmail webhook setup constructs Pub/Sub push endpoints as `https://...?token=<secret>`, exposing the shared secret via URL telemetry surfaces (reverse-proxy logs, access logs, traces, analytics). Additionally, the setup prints tokens in CLI output and `--json` mode.
+
+**Affected code:**
+- `src/hooks/gmail-setup-utils.ts:315` — URL constructed with `?token=<secret>` parameter
+- Same vulnerability class as previously fixed #9435 (gateway auth in URL) and #5120 (webhook query token), but in Gmail-specific code path that was missed
+
+### #11202: Model Catalog with Resolved apiKey in LLM Prompt Context
+
+**Severity:** MEDIUM
+**CWE:** CWE-200 (Exposure of Sensitive Information)
+
+**Vulnerability:** The runtime model catalog (resolved from `openclaw.json` providers) is serialized into every LLM request payload as system prompt context. Environment variable references (`${VAR}`) are resolved to plaintext before serialization, so all provider API keys are sent to whichever LLM provider handles the request. Every provider sees every other provider's keys.
+
+**Affected code:**
+- `src/agents/models-config.ts:126-142` — `normalizeProviders()` returns provider objects including resolved `apiKey` fields
+- `src/agents/models-config.providers.ts` — provider normalization includes credential resolution
+
+**Relationship:** Related to #14808 (apiKey in models.json cache, now WONTFIX), #13683 (CLI config get unredacted), and #9627 (config write-back). Different vector: keys leaked to LLM providers via prompt, not just disk/CLI.
+
+### #12173: apply_patch Tool Path Traversal When Sandbox Disabled
+
+**Severity:** MEDIUM
+**CWE:** CWE-22 (Path Traversal)
+
+**Vulnerability:** `resolvePatchPath()` has two code paths. When `sandboxRoot` is set, it calls `assertSandboxPath()` (secure). When `sandboxRoot` is `undefined` (gateway/non-sandboxed mode), it falls through to `resolvePathFromCwd()` which accepts absolute paths and normalizes `../` via `path.resolve()` with zero containment checks. Default sandbox mode is "off" (`src/agents/sandbox/config.ts:147`).
+
+**Affected code:**
+- `src/agents/apply-patch.ts:215-236` — `resolvePatchPath()` function
+- Lines 219-228: sandbox path (secure, calls `assertSandboxPath`)
+- Lines 231-234: non-sandbox path (vulnerable, no containment)
+- Called at lines 141, 149, 155, 159 for add/delete/update/move patch operations
+
+**Mitigation note:** When sandbox is disabled, the exec tool already has unrestricted file access. This is an additional vector (apply_patch vs exec) but does not expand the attack surface beyond what exec provides. Severity is MEDIUM rather than HIGH because it does not bypass a security boundary that is otherwise enforced.
 
 ### Notable Non-Core Issues
 

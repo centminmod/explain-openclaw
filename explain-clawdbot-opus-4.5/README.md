@@ -258,7 +258,7 @@ Four security-relevant commits:
 
 - **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings (`src/infra/exec-approvals.ts:696,699`). Addresses Audit 2 "shell injection regex" claim.
 
-- **`fe81b1d71`** — Require shared auth before device bypass: Validates shared secret auth before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`).
+- **`fe81b1d71`** — Require shared auth before device bypass: Validates shared secret auth before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:454-499`).
 
 - **`fff59da96`** — Slack fail closed on channel type lookup: Fails closed when channel type lookup fails, infers type from ID prefix (`src/slack/monitor/slash.ts:181-182`).
 
@@ -362,7 +362,7 @@ Fourteen security-relevant commits:
 
 **CRITICAL (3):**
 
-- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue #9517. New `authorizeCanvasRequest()` in `src/gateway/server-http.ts:96-130`. Thanks @coygeek.
+- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue #9517. New `authorizeCanvasRequest()` in `src/gateway/server-http.ts:109-150`. Thanks @coygeek.
 
 - **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** New `redactConfigSnapshot()` in `src/config/redact-snapshot.ts:136-145`. Partially addresses #5995, #9627, #9813.
 

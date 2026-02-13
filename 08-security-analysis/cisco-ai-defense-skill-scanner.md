@@ -170,7 +170,7 @@ The SKILL.md gap extends to **all persistent `.md` files** in the workspace. Two
 
 **Path 1 — Bootstrap files (system prompt injection, high trust):**
 
-Nine named `.md` files are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) and injected directly into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:162-191`). They appear as fully trusted context with **no content validation** — only truncation at 20,000 characters per file (`src/agents/pi-embedded-helpers/bootstrap.ts:84`).
+Nine named `.md` files are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:265-319`) and injected directly into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:162-191`). They appear as fully trusted context with **no content validation** — only truncation at 20,000 characters per file (`src/agents/pi-embedded-helpers/bootstrap.ts:84`).
 
 | Bootstrap file | Purpose | Max chars | Injection path |
 |----------------|---------|-----------|----------------|
@@ -194,7 +194,7 @@ Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. Th
 
 **Neither path is scanned by the built-in skill scanner** (`src/security/skill-scanner.ts:37-46`), which only processes JS/TS files.
 
-**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:295-305` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
+**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:323-331` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
 
 **Risk scenario:** An attacker with workspace write access (via compromised skill, plugin, shared git repo, or social engineering) plants persistent prompt injection in any of these files. The injection persists across sessions and appears as trusted system context, making it significantly harder for the model to reject than runtime injection from user messages or fetched content.
 

@@ -55,7 +55,7 @@ Four defense-in-depth items were identified across audits:
 1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,976-977`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
-4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:239-293`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:346-352`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:295-305`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
+4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:265-319`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:346-352`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:323-331`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
 
 **Gap status: 1 closed, 3 remain open.**
 
@@ -176,7 +176,7 @@ Four security-relevant commits:
 
 - **`d1ecb4607`** — Harden exec allowlist parsing: Rejects `$()` command substitution and backticks inside double-quoted strings in allowlist pattern matching (`src/infra/exec-approvals.ts:696,699`). Addresses Audit 2 "shell injection regex" claim by preventing shell expansion within quoted arguments.
 
-- **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:398-458`). Prevents auth bypass when only Tailscale identity is available.
+- **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:454-499`). Prevents auth bypass when only Tailscale identity is available.
 
 - **`fff59da96`** — Slack fail closed on slash command channel type lookup: Slash command handler now fails closed when Slack API channel type lookup fails (`src/slack/monitor/slash.ts:181-182`). Infers channel type from ID prefix (D*/C*/G*) as fallback. Addresses potential authorization bypass in Slack slash commands.
 
@@ -301,7 +301,7 @@ Fourteen security-relevant commits:
 
 **CRITICAL (3):**
 
-- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:96-130` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
+- **`47538bca4` + `a459e237e`** (PR [#9518](https://github.com/openclaw/openclaw/pull/9518)) — **Canvas auth bypass fix:** FIXES tracked issue [#9517](https://github.com/openclaw/openclaw/issues/9517). New `authorizeCanvasRequest()` function in `src/gateway/server-http.ts:109-150` wraps all canvas/A2UI HTTP and WebSocket requests with bearer-token + authorized-WebSocket-client authentication. Canvas host paths now require either a valid gateway auth token or an already-authenticated WebSocket connection from the same IP. E2E tests: `src/gateway/server.canvas-auth.e2e.test.ts` (212 lines). Thanks @coygeek.
 
 - **`0c7fa2b0d`** (PR [#9858](https://github.com/openclaw/openclaw/pull/9858)) — **Credential leakage in config APIs:** `config.get` previously exposed all secrets (tokens, API keys) to any connected gateway client. New `redactConfigSnapshot()` function in `src/config/redact-snapshot.ts:117-126` strips sensitive values from config snapshots before returning them over the gateway wire protocol. Partially addresses tracked issues [#5995](https://github.com/openclaw/openclaw/issues/5995), [#9627](https://github.com/openclaw/openclaw/issues/9627), [#9813](https://github.com/openclaw/openclaw/issues/9813). Tests: `src/config/redact-snapshot.test.ts` (335 lines).
 
@@ -724,7 +724,7 @@ Primarily QMD memory query scoping, legacy config migration for `memorySearch`, 
 
 1. **`d3aee8449`** (PR [#14659](https://github.com/openclaw/openclaw/pull/14659)) — **fix(security): add --ignore-scripts to skills install commands:** `buildNodeInstallCommand()` in `src/agents/skills-install.ts:147-157` now passes `--ignore-scripts` to all package managers (npm, pnpm, yarn, bun) during global skill installation. Prevents RCE via malicious postinstall/preinstall lifecycle scripts. Completes the supply chain fix from `92702af7a` (Feb 12 sync 1) which added `--ignore-scripts` to plugin and hook installs but overlooked skills.
 
-2. **`647d929c9`** (PR [#13719](https://github.com/openclaw/openclaw/pull/13719)) — **fix: Unauthenticated Nostr profile API allows remote config tampering:** Gateway now requires `authorizeGatewayConnect` for `/api/channels/` plugin HTTP routes (`src/gateway/server-http.ts:351-367`). Channel plugin endpoints are gateway-auth protected by default; non-channel plugin routes remain plugin-owned. New `server.plugin-http-auth.test.ts` (174 lines). **FIXES** tracked issue [#13718](https://github.com/openclaw/openclaw/issues/13718). Also adds UI-side Nostr profile management in `ui/src/ui/app-channels.ts` (+23 lines).
+2. **`647d929c9`** (PR [#13719](https://github.com/openclaw/openclaw/pull/13719)) — **fix: Unauthenticated Nostr profile API allows remote config tampering:** Gateway now requires `authorizeGatewayConnect` for `/api/channels/` plugin HTTP routes (`src/gateway/server-http.ts:472-485`). Channel plugin endpoints are gateway-auth protected by default; non-channel plugin routes remain plugin-owned. New `server.plugin-http-auth.test.ts` (174 lines). **FIXES** tracked issue [#13718](https://github.com/openclaw/openclaw/issues/13718). Also adds UI-side Nostr profile management in `ui/src/ui/app-channels.ts` (+23 lines).
 
 **HIGH — Auth bypass & hook removal (2):**
 
@@ -818,7 +818,7 @@ Merge commit `7cca0e0da` — 17 upstream commits (`bca0652de..afbce7357`). Mostl
 
 **MEDIUM-HIGH — Authentication & Token Security (2):**
 
-1. **`113ebfd6a`** — **fix(security): harden hook and device token auth:** Three changes: (a) Extracted `safeEqual()` from `src/gateway/auth.ts` to new `src/security/secret-equal.ts:3-16` as `safeEqualSecret()` with proper null/undefined handling. (b) `src/infra/device-pairing.ts:435` — switched device token verification from plain `!==` to `safeEqualSecret()`, closing a timing side-channel (relates to tracked issue [#9007](https://github.com/openclaw/openclaw/issues/9007)). (c) `src/gateway/server-http.ts:146-183` — added hook auth failure rate limiting: tracks per-client-IP failures in a sliding 60-second window, returns HTTP 429 after 20 failures with `Retry-After` header. Map bounded to 2048 entries. Addresses Audit 1 claim #8 (token expiry/auth hardening).
+1. **`113ebfd6a`** — **fix(security): harden hook and device token auth:** Three changes: (a) Extracted `safeEqual()` from `src/gateway/auth.ts` to new `src/security/secret-equal.ts:3-16` as `safeEqualSecret()` with proper null/undefined handling. (b) `src/infra/device-pairing.ts:435` — switched device token verification from plain `!==` to `safeEqualSecret()`, closing a timing side-channel (relates to tracked issue [#9007](https://github.com/openclaw/openclaw/issues/9007)). (c) `src/gateway/server-http.ts:245-257` — added hook auth failure rate limiting: tracks per-client-IP failures in a sliding 60-second window, returns HTTP 429 after 20 failures with `Retry-After` header. Map bounded to 2048 entries. Addresses Audit 1 claim #8 (token expiry/auth hardening).
 
 2. **`99f28031e`** — **fix: harden OpenResponses URL input fetching:** Two changes: (a) `src/infra/net/ssrf.ts:42-77` — added `hostnameAllowlist` to `SsrFPolicy` with wildcard suffix matching (`*.example.com`) and explicit block of `*`/`*.` patterns. `resolvePinnedHostnameWithPolicy()` at `:267-268` now rejects hostnames not in the allowlist. (b) `src/infra/net/fetch-guard.ts:115-118` — always uses policy-based resolution (removed conditional that skipped policy when no private network/hostname overrides). Added audit logging at `:161-167` for blocked SSRF attempts with context and target info. Strengthens Audit 2 claim #4 (DNS rebinding SSRF) defense.
 
@@ -920,13 +920,13 @@ Merge commit `82021fa43` — 35 upstream commits. Version bump to 2026.2.13. Mul
 
 **Technical details:**
 
-- **Gateway HTTP tool deny list.** A new constant `DEFAULT_GATEWAY_HTTP_TOOL_DENY` at `src/gateway/tools-invoke-http.ts:42-51` hard-codes a list of four tools that are **always blocked** when called through the HTTP `/tools/invoke` endpoint:
+- **Gateway HTTP tool deny list.** A new constant `DEFAULT_GATEWAY_HTTP_TOOL_DENY` at `src/gateway/tools-invoke-http.ts:43-52` hard-codes a list of four tools that are **always blocked** when called through the HTTP `/tools/invoke` endpoint:
   - `sessions_spawn` — spawning new agent sessions remotely is effectively RCE
   - `sessions_send` — injecting messages into other agent sessions
   - `gateway` — reconfiguring the gateway itself from the outside
   - `whatsapp_login` — requires an interactive QR code scan, would hang on HTTP
 
-  The deny filter is applied at `:316-322`, after all other policy layers (agent provider, group, subagent) have run but *before* the tool is actually looked up and executed. The deny list is configurable: administrators can add extra blocked tools via `gateway.tools.deny` or selectively re-allow a default-blocked tool via `gateway.tools.allow` in `openclaw.json` (type definition: `src/config/types.gateway.ts:229-234`).
+  The deny filter is applied at `:325-331`, after all other policy layers (agent provider, group, subagent) have run but *before* the tool is actually looked up and executed. The deny list is configurable: administrators can add extra blocked tools via `gateway.tools.deny` or selectively re-allow a default-blocked tool via `gateway.tools.allow` in `openclaw.json` (type definition: `src/config/types.gateway.ts:243-246`).
 
 - **ACP permission hardening.** A new `DANGEROUS_ACP_TOOLS` set at `src/acp/client.ts:19-30` enumerates 10 tool names that require explicit interactive confirmation: `exec`, `spawn`, `shell`, `sessions_spawn`, `sessions_send`, `gateway`, `fs_write`, `fs_delete`, `fs_move`, `apply_patch`. The permission resolver at `:152-195` now works as follows:
   - If the tool name is **not** in the dangerous set, it is auto-approved (`:171-178`) — safe tools like "read file" proceed without interruption.
@@ -1039,3 +1039,110 @@ Thanks @jogvan-k.
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged). Note: The OC-02 ACP fix significantly strengthens the defense-in-depth posture for Audit 2 Claim 5 (agent self-approval) but does not close any of the 3 tracked gaps directly.
+
+### Post-merge hardening (Feb 14 sync 2, 16 upstream commits)
+
+**SECURITY-RELEVANT (4):**
+
+#### 1. Gateway auth rate-limiting & brute-force protection
+
+**Commit:** `30b6eccae` — PR [#15035](https://github.com/openclaw/openclaw/pull/15035)
+
+**Plain English:** Before this fix, there was nothing stopping an attacker from trying thousands of passwords or tokens against the OpenClaw gateway in rapid succession. If the gateway was exposed on a network (not just localhost), a brute-force attack could eventually guess the authentication token. This commit adds a rate limiter that tracks failed login attempts per IP address. After too many failures in a short window, the IP is temporarily locked out — the gateway responds with "429 Too Many Requests" and a `Retry-After` header telling the client when to try again. Localhost connections are exempt by default, so the local CLI is never blocked.
+
+**Technical details:**
+
+- New `src/gateway/auth-rate-limit.ts` (218 lines) implements a sliding-window rate limiter with per-IP tracking. Configuration via `gateway.auth.rateLimit` in `openclaw.json`:
+  - `maxAttempts` (default 10): failed attempts before lockout
+  - `windowMs` (default 60000): sliding window duration
+  - `lockoutMs` (default 300000): lockout period after threshold exceeded
+  - `exemptLoopback` (default true): skip rate limiting for 127.0.0.1 / ::1
+- Three rate-limit scopes: `DEFAULT`, `SHARED_SECRET`, `DEVICE_TOKEN` — prevents cross-scope interference.
+- Applied to all auth surfaces: HTTP endpoints (`src/gateway/server-http.ts`), WebSocket handshake (`src/gateway/server/ws-connection/message-handler.ts`), canvas/A2UI auth, OpenAI HTTP, OpenResponses HTTP, and tools invoke HTTP.
+- HTTP 429 response includes `Retry-After` header with seconds until lockout expires.
+- Periodic pruning (every 60s) prevents unbounded memory growth from stale IP entries.
+- New `src/gateway/auth-rate-limit.test.ts` (213 lines) covers window sliding, lockout expiry, scope isolation, loopback exemption, and pruning.
+- New audit check `gateway.auth_no_rate_limit` at `src/security/audit.ts:386-395` warns when bind is non-loopback but no rate limiting is configured.
+- Fully opt-in: limiter only created when `gateway.auth.rateLimit` is configured.
+
+**New security feature** — not remediating an existing audit finding, but significantly raises the bar for brute-force attacks on exposed gateways.
+
+#### 2. Canvas A2UI symlink/traversal hardening
+
+**Commit:** `7467fcc52` — PR [#10525](https://github.com/openclaw/openclaw/pull/10525)
+
+**Plain English:** The Canvas/A2UI feature serves files to the browser for interactive UI components. Previously, the code checked for directory traversal by manually resolving the real path and checking if it started with the expected root directory. This approach had subtle edge cases around symlinks and race conditions. This commit replaces the manual check with the centralized `openFileWithinRoot()` function, which performs inode-level validation and explicitly rejects symlinks — the same robust approach already used elsewhere in the codebase.
+
+**Technical details:**
+
+- `src/canvas-host/a2ui.ts` refactored: replaced manual `fs.realpath()` + `startsWith(rootPrefix)` check with `openFileWithinRoot()` from `src/infra/fs-safe.ts`.
+- `openFileWithinRoot()` performs: (1) relative path component validation, (2) symlink detection via `lstat().isSymbolicLink()`, (3) final real-path containment check via `path.relative()`, (4) returns handle-based `SafeOpenResult` for safe reading.
+- File reads now use the handle from `SafeOpenResult` with proper `result.handle.close()` in finally block — prevents file descriptor leaks.
+- Two regression tests added in `src/canvas-host/server.test.ts`:
+  - Encoded traversal: `/%2e%2e%2fpackage.json` → 404
+  - Symlink escape: symlink pointing outside A2UI root → 404
+- Strengthens Canvas attack surface. Not directly related to a specific audit claim, but improves the same file-serving hardening pattern as `fs-safe.ts:53-54` (root escape prevention).
+
+#### 3. WhatsApp credential file permission hardening
+
+**Commit:** `c60780ba2` — PR [#10529](https://github.com/openclaw/openclaw/pull/10529)
+
+**Plain English:** WhatsApp credentials (the login tokens that let OpenClaw send messages through your WhatsApp account) were being saved to disk without explicitly setting restrictive file permissions. While the general JSON file writer already sets `0o600` (owner-read/write only), the WhatsApp-specific backup and restore flows bypassed that writer. This means the backup files could end up world-readable depending on the system's default umask. This commit adds explicit `chmod 0o600` calls to all three WhatsApp credential file operations.
+
+**Technical details:**
+
+- `src/web/auth-store.ts`: `chmodSync(backupPath, 0o600)` after restoring credentials from backup.
+- `src/web/session.ts`: `chmodSync(backupPath, 0o600)` after creating credential backup; `chmodSync(resolveWebCredsPath(authDir), 0o600)` after saving new credentials.
+- All chmod calls wrapped in try-catch for platform compatibility (best-effort on platforms that support it).
+- Extends the existing `0o600` pattern from `src/infra/json-file.ts:20` to WhatsApp-specific flows.
+- **Strengthens Audit 1 Claim #5** (insufficient file permission checks) — credentials are now explicitly protected in all code paths, not just the generic JSON writer.
+
+#### 4. Web-fetch: Cloudflare Markdown for Agents support with URL-safe logging
+
+**Commit:** `54bf5d0f4` — PR [#15376](https://github.com/openclaw/openclaw/pull/15376)
+
+**Plain English:** When the web-fetch tool visits a website, it now prefers receiving content in Markdown format (if the server supports Cloudflare's "Markdown for Agents" feature) rather than raw HTML. This is cleaner for the AI to process and often more token-efficient. The security-relevant part: the tool now logs a `x-markdown-tokens` header for debugging, but automatically redacts the URL in those debug logs — stripping query parameters and paths that might contain API keys or session tokens.
+
+**Technical details:**
+
+- `src/agents/tools/web-fetch.ts` changes:
+  - Accept header changed from `*/*` to `"text/markdown, text/html;q=0.9, */*;q=0.1"` — prefers server-rendered markdown.
+  - New `cf-markdown` extractor: when response `Content-Type` is `text/markdown`, uses direct markdown parsing instead of HTML readability extraction.
+  - New `redactUrlForDebugLog()` function strips query params and paths from URLs in debug log output (e.g., `https://example.com/api/secret?key=abc` → `https://example.com/...`). Reduces accidental credential leakage in logs.
+  - `x-markdown-tokens` response header logged with redacted URL for token budget debugging.
+- 6 tests in `src/agents/tools/web-fetch.cf-markdown.test.ts` covering: Accept header preference, extractor selection, HTML fallback, token header logging with redaction, markdown-to-text conversion, absent header handling.
+- Tangentially related to Audit 2 Claim #4 (DNS rebinding SSRF) — same file, but DNS pinning already mitigates that claim. The URL redaction in logging is a new defense-in-depth improvement.
+
+**NON-SECURITY (notable):**
+
+#### 5. vLLM provider onboarding
+
+**Commits:** `e73d881c5` + `3bcde8df3` + 7 supporting commits — PR [#12577](https://github.com/openclaw/openclaw/pull/12577)
+
+**Plain English:** OpenClaw can now connect to vLLM (an open-source LLM inference server) as a model provider. During onboarding, users can select `--auth-choice vllm` to configure a local vLLM server as their AI backend. Defaults to `http://127.0.0.1:8000/v1` with 128K context window and 8K max output tokens. Model discovery via vLLM's `/v1/models` endpoint.
+
+**Technical details:**
+
+- New `src/commands/auth-choice.apply.vllm.ts` (107 lines): vLLM-specific onboarding with API key prompt, base URL configuration, model discovery.
+- New `docs/providers/vllm.md` (92 lines): provider documentation.
+- `--auth-choice vllm` added to `openclaw onboard` non-interactive mode.
+- New `src/agents/models-config.providers.vllm.test.ts` (33 lines): vLLM provider config tests.
+
+#### 6. macOS exec approval prompt display fix
+
+**Commit:** `ab4adf717` — PR [#5042](https://github.com/openclaw/openclaw/pull/5042)
+
+**Plain English:** On macOS, the exec approval popup (the system dialog asking "Allow this command?") could fail to display the command text due to a Swift UI layout issue. This fixes the ExecApprovalsSocket Swift code to properly render the command string in the approval prompt.
+
+**Technical details:**
+
+- `extensions/swift-ui/Sources/OpenClaw/ExecApprovalsSocket.swift`: UI layout fixes for command display.
+- `src/config/legacy.migrations.part-2.ts`: refactored legacy audio transcription migration to accept custom script names (was blocking valid commands like `whisperx-transcribe.sh`).
+
+---
+
+**Line number shifts in this sync:** `server-http.ts` +67/-14 lines (rate limiter integration, auth result types, writeUpgradeAuthFailure helper): old 102-136→109-150 (authorizeCanvasRequest), old 193-199→236-243 (?token= rejection), old 204→247 (safeEqualSecret), old 146-183→245-257 (hook auth rate limiting), old 351-367→472-485 (channel plugin routes), old 368→486 (plugin dispatch), old 444-462→514-531 (canvas HTTP handler), old 505-527→577-607 (WS upgrade), old 512→584 (canvas WS auth). `auth.ts` +42 lines (rate limiter params, helper functions): old 63-83→73-94, old 86-107→96-117 (isLocalDirectRequest), old 93-113→96-117. `types.gateway.ts` +13 lines (GatewayAuthRateLimitConfig): old 69-72→73-77, old 229-234→243-246. `audit.ts` +13 lines at line 386 (rate limit check): old 334-353 unchanged, old 953-1031→966-1044. `workspace.ts` +39/-13 lines: old 23-31 unchanged, old 239-293→265-319, old 295-305→323-331. `tools-invoke-http.ts` +10/-3 lines: old 42-51→43-52, old 316-322→325-331. `web-fetch.ts` +26/-2 lines (cf-markdown): old 39-40→40-41, old 252-262→250-271, old 411-415→420-425. `message-handler.ts` +73/-17 lines (rate limiter): old 203-204→210-216, old 398-458→454-499. All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge. New rate limiting (`30b6eccae`) adds defense-in-depth against brute-force attacks on gateway credentials.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
