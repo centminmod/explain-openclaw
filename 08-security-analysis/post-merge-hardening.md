@@ -912,27 +912,127 @@ Merge commit `82021fa43` — 35 upstream commits. Version bump to 2026.2.13. Mul
 
 **SECURITY-RELEVANT (4):**
 
-1. **`749e28dec`** — **fix(security): block dangerous tools from HTTP gateway and fix ACP auto-approval (OC-02):** Two critical RCE vector closures.
-   - **Gateway HTTP tool deny list:** New `DEFAULT_GATEWAY_HTTP_TOOL_DENY` at `src/gateway/tools-invoke-http.ts:42-51` blocks `sessions_spawn`, `sessions_send`, `gateway`, `whatsapp_login` from HTTP `/tools/invoke` endpoint. Deny filter applied at `:316-322` after policy cascade, before tool lookup. Configurable via `gateway.tools.{allow,deny}` in `openclaw.json` (schema: `src/config/zod-schema.ts`, types: `src/config/types.gateway.ts`).
-   - **ACP permission hardening:** New `DANGEROUS_ACP_TOOLS` set at `src/acp/client.ts:19-30` requires explicit interactive confirmation for `exec`, `spawn`, `shell`, `sessions_spawn`, `sessions_send`, `gateway`, `fs_write`, `fs_delete`, `fs_move`, `apply_patch`. Safe tools auto-approve (`:171-178`). Empty options array now returns cancel (`:162-165`, was hardcoded allow). **Directly addresses Audit 2 Claim 5** (self-approving agent / no RBAC) — ACP sessions can no longer auto-approve dangerous tool executions.
+#### 1. Block dangerous tools from HTTP gateway and fix ACP auto-approval (OC-02)
 
-2. **`ee31cd47b`** (PR [#15390](https://github.com/openclaw/openclaw/pull/15390)) — **fix: close OC-02 gaps in ACP permission + gateway HTTP deny config:** Follow-up to `749e28dec`. Adds `gateway.tools` configuration schema, test coverage for deny list in `src/gateway/tools-invoke-http.test.ts` and `src/acp/client.test.ts`, and upstream documentation in `docs/gateway/configuration-reference.md` and `docs/gateway/tools-invoke-http-api.md`. Thanks @aether-ai-agent.
+**Commit:** `749e28dec`
 
-3. **`604dc700a`** — **MSTeams: fix regex injection in mention name formatting:** `extensions/msteams/src/mentions.ts:108` — escapes regex metacharacters (`[.*+?^${}()|[\]\\]`) in display names before constructing RegExp. Prevents runtime errors from crafted display names containing regex metacharacters. Hardened further in `106d60551` with fallback link formatting.
+**Plain English:** Before this fix, anyone with HTTP access to the OpenClaw gateway could call *any* tool — including ones that spawn new AI agent sessions or execute shell commands on the server. That is a remote code execution (RCE) risk: an attacker who can reach the gateway API could tell it to run arbitrary commands. Similarly, when OpenClaw connected to third-party "ACP" (Agent Client Protocol) servers, every tool request was silently auto-approved — the bot never paused to ask the human operator "are you sure?" for dangerous actions like writing files or running programs. This commit adds two new safeguards that close both of those holes.
 
-4. **`25950bcbb`** — **fix(sessions): normalize absolute sessionFile paths for v2026.2.12 compatibility:** `src/config/sessions/paths.ts:77-87` — `resolvePathWithinSessionsDir()` now normalizes legacy absolute paths within the sessions directory to relative before containment validation. Fixes 6 issues (#15283, #15214, #15237, #15216, #15152, #15213) caused by the v2026.2.12 path traversal security fix rejecting previously-valid absolute paths.
+**Technical details:**
+
+- **Gateway HTTP tool deny list.** A new constant `DEFAULT_GATEWAY_HTTP_TOOL_DENY` at `src/gateway/tools-invoke-http.ts:42-51` hard-codes a list of four tools that are **always blocked** when called through the HTTP `/tools/invoke` endpoint:
+  - `sessions_spawn` — spawning new agent sessions remotely is effectively RCE
+  - `sessions_send` — injecting messages into other agent sessions
+  - `gateway` — reconfiguring the gateway itself from the outside
+  - `whatsapp_login` — requires an interactive QR code scan, would hang on HTTP
+
+  The deny filter is applied at `:316-322`, after all other policy layers (agent provider, group, subagent) have run but *before* the tool is actually looked up and executed. The deny list is configurable: administrators can add extra blocked tools via `gateway.tools.deny` or selectively re-allow a default-blocked tool via `gateway.tools.allow` in `openclaw.json` (type definition: `src/config/types.gateway.ts:229-234`).
+
+- **ACP permission hardening.** A new `DANGEROUS_ACP_TOOLS` set at `src/acp/client.ts:19-30` enumerates 10 tool names that require explicit interactive confirmation: `exec`, `spawn`, `shell`, `sessions_spawn`, `sessions_send`, `gateway`, `fs_write`, `fs_delete`, `fs_move`, `apply_patch`. The permission resolver at `:152-195` now works as follows:
+  - If the tool name is **not** in the dangerous set, it is auto-approved (`:171-178`) — safe tools like "read file" proceed without interruption.
+  - If the tool name **is** in the dangerous set, the resolver prompts the human operator (`:169, :181-182`).
+  - If no options are provided by the server (empty array), the resolver now returns *cancel* (`:162-165`). Previously this edge case defaulted to *allow*, meaning a malformed or minimal ACP server could trick the client into approving anything.
+
+  **Directly addresses Audit 2 Claim 5** (self-approving agent / no RBAC) — ACP sessions can no longer silently auto-approve dangerous tool executions.
+
+#### 2. Close OC-02 gaps in ACP permission + gateway HTTP deny config (follow-up)
+
+**Commit:** `ee31cd47b` — PR [#15390](https://github.com/openclaw/openclaw/pull/15390)
+
+**Plain English:** The previous commit added the security logic; this commit adds the configuration schema, tests, and documentation so that the new safeguards are properly validated, testable, and documented for gateway operators. Without this follow-up, administrators could misconfigure the deny list with no schema validation telling them what went wrong.
+
+**Technical details:**
+
+- Adds the `gateway.tools` configuration schema (allow/deny arrays) so `openclaw.json` is validated at startup — a typo in the deny list is caught immediately rather than silently ignored.
+- Adds test coverage in `src/gateway/tools-invoke-http.test.ts` (deny list filtering works, allow overrides work, custom deny items appended) and `src/acp/client.test.ts` (dangerous tool prompt required, safe tool auto-approved, empty options cancelled).
+- Adds upstream documentation in `docs/gateway/configuration-reference.md` and `docs/gateway/tools-invoke-http-api.md` explaining the deny list behavior for gateway operators.
+
+Thanks @aether-ai-agent.
+
+#### 3. MSTeams: fix regex injection in mention name formatting
+
+**Commit:** `604dc700a`
+
+**Plain English:** When OpenClaw formats a message for Microsoft Teams and needs to highlight someone's @name, it builds a search pattern to find that name in the text. If someone's display name happened to contain special characters like `(`, `)`, `*`, or `+` (which have meaning in regular expressions), the old code would crash or behave unpredictably because it tried to use those characters as regex operators. This fix escapes those special characters first, so a display name like `John (Manager)` is treated as literal text, not as a regex pattern.
+
+**Technical details:**
+
+- At `extensions/msteams/src/mentions.ts:109`, display names are now sanitized with `.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")` before being passed to `new RegExp(...)`. This escapes all 12 regex metacharacters so the constructed pattern matches the literal display name string.
+- The escaped name is used at `:110` to build a case-insensitive regex (`"gi"` flags) that replaces `@Name` with `<at>Name</at>` in the message body.
+- Further hardened in commit `106d60551` which adds fallback link formatting if the regex replacement fails entirely — belt-and-suspenders approach.
+
+#### 4. Normalize absolute sessionFile paths for v2026.2.12 compatibility
+
+**Commit:** `25950bcbb`
+
+**Plain English:** Version 2026.2.12 added a security fix that prevents session files from being read outside their designated directory (a "path traversal" guard). However, older versions of OpenClaw stored session file paths as *absolute* paths (like `/home/user/.openclaw/sessions/abc.json`) in the sessions database. The new security check rejected these absolute paths even though they pointed to perfectly valid files inside the correct directory. This broke 6 different user workflows. This fix teaches the path resolver to recognize "these absolute paths are actually inside the sessions directory" and convert them to relative paths before the security check runs.
+
+**Technical details:**
+
+- `resolvePathWithinSessionsDir()` at `src/config/sessions/paths.ts:74-88` now checks if the candidate path is absolute (`:83`). If so, it computes the relative path from the sessions directory base using `path.relative(resolvedBase, trimmed)`.
+- The containment validation at `:84` then checks the *normalized* relative path: it rejects anything that starts with `..` (escaping the directory) or is still absolute after relativization (meaning it was on a completely different filesystem path).
+- Fixes 6 issues: #15283, #15214, #15237, #15216, #15152, #15213 — all caused by the v2026.2.12 path traversal security fix rejecting previously-valid absolute paths stored by older versions.
 
 **NON-SECURITY (notable):**
 
-5. **`7c6d6ce06`** + **`73c6c80b7`** + **`106d60551`** — **MS Teams: user mention support:** New `extensions/msteams/src/mentions.ts` (114 lines) with `parseMentions()` and `formatMentionsInText()`. Adds `User.Read.All` permission requirement.
+#### 5. MS Teams: user mention support
 
-6. **`edfdd12d3`** (PR [#11020](https://github.com/openclaw/openclaw/pull/11020)) — **TTS: add missing OpenAI voices:** Adds ballad, cedar, juniper, marin, verse to `src/tts/tts.ts`. Thanks @lailoo.
+**Commits:** `7c6d6ce06` + `73c6c80b7` + `106d60551`
 
-7. **`eb4a0a84f`** + **`771c7ba14`** + **`8307f9738`** — **fix: use Homebrew for signal-cli install on non-x64 architectures:** Architecture-aware signal-cli installation via Homebrew on arm64/arm hosts. Thanks @jogvan-k.
+**Plain English:** OpenClaw can now properly @mention users in Microsoft Teams messages. When the bot replies to a conversation where someone was @mentioned, it formats the mention so Teams renders it as a clickable user tag (the blue highlighted name) rather than plain text. This requires the bot to look up Teams user IDs, which is why it now requests the `User.Read.All` Microsoft Graph permission.
 
-8. **`990413534`** (PRs [#15103](https://github.com/openclaw/openclaw/pull/15103), [#15448](https://github.com/openclaw/openclaw/pull/15448)) — **fix: multi-agent session path resolution:** Fixes `agentId` propagation through status/usage paths.
+**Technical details:**
 
-9. **`9131b22a2`** — **test: migrate suites to e2e coverage layout:** 376 test files renamed `.test.ts` to `.e2e.test.ts`. No functional changes.
+- New `extensions/msteams/src/mentions.ts` (114 lines) exports `parseMentions()` (extracts mention entities from incoming Teams activity) and `formatMentionsInText()` (converts `@Name` strings to `<at>Name</at>` XML tags that Teams renders as interactive mentions).
+- The `MentionInfo` type carries `id`, `name`, and `aadObjectId` for each mentioned user.
+- Adds `User.Read.All` permission requirement to the Teams bot registration for user ID resolution.
+
+#### 6. TTS: add missing OpenAI voices
+
+**Commit:** `edfdd12d3` — PR [#11020](https://github.com/openclaw/openclaw/pull/11020)
+
+**Plain English:** OpenClaw's text-to-speech feature was missing several newer OpenAI voice options. This adds five new voices — ballad, cedar, juniper, marin, and verse — so users can choose from the full set of available OpenAI TTS voices.
+
+**Technical details:**
+
+- Adds `ballad`, `cedar`, `juniper`, `marin`, `verse` to the voice list in `src/tts/tts.ts`.
+
+Thanks @lailoo.
+
+#### 7. Use Homebrew for signal-cli install on non-x64 architectures
+
+**Commits:** `eb4a0a84f` + `771c7ba14` + `8307f9738`
+
+**Plain English:** The Signal messaging integration uses a command-line tool called `signal-cli`. Previously, the installer downloaded a pre-built binary that only worked on x86_64 (Intel) machines. On ARM-based systems (like Apple Silicon Macs or ARM Linux servers), the binary would fail to run. This fix detects the system architecture and uses Homebrew to install signal-cli on non-x64 hosts, which handles compilation for the correct architecture automatically.
+
+**Technical details:**
+
+- Architecture detection checks if the host is `arm64` or `arm`, and if so, falls back to `brew install signal-cli` instead of downloading the x64 binary directly.
+- The Homebrew approach handles native compilation and dependency resolution for the target architecture.
+
+Thanks @jogvan-k.
+
+#### 8. Fix multi-agent session path resolution
+
+**Commit:** `990413534` — PRs [#15103](https://github.com/openclaw/openclaw/pull/15103), [#15448](https://github.com/openclaw/openclaw/pull/15448)
+
+**Plain English:** When multiple AI agents run in parallel (multi-agent sessions), each agent needs to write its status and usage data to its own separate file. A bug was causing the `agentId` to not propagate correctly through the path resolution, so agents could end up writing to the wrong location or overwriting each other's data. This fix ensures each agent's status and usage paths include its unique agent ID.
+
+**Technical details:**
+
+- Fixes `agentId` propagation through status and usage path resolution functions so that multi-agent sessions write to distinct, non-overlapping file paths.
+
+#### 9. Test: migrate suites to e2e coverage layout
+
+**Commit:** `9131b22a2`
+
+**Plain English:** This is a housekeeping change with no functional impact. 376 test files were renamed from `.test.ts` to `.e2e.test.ts` to clearly distinguish end-to-end tests from unit tests. This makes it easier for developers to run only one type of test at a time and improves test reporting clarity.
+
+**Technical details:**
+
+- 376 test files renamed with `.e2e.test.ts` suffix. No logic changes — purely organizational.
+
+---
 
 **Line number shifts in this sync:** None. No changes to files referenced in existing documentation line numbers.
 
