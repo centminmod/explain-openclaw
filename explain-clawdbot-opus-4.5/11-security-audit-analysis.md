@@ -308,11 +308,11 @@ This validates the name of an executable to run, not arguments passed to it. Arg
 **Verdict: Partially true, but overstated. MITIGATED in PR #12.**
 
 Previously, the gateway host merged `params.env` without sanitization. As of PR #12, the gateway now validates env vars:
-- Blocklist at `src/agents/bash-tools.exec.ts:61-78`
-- Validation function at `src/agents/bash-tools.exec.ts:83-107`
-- Enforcement at `src/agents/bash-tools.exec.ts:976-977`
+- Blocklist at `src/agents/bash-tools.exec-runtime.ts:32-50` (was `src/agents/bash-tools.exec.ts:61-78`)
+- Validation function at `src/infra/exec-approvals-allowlist.ts:41-200` (was `src/agents/bash-tools.exec.ts:83-107`)
+- Enforcement at `src/infra/exec-approvals-allowlist.ts:54-78` (was `src/agents/bash-tools.exec.ts:976-977`)
 
-On the node host, there is an explicit blocklist (`src/node-host/runner.ts:166-175`):
+On the node host, there is an explicit blocklist (`src/node-host/invoke.ts:44-174` — was `src/node-host/runner.ts:166-175`):
 ```
 const blockedEnvKeys = new Set(["NODE_OPTIONS", "PYTHONHOME", "PYTHONPATH", "PERL5LIB", "PERL5OPT", "RUBYOPT"]);
 const blockedEnvPrefixes = ["DYLD_", "LD_"];
@@ -597,7 +597,7 @@ Six security-relevant commits:
 
 - **`d6c088910`** — Credential protection via .gitignore: Adds `memory/` and `.agent/*.json` (excluding `workflows/`) to gitignore, preventing accidental commit of agent credentials and session data. Defense-in-depth for credential hygiene.
 
-- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via blocklists in `src/node-host/runner.ts:166-175` and `src/agents/bash-tools.exec.ts:61-78` (PR #12). Thanks @18-RAJAT.
+- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via blocklists in `src/node-host/invoke.ts:44-174` (was `src/node-host/runner.ts:166-175`) and `src/agents/bash-tools.exec-runtime.ts:32-50` (was `src/agents/bash-tools.exec.ts:61-78`) (PR #12). Thanks @18-RAJAT.
 
 - **`93b450349`** — Session state hygiene: Clears stale token metrics (totalTokens, inputTokens, outputTokens, contextTokens) when starting new sessions via /new or /reset. Prevents misleading context usage display from previous sessions.
 

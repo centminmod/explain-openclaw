@@ -4,13 +4,12 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 14-02-2026 (05:24 AEST)
+> **Last checked:** 14-02-2026 (06:04 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
-| [#15652](https://github.com/openclaw/openclaw/pull/15652) | OPEN | hardening | Constrain browser trace/download output paths to OpenClaw temp roots | — | OPEN/PENDING |
 | [#15615](https://github.com/openclaw/openclaw/pull/15615) | OPEN | security-fix | Restrict PATH override to exact match in node-host sanitizeEnv | — | OPEN/PENDING |
 | [#15608](https://github.com/openclaw/openclaw/pull/15608) | OPEN | hardening | Prune expired hook auth failure entries instead of clearing all rate-limit state | — | OPEN/PENDING |
 | [#15379](https://github.com/openclaw/openclaw/pull/15379) | OPEN | hardening | Strip unsigned thinking blocks in agent loop via `transformContext` hook | [#13826](https://github.com/openclaw/openclaw/issues/13826) | OPEN/PENDING |
@@ -80,6 +79,7 @@
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#15652](https://github.com/openclaw/openclaw/pull/15652) | MERGED | hardening | Constrain browser trace/download output paths to OpenClaw temp roots (merged 2026-02-13) | — | ALREADY SYNCED |
 | [#15604](https://github.com/openclaw/openclaw/pull/15604) | MERGED | security-fix | Block private/loopback/metadata IPs in link-understanding URL detection (SSRF hardening) | — | ALREADY SYNCED |
 | [#15592](https://github.com/openclaw/openclaw/pull/15592) | MERGED | hardening | Sanitize and truncate untrusted WebSocket header values before logging (merged 2026-02-13) | — | ALREADY SYNCED |
 | [#1795](https://github.com/openclaw/openclaw/pull/1795) | MERGED | security-fix | Prevent auth bypass when behind unconfigured reverse proxy | — | ALREADY SYNCED |
@@ -125,9 +125,9 @@
 | [#11152](https://github.com/openclaw/openclaw/pull/11152) | CLOSED | security-fix | Add `place_id` validation to prevent path traversal SSRF (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | CLOSED | hardening | Add `--harden` CLI flag for security-hardened gateway mode (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 
-**Total:** 104 tracked PRs (30 merged, 64 open, 2 draft, 9 closed)
+**Total:** 104 tracked PRs (31 merged, 63 open, 2 draft, 9 closed)
 
-> **Status change log (14-02-2026 05:24 AEST):** 1 state change detected. #15592 OPEN->MERGED (ALREADY SYNCED). 4 new PRs added: #15604 (MERGED, link-understanding SSRF hardening, ALREADY SYNCED), #15615 (OPEN, PATH override restriction), #15652 (OPEN, browser output path constraint), #15608 (OPEN, hook auth failure pruning).
+> **Status change log (14-02-2026 06:04 AEST):** 1 state change detected. #15652 OPEN->MERGED (ALREADY SYNCED). No new PRs added (#15734 assessed as feature addition, not tracked).
 >
 > **Status change log (14-02-2026 03:12 AEST):** 6 state changes detected. #13129 OPEN->MERGED, #13184 OPEN->MERGED, #13185 OPEN->MERGED, #13767 OPEN->MERGED, #14661 OPEN->MERGED (all ALREADY SYNCED). #14350 OPEN->CLOSED (no replacement). 1 new PR added: #15592 (WebSocket log header sanitization, OPEN).
 >
