@@ -555,6 +555,18 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
 
+### Post-Merge Hardening (Feb 14 sync 3) — 35 upstream commits
+
+**Security relevance: CRITICAL-HIGH** — Canvas IP auth restriction (`14fc74200` — private networks only). Gateway error sanitization (`767fd9f22`, `f788de30c` — raw errors stripped from HTTP responses). Literal "undefined"/"null" token rejection (`59733a02c`). Standalone servers default to loopback (`5643a9347`). **CRITICAL:** `29d783958` — execute sandboxed file ops inside containers (new `SandboxFsBridge` routes through Docker `exec`). **Deepens** Medium Audit Claim 2 mitigation. Credential redaction completion (`96318641d` — 516-line refactor). Unicode homoglyph hardening (`6c4c53581` — 12 angle bracket variants). Hugging Face provider (`08b7932df`). ACP permission hardening (`4c86821ac`).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format — Gap #2 unchanged, outPath validation — Gap #3 further mitigated by container-level file ops isolation `29d783958`, bootstrap/memory .md scanning — Gap #4 unchanged).
+
+### Post-Merge Hardening (Feb 14 sync 4) — 21 upstream commits
+
+**Security relevance: MEDIUM-LOW** — WebSocket log header sanitization (`d637a2635` — removes control/format chars, truncates to 300). Windows environment hardening (`e97aa4542`, `23b1b5156`, `d7fb01afa` — filter undefined env vars, normalize merging). Codex OAuth onboarding (`86e4fe0a7`). Image tool maxTokens increase (`397011bd7` — budget adjustment). Slack fixes (`b3b49bed8`, `3d921b615`). Memory leak fixes (`7ec60d644`, `d9c582627`). Test cleanup (`1eccfa893`).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
