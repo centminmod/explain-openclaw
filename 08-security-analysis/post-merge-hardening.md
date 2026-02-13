@@ -51,7 +51,7 @@
 - [Feb 14 sync 3 (35 commits)](./post-merge-hardening/2026-02-14-sync-3.md)
 - [Feb 14 sync 4 (21 commits)](./post-merge-hardening/2026-02-14-sync-4.md)
 - [Feb 14 sync 6 (33 commits)](./post-merge-hardening/2026-02-14-sync-6.md)
-- [Feb 14 sync 7 (7 commits)](./post-merge-hardening/2026-02-14-sync-7.md)
+- [Feb 14 sync 7 (63 commits)](./post-merge-hardening/2026-02-14-sync-7.md)
 
 ## Post-Merge Security Hardening
 
@@ -61,7 +61,7 @@
 
 Four defense-in-depth items were identified across audits:
 
-1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec.ts:59-107,976-977`).
+1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist (`src/agents/bash-tools.exec-runtime.ts:32-50`) and `validateHostEnv()` (`src/agents/bash-tools.exec-runtime.ts:54`, enforced at `src/agents/bash-tools.exec.ts:294-295`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
 4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:265-319`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:346-352`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:323-331`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
@@ -143,7 +143,7 @@ One security-relevant commit:
 
 Seven security-relevant commits:
 
-- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation (#4896) (thanks @HassanFleyah): `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` now block `LD_PRELOAD`, `DYLD_*`, `NODE_OPTIONS`, `PATH`, etc. on gateway host execution (`src/agents/bash-tools.exec.ts:59-107,976-977`). **Closes Legitimate Gap #1.**
+- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation (#4896) (thanks @HassanFleyah): `DANGEROUS_HOST_ENV_VARS` blocklist (`src/agents/bash-tools.exec-runtime.ts:32-50`) and `validateHostEnv()` (`src/agents/bash-tools.exec-runtime.ts:54`, enforced at `src/agents/bash-tools.exec.ts:294-295`) now block `LD_PRELOAD`, `DYLD_*`, `NODE_OPTIONS`, `PATH`, etc. on gateway host execution. **Closes Legitimate Gap #1.**
 
 - **`b796f6ec0`** — Web tools and file parsing hardening (#4058) (thanks @VACInc)
 - **`a2b00495c`** — TLS 1.3 minimum requirement (thanks @loganaden)

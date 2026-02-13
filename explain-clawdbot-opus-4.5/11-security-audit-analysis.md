@@ -308,9 +308,9 @@ This validates the name of an executable to run, not arguments passed to it. Arg
 **Verdict: Partially true, but overstated. MITIGATED in PR #12.**
 
 Previously, the gateway host merged `params.env` without sanitization. As of PR #12, the gateway now validates env vars:
-- Blocklist at `src/agents/bash-tools.exec-runtime.ts:32-50` (was `src/agents/bash-tools.exec.ts:61-78`)
-- Validation function at `src/infra/exec-approvals-allowlist.ts:41-200` (was `src/agents/bash-tools.exec.ts:83-107`)
-- Enforcement at `src/infra/exec-approvals-allowlist.ts:54-78` (was `src/agents/bash-tools.exec.ts:976-977`)
+- Blocklist at `src/agents/bash-tools.exec-runtime.ts:32-50`
+- Validation function at `src/agents/bash-tools.exec-runtime.ts:54` (`validateHostEnv`)
+- Enforcement at `src/agents/bash-tools.exec.ts:294-295` (validates before env merge at `:298`)
 
 On the node host, there is an explicit blocklist (`src/node-host/invoke.ts:44-174` — was `src/node-host/runner.ts:166-175`):
 ```

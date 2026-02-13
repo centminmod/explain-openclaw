@@ -20,8 +20,8 @@
 | [#6609](https://github.com/openclaw/openclaw/issues/6609) | HIGH | Browser bridge server optional authentication | `src/browser/bridge-server.ts:33-42` |
 | [#8054](https://github.com/openclaw/openclaw/issues/8054) | ~~HIGH~~ FIXED | Type coercion `"undefined"` credentials | Fixed upstream (COMPLETED 2026-02-13); `src/wizard/onboarding.gateway-config.ts:206` |
 | [#8516](https://github.com/openclaw/openclaw/issues/8516) | HIGH | Browser download/trace endpoints arbitrary file write | `src/browser/routes/agent.act.ts:447-480` |
-| [#8586](https://github.com/openclaw/openclaw/issues/8586) | HIGH | Configurable bypass allows unrestricted command exec | `src/agents/bash-tools.exec-runtime.ts:237-244` (was `src/agents/bash-tools.exec.ts:955-962`) |
-| [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH (WONTFIX) | Env vars exposed via shell commands | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/infra/exec-approvals-allowlist.ts:41-200` (was `src/agents/bash-tools.exec.ts:982,987-991`) |
+| [#8586](https://github.com/openclaw/openclaw/issues/8586) | HIGH | Configurable bypass allows unrestricted command exec | `src/agents/bash-tools.exec.ts:199-207,269-271` |
+| [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH (WONTFIX) | Env vars exposed via shell commands | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/agents/bash-tools.exec.ts:290,298` |
 | [#8590](https://github.com/openclaw/openclaw/issues/8590) | HIGH | Status endpoint exposes sensitive internal info | `src/gateway/server-methods/health.ts:28-31` |
 | [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal | `src/browser/pw-tools-core.downloads.ts:20-24` |
 | [#8776](https://github.com/openclaw/openclaw/issues/8776) | ~~HIGH~~ FIXED | soul-evil hook silently hijacks agent | Fixed in PR [#14757](https://github.com/openclaw/openclaw/pull/14757) — soul-evil hook completely removed |
@@ -32,7 +32,7 @@
 | [#9813](https://github.com/openclaw/openclaw/issues/9813) | HIGH (DUPLICATE #9627) | Gateway expands ${ENV_VAR} on meta writeback | `src/config/io.ts:681-753` — partially mitigated by `redactConfigSnapshot()` (PR #9858) + env var reference preservation (commit `f59df9589`) |
 | [#11126](https://github.com/openclaw/openclaw/issues/11126) | HIGH (DUP #9627, WONTFIX) | Config write paths resolve ${VAR} to cleartext | Closed upstream as NOT_PLANNED (2026-02-13); same as #9627/#9813 — `src/config/io.ts:681-753` |
 | [#9795](https://github.com/openclaw/openclaw/issues/9795) | LOW | sanitizeMimeType regex not end-anchored (by design) | `src/media-understanding/apply.ts:96-106` |
-| [#9792](https://github.com/openclaw/openclaw/issues/9792) | INVALID | validateHostEnv skips baseEnv (by design) | `src/infra/exec-approvals-allowlist.ts:41-200` (was `src/agents/bash-tools.exec.ts:982-991`) |
+| [#9792](https://github.com/openclaw/openclaw/issues/9792) | INVALID | validateHostEnv skips baseEnv (by design) | `src/agents/bash-tools.exec-runtime.ts:54` (definition) + `src/agents/bash-tools.exec.ts:295` (call) |
 | [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:127-167` |
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check — remains open) |
@@ -373,8 +373,8 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** When `elevatedMode=full` is configured, all security controls on command execution are bypassed. The `bypassApprovals` flag skips `resolveExecApprovals` entirely, allowing any command without user confirmation.
 
 **Affected code:**
-- `src/agents/bash-tools.exec-runtime.ts:237-244` (was `src/agents/bash-tools.exec.ts:955-962`) - `elevatedMode=full` sets security to "full", ask to "off"
-- `src/agents/bash-tools.exec-runtime.ts:358` (was `src/agents/bash-tools.exec.ts:1310`) - `bypassApprovals` skips all approval checks
+- `src/agents/bash-tools.exec.ts:199-207` — `elevatedMode` resolution; `elevatedMode=full` sets security to "full", ask to "off"
+- `src/agents/bash-tools.exec.ts:269-271` — `bypassApprovals` flag; skips all approval checks when `elevatedMode === "full"`
 
 ### #8590: Status Endpoint Exposes Sensitive Internal Info
 
@@ -397,8 +397,8 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Full `process.env` is passed as the base environment to child processes. An agent can run `env` or `printenv` to dump all environment variables, including API keys and secrets.
 
 **Affected code:**
-- `src/infra/exec-approvals-allowlist.ts:41-200` (was `src/agents/bash-tools.exec.ts:982,987-991`) - full `process.env` passed to child spawn
-- `src/agents/bash-tools.exec-runtime.ts:32-50` (was `src/agents/bash-tools.exec.ts:61-78`) - `DANGEROUS_HOST_ENV_VARS` blocks injection INTO env, but doesn't filter what children can READ
+- `src/agents/bash-tools.exec.ts:290,298` — full `process.env` passed to child spawn via `coerceEnv(process.env)` + `{ ...baseEnv, ...params.env }`
+- `src/agents/bash-tools.exec-runtime.ts:32-50` — `DANGEROUS_HOST_ENV_VARS` blocks injection INTO env, but doesn't filter what children can READ
 
 ### #8592: No Detection of Encoded/Obfuscated Commands
 
@@ -504,7 +504,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability claimed:** `validateHostEnv` only validates agent-supplied `params.env` but not the host's own `baseEnv`, potentially allowing dangerous environment variables.
 
 **Affected code:**
-- `src/infra/exec-approvals-allowlist.ts:41-200` (was `src/agents/bash-tools.exec.ts:982-991`) - validation scoped to `params.env` only
+- `src/agents/bash-tools.exec-runtime.ts:54` (definition) + `src/agents/bash-tools.exec.ts:295` (call) — validation scoped to `params.env` only
 
 **Our analysis:** `baseEnv = coerceEnv(process.env)` is the **host's own environment**, not untrusted input. The code comment at line 969 states: "We validate BEFORE merging to prevent any dangerous vars from entering the stream." Validating `baseEnv` would **break the gateway** — the host always has `PATH` set, which `validateHostEnv` explicitly rejects (it's designed to block agents from injecting `PATH` overrides). The validation boundary is intentionally scoped to untrusted agent-supplied variables. This is a Qodo AI automated finding.
 
