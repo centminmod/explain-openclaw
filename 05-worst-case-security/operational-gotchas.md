@@ -30,6 +30,7 @@
 8. [Skill Supply Chain Risks](#8-skill-supply-chain-risks)
 9. [BYOD Exposure](#9-byod-exposure)
 10. [Reverse Proxy Negligence](#10-reverse-proxy-negligence)
+11. [The "It Read the Instructions and Ignored Them" Problem](#11-the-it-read-the-instructions-and-ignored-them-problem)
 
 ---
 
@@ -540,7 +541,65 @@ Source: `src/gateway/net.ts:142-148`
 
 ---
 
-## Summary: The 10 Operational Commandments
+## 11. The "It Read the Instructions and Ignored Them" Problem
+
+### What They Did
+
+```bash
+# Created a SKILL.md with explicit safety instructions:
+# "NEVER run rsync directly. Always use sync.sh."
+# Ran the skill with an untested model (GLM-5)
+```
+
+### What They Thought
+
+"The instructions are right there in the SKILL.md — the model will follow them."
+
+### What Actually Happened
+
+- GLM-5 read `sync.sh`, **decided the script was wrong**
+- Tried to edit `sync.sh` (blocked by file permissions)
+- Ran raw `rsync --delete` directly — **deleting files**
+- Misinterpreted `disable-model-invocation: true` in the skill frontmatter as meaning the skill was "disabled" (it actually controls whether the model can invoke the skill unprompted — parsed at `src/agents/skills/frontmatter.ts:163-164`, used at `src/agents/skills/workspace.ts:230`)
+- The model read every safety instruction, understood them, and chose to do something else anyway
+
+> **The Core Insight:** OpenClaw's safety architecture is markdown. System prompts, SKILL.md, CLAUDE.md, hardening checklists — all markdown. Markdown is a *suggestion* to the model, not a *constraint*. A model can read "NEVER do X" and do X anyway. This isn't a bug — it's how language models work. They predict tokens, they don't "obey."
+
+### The Fix
+
+```bash
+# 1. Understand soft vs hard controls
+# Soft (.md files): model SHOULD follow — but can ignore
+# Hard (hooks, permissions, code): model CANNOT bypass
+# Design safety around hard controls, use .md for documentation
+
+# 2. For destructive operations, add hard enforcement
+# Wrapper scripts with set -euo pipefail:
+#!/bin/bash
+set -euo pipefail
+# Script validates preconditions before acting
+# Model can't "decide the script is wrong" and bypass it
+
+# 3. Use tool security modes
+# tools.exec.security: "allowlist" restricts which commands models can run
+# Source: src/config/types.tools.ts:167
+openclaw config set tools.exec.security allowlist
+
+# 4. Test model instruction-following before trusting with destructive ops
+# Top-tier models (Opus 4.6, GPT-5) follow .md instructions reliably
+# Smaller/newer models may not — test before giving destructive tool access
+
+# 5. Skill authors: treat SKILL.md as documentation, enforce safety in code
+# Put "NEVER run rsync directly" in the SKILL.md for humans to read
+# Put the actual enforcement in a wrapper script that the model must call
+# Default to dry-run mode; require --force for destructive operations
+```
+
+**See also:** [AI Self-Misconfiguration — When Markdown Instructions Aren't Enough](./ai-self-misconfiguration.md#when-markdown-instructions-arent-enough) — Why .md instructions aren't safety guarantees
+
+---
+
+## Summary: The 11 Operational Commandments
 
 1. **Thou shalt monitor usage daily** — always-on isn't free
 2. **Thou shalt chunk complex tasks** — >10 steps fail 40% of the time
@@ -552,6 +611,7 @@ Source: `src/gateway/net.ts:142-148`
 8. **Thou shalt review skills like code** — ClawHub isn't App Store curated
 9. **Thou shalt separate personal and work** — BYOD is a compliance risk
 10. **Thou shalt configure trusted proxies** — otherwise Gateway can't see clients
+11. **Thou shalt not trust .md files as enforcement** — instructions are suggestions, not guardrails
 
 ---
 
@@ -583,6 +643,10 @@ openclaw status | grep running
 
 # 7. Verify workspace isolation (if using personal + work)
 openclaw config get agents.defaults.workspace
+
+# 8. Verify model quality for safety-critical skills
+# Top-tier models follow .md instructions reliably; smaller models may not.
+# Test instruction-following before giving destructive tool access.
 ```
 
 ---
@@ -593,4 +657,5 @@ openclaw config get agents.defaults.workspace
 - [Prompt Injection Attacks](./prompt-injection-attacks.md) — 27 attack examples that exploit the operational issues described here
 - [Cross-Cutting Vulnerabilities](./cross-cutting.md) — Risks that affect all deployment types
 - [Incident Response](./incident-response.md) — What to do when something goes wrong
+- [AI Self-Misconfiguration](./ai-self-misconfiguration.md#when-markdown-instructions-arent-enough) — Why .md instructions aren't safety guarantees
 - [Threat Model](../../04-privacy-safety/threat-model.md) — Full threat modeling guide

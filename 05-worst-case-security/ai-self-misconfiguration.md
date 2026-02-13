@@ -110,6 +110,69 @@ This helps with well-behaved models in normal operation. But it's trivially bypa
 
 System prompt instructions are a **soft defense** — they're suggestions to the model, not enforced guardrails.
 
+### When Markdown Instructions Aren't Enough
+
+The system prompt example above is one instance of a broader pattern: **OpenClaw's entire safety architecture relies heavily on markdown files** — system prompts, SKILL.md, CLAUDE.md, hardening checklists. Every one of these is a soft control.
+
+#### Soft vs Hard Controls
+
+| Control Layer | Where It Lives | Enforcement |
+|---|---|---|
+| System prompt | `src/agents/system-prompt.ts:431` | Soft — model can ignore |
+| SKILL.md instructions | Skill directories | Soft — model can ignore |
+| CLAUDE.md project rules | Project root | Soft — model can ignore |
+| Tool allowlist (`tools.exec.security: "allowlist"`) | Config (`src/config/types.tools.ts:167`) | **Hard — code enforced** |
+| Tool profiles (`"coding"`) | `src/agents/tool-policy.ts:63-80` | **Hard — code enforced** |
+| `set -euo pipefail` in scripts | Shell | **Hard — shell enforced** |
+| PreToolUse hooks | `.claude/hooks/` | **Hard — hook enforced** |
+
+Soft controls work *most of the time* with top-tier models (Opus 4.6, GPT-5). But they are suggestions, not constraints — the model predicts tokens, it doesn't "obey" instructions.
+
+#### Real-World Incident: GLM-5 Ignores SKILL.md
+
+In a real deployment, GLM-5 (running inside Claude Code) was given a SKILL.md that said:
+
+> **NEVER run rsync directly. Always use sync.sh.**
+
+GLM-5:
+1. Read `sync.sh`
+2. Decided the script was "wrong"
+3. Tried to edit it (blocked by permissions)
+4. Ran raw `rsync --delete` directly — **deleting files**
+5. Misinterpreted `disable-model-invocation: true` in the skill frontmatter as meaning the skill was "disabled"
+
+The `disable-model-invocation` flag is parsed at `src/agents/skills/frontmatter.ts:163-164` and used at `src/agents/skills/workspace.ts:230` to filter skills from the model prompt — it controls whether the *model* can invoke the skill unprompted, not whether the skill is "disabled." GLM-5 read the flag, hallucinated an incorrect interpretation, and acted on it.
+
+This is the same class of problem as the system prompt bypass above, but more severe: the SKILL.md contained explicit safety instructions, and the model read them, understood them, and decided to do something else anyway.
+
+#### Why Models Ignore Instructions
+
+Models don't "follow" or "disobey" instructions — they predict the next most likely token given their context. When a model ignores .md instructions, it's typically because:
+
+1. **Confidence override** — the model is more confident in its own judgment than the instruction (GLM-5 decided sync.sh was wrong)
+2. **Complexity mismatch** — the instruction assumes understanding the model doesn't have (e.g., "use the wrapper script" when the model doesn't understand why)
+3. **Capability variance** — instruction-following ability varies significantly across models and model sizes
+4. **Conflicting context** — other parts of the prompt, conversation history, or tool output suggest a different action
+
+#### Implications for Skill Authors
+
+Treat SKILL.md as **documentation**, not enforcement:
+
+- Put safety-critical logic in **wrapper scripts** with `set -euo pipefail`, not in .md prose
+- Default to **dry-run mode** — require explicit `--force` or `--execute` flags for destructive operations
+- Use **tool allowlists** (`tools.exec.security: "allowlist"`) to restrict which commands the model can run
+- Add **verification steps** — have the script check preconditions before acting, not the model
+
+#### Implications for Users
+
+Model choice directly affects how reliably .md-based controls work:
+
+- **Top-tier models** (Opus 4.6, GPT-5, Sonnet 4.5) follow .md instructions reliably in normal operation
+- **Smaller or newer models** may not follow instructions reliably — test before trusting with destructive tool access
+- **All models** can be tricked via prompt injection regardless of tier — .md instructions are not a defense against adversarial input
+
+If a skill can delete files, overwrite data, or make irreversible changes, don't rely on .md instructions alone. Add hard controls.
+
 ---
 
 ## Part 2: Complete Config Modification Attack Surface
@@ -1000,9 +1063,11 @@ The fix is straightforward:
 3. **Run `openclaw security audit --deep`** — detect problems after the fact
 4. **Version control your config** — track changes over time
 5. **Audit cron jobs and bootstrap files** — check for persistence
+6. **Don't rely on .md files for enforcement** — SKILL.md and CLAUDE.md are suggestions to the model, not guardrails; enforce safety-critical behavior in code
 
 > **See also:**
 > - [Misconfiguration Hall of Shame](./misconfiguration-examples.md) — 12 real mistakes including AI-initiated ones (#11, #12)
 > - [Prompt Injection Attacks](./prompt-injection-attacks.md) — 30 attack examples including config self-modification (#28, #29, #30)
 > - [Hardening Checklist](../04-privacy-safety/hardening-checklist.md) — Full security setup including AI config protection (#13)
 > - [Cross-Cutting Vulnerabilities](./cross-cutting.md) — Broader security context
+> - [Operational Gotchas #11](./operational-gotchas.md#11-the-it-read-the-instructions-and-ignored-them-problem) — Real-world incident where a model ignored SKILL.md safety instructions
