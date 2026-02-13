@@ -41,6 +41,7 @@
 - [Feb 12 sync 3 (8 commits)](#post-merge-hardening-feb-12-sync-3-8-upstream-commits)
 - [Feb 13 sync 1 (35 commits)](#post-merge-hardening-feb-13-sync-1-35-upstream-commits)
 - [Feb 13 sync 4 (20 commits)](#post-merge-hardening-feb-13-sync-4-20-upstream-commits)
+- [Feb 13 sync 5 (35 commits)](#post-merge-hardening-feb-13-sync-5-35-upstream-commits)
 
 ## Post-Merge Security Hardening
 
@@ -331,7 +332,7 @@ Four security-relevant commits:
 
 **HIGH (2):**
 
-- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:92-109` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:154-161` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
+- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:157-174` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:154-161` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
 
 - **`bccdc95a9`** (PR [#10000](https://github.com/openclaw/openclaw/pull/10000)) — **Cap sessions_history payloads:** New `SESSIONS_HISTORY_MAX_BYTES` (80KB) and `SESSIONS_HISTORY_TEXT_MAX_CHARS` (4000) in `src/agents/tools/sessions-history-tool.ts:24-25`. Sanitization strips thinking signatures, image data, usage/cost metadata. Prevents DoS via unbounded session history injection. Thanks @gut-puncture.
 
@@ -839,6 +840,36 @@ Merge commit `7cca0e0da` — 17 upstream commits (`bca0652de..afbce7357`). Mostl
 8. **`957b88308`** (PR [#14102](https://github.com/openclaw/openclaw/pull/14102)) — **fix(agents): stabilize overflow compaction retries:** Improves session context accounting after compaction in `src/agents/pi-embedded-runner/run.ts` and `src/agents/compaction.ts`. Adds `promptTokens` tracking for accurate token accounting.
 
 **Line number shifts in this sync:** `auth.ts` -7 lines (safeEqual removed, replaced by `src/security/secret-equal.ts`): old 40-45 removed, old 70-90->63-83, old 93-114->86-107. `external-content.ts` +2 lines (browser source): old 85-108->87-110, old 110-150->112-152. `ssrf.ts` +37 lines (hostname allowlist): old 270-307->253-305. `server-http.ts` +51 lines (hook auth rate limiting): old 96-130->102-136, old 154-161->193-199, old 393-412->444-462, old 454-476->505-527. `web-search.ts` +18 lines (externalContent metadata): old 571,592,642,644->577,604,654,656, old 620-625->632-637. `cron/run.ts` +2 lines: old 303-310->328-334, old 316-322->340-346. All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+
+### Post-merge hardening (Feb 13 sync 5, 35 upstream commits)
+
+**SECURITY-RELEVANT (5):**
+
+1. **`9230a2ae1`** — **fix(browser): require auth on control HTTP and auto-bootstrap token:** New `src/browser/control-auth.ts` (88 lines) provides `resolveBrowserControlAuth()` and `ensureBrowserControlAuth()` which auto-generates `gateway.auth.token` when browser control is enabled. `src/browser/server.ts:50-76` adds `isAuthorizedBrowserRequest()` supporting Bearer token, `x-openclaw-password` header, and HTTP Basic auth (all using `safeEqualSecret()` for timing-safe comparison). Auth middleware at `:116-123` returns HTTP 401 for unauthenticated requests. `src/security/audit.ts:410-424` adds new `browser.control_no_auth` critical finding when browser control has no auth configured. **Partially mitigates** tracked issue [#4949](https://github.com/openclaw/openclaw/issues/4949) (DNS rebinding) — requests now require authentication, significantly raising the bar for DNS rebinding exploitation.
+
+2. **`3421b2ec1`** — **fix: harden hook session key routing defaults:** New `HookSessionPolicyResolved` type in `src/gateway/hooks.ts:31-36` with `defaultSessionKey`, `allowRequestSessionKey`, and `allowedSessionKeyPrefixes`. New `resolveHookSessionKey()` at `:327-360` validates session keys against policy — external webhook payloads cannot override session keys unless `hooks.allowRequestSessionKey=true`, and all session keys must match configured prefixes. Validation at config load time ensures `defaultSessionKey` matches `allowedSessionKeyPrefixes` (`:57-72`). Defense-in-depth for webhook-to-session routing — prevents attackers from injecting messages into arbitrary sessions via crafted webhook payloads.
+
+3. **`85409e401`** — **fix: preserve inter-session input provenance:** New `src/sessions/input-provenance.ts` (79 lines) with `InputProvenance` type tracking `kind` (`external_user` / `inter_session` / `internal_system`), `sourceSessionKey`, `sourceChannel`, and `sourceTool`. `applyInputProvenanceToUserMessage()` stamps provenance metadata onto user messages; `hasInterSessionUserProvenance()` enables downstream checks. Defense-in-depth for session isolation — enables distinguishing external user input from inter-session forwarded messages.
+
+4. **`34c304727` + `22fe30c1d` + `4c0ce46ac` + `75fc8cf25` + `f7adc21d3` + `e084f0742` + `334a291fb` + `4bf06e782`** (8 commits) — **Discord: role-based allowlists + role-based agent routing:** Major Discord RBAC expansion. New `allowedRoles` configuration in `src/discord/monitor/allow-list.ts:49+` with OR logic — users matching ANY listed role pass preflight. `src/routing/resolve-route.ts:30+` now accepts `memberRoleIds` and matches against route `allowedRoles` for role-based agent routing. `src/discord/monitor/message-handler.preflight.ts:48+` integrates role checks alongside existing user/channel allowlists. `src/discord/send.permissions.ts:17+` honors `Administrator` permission for all permission checks. Full test coverage in `allow-list.test.ts` and `resolve-route.test.ts`. **Strengthens Audit 2 Claim 5** (self-approving agent / RBAC) — Discord users can now be restricted by role, not just by user ID or channel.
+
+5. **`d34138dfe`** (PR [#15012](https://github.com/openclaw/openclaw/pull/15012)) — **fix: dispatch before_tool_call and after_tool_call hooks from both tool execution paths:** `src/agents/pi-tool-definition-adapter.ts:58+` — both the direct and adapter tool execution paths now dispatch `before_tool_call` and `after_tool_call` hooks. Previously, tools executed through the adapter path skipped these hooks. Ensures hook-based security policies (e.g., tool auditing, blocking) apply uniformly regardless of which code path invokes the tool. Thanks @Patrick-Barletta.
+
+**NON-SECURITY (notable):**
+
+6. **`1d8bda4a2`** (PR [#15104](https://github.com/openclaw/openclaw/pull/15104)) — **fix: emit message_sent hook for all successful outbound paths:** `src/infra/outbound/deliver.ts:56+` — ensures `message_sent` hook fires for all successful message deliveries including previously unwired paths.
+
+7. **`89bfe0c94`** (PR [#15105](https://github.com/openclaw/openclaw/pull/15105)) — **fix: add adapter-path after_tool_call coverage:** Follow-up to PR #15012. Adds test coverage for after_tool_call hook dispatch from the adapter execution path in `src/agents/pi-tool-definition-adapter.after-tool-call.test.ts`.
+
+8. **`da2d09f57`** (PR [#6878](https://github.com/openclaw/openclaw/pull/6878)) — **fix(memory-flush): instruct agents to append rather than overwrite memory files:** `src/hooks/bundled/session-memory/handler.ts:4+` and `src/auto-reply/reply/memory-flush.ts:1+` — session memory flush instructions now explicitly tell the agent to append to existing memory files. Prevents data loss from overwrite. Thanks @EmberCF.
+
+9. **`57d0f65e7`** (PR [#6141](https://github.com/openclaw/openclaw/pull/6141)) — **CLI: add plugins uninstall command:** New `src/plugins/uninstall.ts` (237 lines) and `src/cli/plugins-cli.ts` (146 lines). `openclaw plugins uninstall <name>` removes installed plugins. Security-neutral — follows existing install patterns. Thanks @JustasMonkev.
+
+**Line number shifts in this sync:** `audit.ts` +39 lines (browser control auth check + HTTP API session key check + import): old 323-343->334-353, old 914-992->953-1031, old 159-176->160-177. `hooks.ts` +65 lines (session key policy, prefix validation, resolveHookSessionKey): old 92-109->157-174, old 102-103->167-168, old 111-157->176-222. `browser/server.ts` +96 lines (auth middleware + auto-bootstrap + isAuthorizedBrowserRequest): old 36->132. All references updated in documentation.
 
 **CVE status:** 5 published advisories — all pre-existing, none patched in this merge.
 

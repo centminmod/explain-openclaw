@@ -4,13 +4,13 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 13-02-2026 (12:10 AEST)
+> **Last checked:** 13-02-2026 (12:40 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
 | [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass gateway authentication | `src/gateway/server/plugins-http.ts:17-59` |
 | [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path validation bypass via `startsWith` prefix | `src/infra/archive.ts:81,89` - zip/tar extraction |
-| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:36` - no Host header validation |
+| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:132` - auth middleware at `:116-123` mitigates but no Host header validation |
 | [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH | Arbitrary JS execution via browser evaluate (default on) | `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true` |
 | [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage dmPolicy auto-responds with pairing codes | `src/imessage/monitor/monitor-provider.ts:184,342-381` |
 | [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:317-321` - security settings reset |
@@ -37,7 +37,7 @@
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check) |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` (note: upstream issue still OPEN) |
-| [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:111-157` |
+| [#5122](https://github.com/openclaw/openclaw/issues/5122) | MEDIUM | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:176-222` |
 | [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
 | [#5124](https://github.com/openclaw/openclaw/issues/5124) | MEDIUM | ReDoS in log redaction patterns | `src/logging/redact.ts:47-61` |
 | [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM | Timing attack in non-gateway token comparisons | `src/gateway/server-http.ts:164`, `src/infra/node-pairing.ts:277` |
@@ -241,8 +241,10 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Browser control server binds to `127.0.0.1` but performs no Host header validation. DNS rebinding attacks can bypass localhost restriction to reach browser automation endpoints from a remote origin.
 
 **Affected code:**
-- `src/browser/server.ts:36` - binds to `"127.0.0.1"` but no Host header check
-- `src/browser/server.ts:26-41` - no `isLocalDirectRequest` or origin validation
+- `src/browser/server.ts:132` - binds to `"127.0.0.1"` with auth middleware at `:116-123`
+- `src/browser/server.ts:78-165` - auth now required via `isAuthorizedBrowserRequest()` (commit `9230a2ae1`), but still no Host header or origin validation
+
+**Partial mitigation (Feb 13 sync 5):** Commit `9230a2ae1` adds bearer token / password auth middleware to all browser control HTTP routes. DNS rebinding still possible but requests now need valid authentication credentials, significantly raising the bar. New `browser.control_no_auth` audit check flags when no auth is configured.
 
 ### #4950: Arbitrary JS Execution via Browser Evaluate (Default On)
 
@@ -275,7 +277,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** `readJsonBody()` has a body size limit but no read timeout. An attacker can hold connections open indefinitely by sending data one byte at a time (Slowloris attack).
 
-**Affected code:** `src/gateway/hooks.ts:111-157` - size limit present, timeout absent.
+**Affected code:** `src/gateway/hooks.ts:176-222` - size limit present, timeout absent.
 
 ### #5123: ReDoS in Session Filter Regex
 
@@ -428,7 +430,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** Code correctly uses `mode: 0o700` for directory creation (`src/config/io.ts:497`), but when installed via `sudo`, the directory inherits root ownership. Subsequent user-space operations may create group-writable files.
 
-**Note:** This is an operational issue (sudo usage), not a code bug. `src/security/audit.ts:159-176` already detects group-writable state directories.
+**Note:** This is an operational issue (sudo usage), not a code bug. `src/security/audit.ts:160-177` already detects group-writable state directories.
 
 ### #9435: Gateway Auth Token Exposed in URL Query Params
 
@@ -439,7 +441,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** Gateway authentication tokens were passed via URL query parameters (`?token=...`) in dashboard and onboarding flows, exposing credentials through logs, browser history, and Referer headers.
 
-**Fix:** Query token acceptance completely removed. `extractHookToken()` in `src/gateway/hooks.ts:92-109` no longer reads `url.searchParams`. `src/commands/dashboard.ts` no longer constructs `?token=` URLs. `src/commands/onboard-helpers.ts` no longer passes token in URL. Server now returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:193-199`).
+**Fix:** Query token acceptance completely removed. `extractHookToken()` in `src/gateway/hooks.ts:157-174` no longer reads `url.searchParams`. `src/commands/dashboard.ts` no longer constructs `?token=` URLs. `src/commands/onboard-helpers.ts` no longer passes token in URL. Server now returns HTTP 400 when `?token=` is present (`src/gateway/server-http.ts:193-199`).
 
 ### #9627: Config Secrets Exposed in JSON After Update/Doctor
 

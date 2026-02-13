@@ -2,7 +2,7 @@
 
 ## `openclaw security audit` command reference
 
-> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:914-992`, `src/security/fix.ts:455-541`
+> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:953-1031`, `src/security/fix.ts:455-541`
 >
 > The built-in security audit scans your local config, filesystem permissions, and channel policies for common misconfigurations. It does **not** scan source code for vulnerabilities.
 

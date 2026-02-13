@@ -377,4 +377,4 @@ If you suspect compromise, do these in order:
 | File permissions (0o700) | `src/config/io.ts` | 477 |
 | File permissions (0o600) | `src/config/io.ts` | 489 |
 | Shell security settings | `src/agents/bash-tools.exec.ts` | (tool handler) |
-| Security audit checks | `src/security/audit.ts` | 323-343 |
+| Security audit checks | `src/security/audit.ts` | 334-353 |

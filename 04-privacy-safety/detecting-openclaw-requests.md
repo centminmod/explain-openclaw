@@ -589,7 +589,7 @@ OpenClaw's HTTP API endpoints read several custom headers from inbound requests.
 | `x-openclaw-agent-id` | `src/gateway/http-utils.ts:27` | Agent routing — selects which named agent handles the request | `/v1/chat/completions`, `/v1/responses` |
 | `x-openclaw-agent` | `src/gateway/http-utils.ts:28` | Agent routing (fallback alias for `x-openclaw-agent-id`) | Same as above |
 | `x-openclaw-session-key` | `src/gateway/http-utils.ts:71` | Session pinning — pins request to a specific named session | `/v1/chat/completions`, `/v1/responses` |
-| `x-openclaw-token` | `src/gateway/hooks.ts:102-103` | Webhook authentication — alternative to `Authorization: Bearer` | `/hooks/*` |
+| `x-openclaw-token` | `src/gateway/hooks.ts:167-168` | Webhook authentication — alternative to `Authorization: Bearer` | `/hooks/*` |
 | `x-openclaw-message-channel` | `src/gateway/tools-invoke-http.ts:173` | Tool policy routing — specifies channel context (e.g., `"discord"`, `"slack"`) | `/tools/invoke` |
 | `x-openclaw-account-id` | `src/gateway/tools-invoke-http.ts:175` | Account-level tool policy routing | `/tools/invoke` |
 | `x-openclaw-relay-token` | `src/browser/extension-relay.ts:80` | Browser extension CDP relay auth | Separate loopback-only server (NOT on main Gateway port) |

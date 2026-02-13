@@ -645,7 +645,7 @@ Four security-relevant commits:
 
 **HIGH (2):**
 
-- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:92-109` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:154-161` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
+- **`717129f7f`** (PR [#9436](https://github.com/openclaw/openclaw/pull/9436)) — **Remove auth tokens from URL query parameters:** Complete removal of query-parameter token acceptance. `extractHookToken()` in `src/gateway/hooks.ts:157-174` no longer accepts `url.searchParams.get("token")`. New explicit HTTP 400 rejection in `src/gateway/server-http.ts:154-161` when `?token=` is present. Dashboard URL no longer appends `?token=`. **FIXES** tracked issues #5120 and #9435 (CWE-598). Thanks @coygeek.
 
 - **`bccdc95a9`** (PR [#10000](https://github.com/openclaw/openclaw/pull/10000)) — **Cap sessions_history payloads:** New `SESSIONS_HISTORY_MAX_BYTES` (80KB) and `SESSIONS_HISTORY_TEXT_MAX_CHARS` (4000) in `src/agents/tools/sessions-history-tool.ts:24-25`. Sanitization strips thinking signatures, image data, usage/cost metadata. Prevents DoS via unbounded session history injection. Thanks @gut-puncture.
 

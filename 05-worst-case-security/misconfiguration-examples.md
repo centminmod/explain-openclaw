@@ -114,7 +114,7 @@ openclaw security audit
 ### How the Security Audit Catches This
 
 ```typescript
-// From src/security/audit.ts lines 323-343
+// From src/security/audit.ts lines 334-353
 // Both flags are flagged as severity: "critical"
 ```
 

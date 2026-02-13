@@ -4,7 +4,7 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 13-02-2026 (12:13 AEST)
+> **Last checked:** 13-02-2026 (12:39 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 

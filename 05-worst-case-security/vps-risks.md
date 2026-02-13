@@ -505,4 +505,4 @@ Additionally, set up **billing alerts** on whatever account runs OpenClaw. Unusu
 | File permissions (0o600) | `src/config/io.ts` | 489 |
 | Gateway auth | `src/gateway/auth.ts` | Authentication logic |
 | Docker sandbox | `src/agents/sandbox/docker.ts` | Container isolation |
-| Security audit | `src/security/audit.ts` | 323-343 |
+| Security audit | `src/security/audit.ts` | 334-353 |
