@@ -324,4 +324,22 @@ See: [AI Self-Misconfiguration Guide](../05-worst-case-security/ai-self-misconfi
 
 ---
 
+## 14) Operational patterns (post-deployment)
+
+Security configuration is critical, but **how you use OpenClaw day-to-day** matters just as much. Real users report these operational pitfalls:
+
+| Pattern | Risk | Fix |
+|---------|------|-----|
+| **Always-on agents** | Surprise API bills ($847/month in one case) | Set spending alerts, monitor usage daily |
+| **Tasks >10 steps** | 40% failure rate from context drift | Break into chunks, use checkpoints |
+| **"Draft" ambiguity** | Agent interprets "draft" as "send" | Say explicitly "SHOW ME, do not send" |
+| **Daily browser profile** | Agent inherits ALL your sessions | Use dedicated OpenClaw profile |
+| **Long sessions** | Context window fills, agent forgets context | Refresh every 1-2 days, use memory files |
+| **ClawHub skills** | 341 malicious skills found (Feb 2026) | Read code, verify publisher, scan |
+| **Personal + work mixed** | BYOD compliance violations | Use separate instances and workspaces |
+
+For detailed analysis of each pattern with real-world examples and fixes, see: [Operational Gotchas](../05-worst-case-security/operational-gotchas.md).
+
+---
+
 See also: [High privacy config example](./high-privacy-config.example.json5.md) for a complete hardened configuration.
