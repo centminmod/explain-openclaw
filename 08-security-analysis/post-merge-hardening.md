@@ -845,6 +845,38 @@ Merge commit `7cca0e0da` — 17 upstream commits (`bca0652de..afbce7357`). Mostl
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
 
+### Post-merge hardening (Feb 13 sync 6, 35 upstream commits)
+
+Merge commit `82021fa43` — 35 upstream commits. Version bump to 2026.2.13. Multiple security hardening commits, exec system improvements, credential coercion fixes, sandbox improvements, and config write path correctness.
+
+**MEDIUM — Credential & Input Security (2):**
+
+1. **`ec44e262b`** (PR [#12287](https://github.com/openclaw/openclaw/pull/12287)) — **fix(security): prevent String(undefined) coercion in credential inputs:** When a prompter returns `undefined` (cancel, timeout, or bug), `String(undefined).trim()` produces the literal string `"undefined"` instead of `""`. This truthy string prevents secure fallbacks from triggering, allowing predictable credential values (e.g., gateway password = "undefined"). Fixes all 12 occurrences across `src/commands/agents.commands.add.ts`, `src/commands/auth-choice.apply.anthropic.ts`, `src/commands/auth-choice.apply.api-providers.ts`, `src/commands/configure.gateway.ts`, `src/commands/models/auth.ts`, `src/wizard/onboarding.gateway-config.ts` using `String(value ?? "").trim()`. 102 lines of test coverage.
+
+2. **`2a9745c9a`** — **fix(config): redact resolved field in config snapshots:** The new `resolved` field in `ConfigFileSnapshot` (added in `3189e2f11`) contains config values after `${ENV}` variable substitution — meaning actual secrets instead of `${OPENCLAW_API_KEY}` placeholders. `src/config/redact-snapshot.ts:140-148` now also redacts this field via `redactConfigObject()`. Prevents credential leaks through `config.get` API responses. Strengthens the existing credential redaction control.
+
+**MEDIUM — Exec System & Sandbox (3):**
+
+3. **`e90caa66d`** (PR [#13811](https://github.com/openclaw/openclaw/pull/13811)) — **fix(exec): allow heredoc operator (<<) in allowlist security mode:** Major refactoring of `src/infra/exec-approvals.ts` (+199/-54 lines). Replaces the generic `iterateQuoteAware()` callback pattern with an inlined `splitShellPipeline()` that includes full heredoc parsing: delimiter extraction (plain, single-quoted, double-quoted), `<<-` tab stripping, multi-heredoc stacking, and body scanning. Commands using heredoc syntax (e.g., `cat <<EOF ... EOF`) no longer incorrectly rejected by the allowlist evaluator. The `$()` and backtick rejection (previously at old lines 696,699) is preserved at new lines 768-769 and 844-845. Relates to Audit 2 Claim 7 (shell injection regex) — extends the shell parser's correctness without weakening security.
+
+4. **`23e418360`** (PR [#6961](https://github.com/openclaw/openclaw/pull/6961)) — **fix(sandbox): force network bridge for browser container:** `src/agents/sandbox/browser.ts:109` — browser sandbox container now always uses `network: "bridge"` regardless of the parent sandbox's network configuration. Previously inherited the parent's network setting, which could be `"none"`, causing browser containers to have no network access and fail silently. This is a correctness fix (browser containers need network for CDP), not a security weakening — the browser container's network was always expected to be bridged.
+
+5. **`92567765e` + `a067565db`** (PR [#15138](https://github.com/openclaw/openclaw/pull/15138)) — **fix(sandbox): pass docker.env into sandbox container:** `src/agents/sandbox/docker.ts:158-163` — new env loop in `buildSandboxCreateArgs()` iterates `params.cfg.env` entries and passes them as `--env key=value` flags to Docker. Previously, `docker.env` configuration was ignored. Thanks @stevebot-alive.
+
+**LOW — Audit & Config Improvements (3):**
+
+6. **`e355f6e09`** (PR [#13474](https://github.com/openclaw/openclaw/pull/13474)) — **fix(security): distinguish webhooks from internal hooks in audit summary:** `src/security/audit-extra.sync.ts:306-317` — the attack surface summary now reports `hooks.webhooks: disabled/enabled` and `hooks.internal: disabled/enabled` as separate lines instead of a single `hooks: disabled/enabled`. Users who enabled internal hooks (session-memory, command-logger) previously saw misleading `hooks: disabled` status. 34 lines of test coverage in `audit-extra.sync.test.ts`. Fixes [#13466](https://github.com/openclaw/openclaw/issues/13466).
+
+7. **`7c25696ab` + `9e8d9f114` + `3189e2f11`** — **fix(config): enforce default-free persistence in write path:** Three commits refactoring the config write path. `validateConfigObjectRaw()` validates without applying runtime defaults (`src/config/validation.ts`). `writeConfigFile()` now uses merge-patch approach to persist only user-set values, not runtime defaults (`src/config/io.ts`). New `resolved` field in `ConfigFileSnapshot` tracks post-env-substitution config separately from the defaults-applied `config` field. Prevents config round-trip issues where runtime defaults would be permanently written to disk.
+
+8. **`f05553413`** — **fix(aa-01): apply security fix:** Enforces Feishu DM policy in `extensions/feishu/src/bot.ts` with 105 lines of test coverage. Channel-specific access control improvement.
+
+**Line number shifts in this sync:** `docker.ts` +6 lines at 158 (env loop insertion in `buildSandboxCreateArgs`): old 158-160→164-166 (capDrop), old 161→167 (no-new-privileges), old 163-166→169-172 (seccomp/apparmor), old 170-175→176-181 (DNS/extra hosts), old 178-191→184-197 (resource limits), old 200-204→206-210 (binds), old 227-236→233-242 (workspace mount), old 242-243→248-249 (setupCommand). `audit-extra.sync.ts` +3 lines at 306 (hooks split): old 502-532→505-535 (small model risk). `redact-snapshot.ts` +3 lines at 140 (resolved field redaction): old 136-145→136-150 (redactConfigSnapshot). `exec-approvals.ts` +145 lines (heredoc rewrite): old `iterateQuoteAware` removed, `splitShellPipeline` inlined with heredoc support. All references updated in documentation.
+
+**CVE status:** 5 published advisories — all pre-existing, none patched in this merge. Commit `2a9745c9a` strengthens credential redaction (defense-in-depth for all CVEs involving credential handling).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
+
 ### Post-merge hardening (Feb 13 sync 5, 35 upstream commits)
 
 **SECURITY-RELEVANT (5):**

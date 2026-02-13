@@ -4,12 +4,18 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 13-02-2026 (12:39 AEST)
+> **Last checked:** 13-02-2026 (22:45 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#15390](https://github.com/openclaw/openclaw/pull/15390) | OPEN | security-fix | OC-02: Block `sessions_spawn` via HTTP gateway + fix ACP auto-approval (CVSS 9.8) | — | OPEN/PENDING |
+| [#15384](https://github.com/openclaw/openclaw/pull/15384) | OPEN | security-fix | OC-01: Validate `setupCommand` to prevent shell injection (CWE-78) | — | OPEN/PENDING |
+| [#15314](https://github.com/openclaw/openclaw/pull/15314) | OPEN | security-fix | Arbitrary Code Execution via Browser Evaluate Endpoint -- default `evaluateEnabled` to false (CVSS 8.8) | [#15313](https://github.com/openclaw/openclaw/issues/15313) | OPEN/PENDING |
+| [#15379](https://github.com/openclaw/openclaw/pull/15379) | OPEN | hardening | Strip unsigned thinking blocks in agent loop via `transformContext` hook | [#13826](https://github.com/openclaw/openclaw/issues/13826) | OPEN/PENDING |
+| [#15360](https://github.com/openclaw/openclaw/pull/15360) | OPEN | hardening | Prevent subagent announce from leaking internal prompts and stats | [#6669](https://github.com/openclaw/openclaw/issues/6669) | OPEN/PENDING |
+| [#15296](https://github.com/openclaw/openclaw/pull/15296) | OPEN | hardening | Harden config redaction defaults; add explicit `--show-secrets` opt-in | — | OPEN/PENDING |
 | [#8513](https://github.com/openclaw/openclaw/pull/8513) | OPEN | security-fix | Require auth for plugin HTTP routes | [#8512](https://github.com/openclaw/openclaw/issues/8512) | OPEN/PENDING |
 | [#11435](https://github.com/openclaw/openclaw/pull/11435) | OPEN | security-fix | Validate `OPENCLAW_BROWSER_CONTROL_MODULE` before dynamic import | [#11437](https://github.com/openclaw/openclaw/issues/11437) | OPEN/PENDING |
 | [#11432](https://github.com/openclaw/openclaw/pull/11432) | OPEN | hardening | Add `--ignore-scripts` to npm install in hook/plugin installers | [#11434](https://github.com/openclaw/openclaw/issues/11434) | OPEN/PENDING |
@@ -30,7 +36,7 @@
 | [#10238](https://github.com/openclaw/openclaw/pull/10238) | OPEN | security-fix | Fix TwiML injection via unescaped locale/language/voice parameters | — | OPEN/PENDING |
 | [#9529](https://github.com/openclaw/openclaw/pull/9529) | OPEN | security-fix | Validate archive entries against path traversal (Zip Slip) | [#3277](https://github.com/openclaw/openclaw/issues/3277) | OPEN/PENDING |
 | [#9513](https://github.com/openclaw/openclaw/pull/9513) | OPEN | security-fix | Skill download archive path traversal checks | [#9512](https://github.com/openclaw/openclaw/issues/9512) | OPEN/PENDING |
-| [#8757](https://github.com/openclaw/openclaw/pull/8757) | OPEN | security-fix | Validate redirect destinations to prevent SSRF via open redirect (MS Teams) | — | OPEN/PENDING |
+| [#8757](https://github.com/openclaw/openclaw/pull/8757) | CLOSED | security-fix | Validate redirect destinations to prevent SSRF via open redirect (MS Teams) (closed without merge 2026-02-13) | — | NOT AFFECTED |
 | [#8718](https://github.com/openclaw/openclaw/pull/8718) | OPEN | security-fix | Sanitize download filenames to prevent path traversal (CWE-22) | [#8696](https://github.com/openclaw/openclaw/issues/8696) | OPEN/PENDING |
 | [#8604](https://github.com/openclaw/openclaw/pull/8604) | OPEN | security-fix | Unauthenticated Nostr profile endpoints allow remote profile takeover | — | OPEN/PENDING |
 | [#8305](https://github.com/openclaw/openclaw/pull/8305) | OPEN | hardening | Add SSRF protection to browser navigation | — | OPEN/PENDING |
@@ -63,7 +69,6 @@
 | [#13737](https://github.com/openclaw/openclaw/pull/13737) | OPEN | hardening | Docker UID/GID remap hardening and docker-setup privilege isolation | — | OPEN/PENDING |
 | [#13680](https://github.com/openclaw/openclaw/pull/13680) | OPEN | hardening | Add per-IP rate limiting to gateway authentication (CWE-307) | — | OPEN/PENDING |
 | [#13521](https://github.com/openclaw/openclaw/pull/13521) | OPEN | security-fix | Require webhook secret in Telegram runtime webhook mode | [#13116](https://github.com/openclaw/openclaw/issues/13116) | OPEN/PENDING |
-| [#13474](https://github.com/openclaw/openclaw/pull/13474) | OPEN | hardening | Distinguish webhooks from internal hooks in audit summary | [#13466](https://github.com/openclaw/openclaw/issues/13466) | OPEN/PENDING |
 | [#13321](https://github.com/openclaw/openclaw/pull/13321) | OPEN | hardening | Android gateway device identity hardening and A2UI UX improvements | — | OPEN/PENDING |
 | [#13308](https://github.com/openclaw/openclaw/pull/13308) | OPEN | hardening | Address audit findings (gateway, CI, Docker) | — | OPEN/PENDING |
 | [#13290](https://github.com/openclaw/openclaw/pull/13290) | OPEN | docs | Warn against storing secrets in injected workspace files (TOOLS.md enters model context) | — | OPEN/PENDING |
@@ -102,9 +107,10 @@
 | [#13787](https://github.com/openclaw/openclaw/pull/13787) | MERGED | security-fix | BlueBubbles webhook auth bypass via loopback proxy trust (CVSS 8.6) | [#13786](https://github.com/openclaw/openclaw/issues/13786) | SYNC NEEDED |
 | [#14029](https://github.com/openclaw/openclaw/pull/14029) | MERGED | security-fix | Pass Twilio stream auth token via `<Parameter>` instead of query string | — | ALREADY SYNCED |
 | [#14218](https://github.com/openclaw/openclaw/pull/14218) | MERGED | security-fix | Antigravity thinking signature sanitization bypass via orphaned user-message repair | [#13765](https://github.com/openclaw/openclaw/issues/13765) | SYNC NEEDED |
+| [#13474](https://github.com/openclaw/openclaw/pull/13474) | MERGED | hardening | Distinguish webhooks from internal hooks in audit summary | [#13466](https://github.com/openclaw/openclaw/issues/13466) | ALREADY SYNCED |
 | [#14659](https://github.com/openclaw/openclaw/pull/14659) | MERGED | hardening | Add `--ignore-scripts` to skills install commands | — | ALREADY SYNCED |
 
-**Total:** 88 tracked PRs (15 merged, 68 open, 2 draft, 3 closed)
+**Total:** 94 tracked PRs (16 merged, 72 open, 2 draft, 4 closed)
 
 ### Cross-Reference: PRs and Tracked Issues
 
@@ -131,7 +137,7 @@
 | [#13182](https://github.com/openclaw/openclaw/pull/13182) | (refactor) | LOW | MERGED | Barrel re-export at `src/security/audit-extra.ts` → `.sync.ts` + `.async.ts` |
 | [#13680](https://github.com/openclaw/openclaw/pull/13680) | (CWE-307 brute force) | MEDIUM | OPEN | Per-IP rate limiting for gateway auth — no limiter exists locally in `src/gateway/auth.ts` |
 | [#13521](https://github.com/openclaw/openclaw/pull/13521) | [#13116](https://github.com/openclaw/openclaw/issues/13116) (HIGH) | HIGH | OPEN | Fail-close webhook secret enforcement; related to #13170 and #13117 |
-| [#13474](https://github.com/openclaw/openclaw/pull/13474) | [#13466](https://github.com/openclaw/openclaw/issues/13466) (LOW) | LOW | OPEN | Split `hooks:` → `hooks.webhooks:` + `hooks.internal:` at `audit-extra.sync.ts:294-317` |
+| [#13474](https://github.com/openclaw/openclaw/pull/13474) | [#13466](https://github.com/openclaw/openclaw/issues/13466) (LOW) | LOW | MERGED | Split `hooks:` → `hooks.webhooks:` + `hooks.internal:` at `audit-extra.sync.ts:294-317`; merged 2026-02-13; ALREADY SYNCED |
 | [#8718](https://github.com/openclaw/openclaw/pull/8718) | [#8696](https://github.com/openclaw/openclaw/issues/8696) (HIGH) | HIGH | OPEN | Sanitizes download filenames to prevent path traversal (CWE-22) |
 | [#13787](https://github.com/openclaw/openclaw/pull/13787) | [#13786](https://github.com/openclaw/openclaw/issues/13786) (HIGH) | HIGH | MERGED | Loopback bypass in BlueBubbles webhook auth (CVSS 8.6); related to #11742; merged 2026-02-12 |
 | [#13777](https://github.com/openclaw/openclaw/pull/13777) | [#13683](https://github.com/openclaw/openclaw/issues/13683) (HIGH) | HIGH | OPEN | Sandboxed agent credential exfil via `openclaw config get` — no redaction in CLI path |
@@ -157,6 +163,13 @@
 | [#14112](https://github.com/openclaw/openclaw/pull/14112) | [#13132](https://github.com/openclaw/openclaw/issues/13132) | MEDIUM | OPEN | Integration test verifying `--ignore-scripts` blocks postinstall in plugin archive install; related to #11432 |
 | [#13737](https://github.com/openclaw/openclaw/pull/13737) | (Docker privilege hardening) | LOW | OPEN | UID/GID remap in Dockerfile; Greptile flags GID collision not detected (silently reuses existing group) |
 | [#13290](https://github.com/openclaw/openclaw/pull/13290) | (openclaw/trust#1) | LOW | OPEN | Security warnings in TOOLS.md templates and system-prompt docs that workspace files enter model context |
+| [#15390](https://github.com/openclaw/openclaw/pull/15390) | (OC-02 RCE via HTTP gateway) | CRITICAL | OPEN | No deny list on `/tools/invoke` endpoint; `sessions_spawn` callable via HTTP POST at `tools-invoke-http.ts:300`; ACP client auto-approves all permissions |
+| [#15384](https://github.com/openclaw/openclaw/pull/15384) | (OC-01 shell injection) | CRITICAL | OPEN | `setupCommand` passed to `sh -lc` at `docker.ts:249` with no validation; Greptile flags incomplete enforcement (allowed prefix bypass, log-and-continue) |
+| [#15314](https://github.com/openclaw/openclaw/pull/15314) | [#15313](https://github.com/openclaw/openclaw/issues/15313) (HIGH) | HIGH | OPEN | `DEFAULT_BROWSER_EVALUATE_ENABLED = true` at `constants.ts:2`; evaluate handler at `agent.act.ts:293` allows arbitrary JS execution when enabled |
+| [#15379](https://github.com/openclaw/openclaw/pull/15379) | [#13826](https://github.com/openclaw/openclaw/issues/13826) | LOW | OPEN | No `transformContext` hook in local `pi-embedded-runner`; sanitization only at session load (`attempt.ts:778-779`), not during tool-call iterations |
+| [#15360](https://github.com/openclaw/openclaw/pull/15360) | [#6669](https://github.com/openclaw/openclaw/issues/6669) | LOW | OPEN | `statsLine` with token counts, session IDs, file paths, costs in user-visible `message` at `subagent-announce.ts:479-506` |
+| [#15296](https://github.com/openclaw/openclaw/pull/15296) | (config secret hardening) | MEDIUM | OPEN | No `--show-secrets` opt-in for CLI `config get`; gateway `config.get` returns unredacted by default |
+| [#8757](https://github.com/openclaw/openclaw/pull/8757) | (MS Teams SSRF redirect) | MEDIUM | CLOSED | Closed without merge 2026-02-13; MS Teams redirect validation SSRF fix; no replacement PR identified |
 | [#13129](https://github.com/openclaw/openclaw/pull/13129) | (dmScope UX) | LOW | OPEN | Uses `formatCliCommand()` for dmScope remediation; local `audit.ts:547` still uses plain string |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
@@ -294,6 +307,134 @@
 - `src/agents/pi-embedded-runner/model.test.ts` — test coverage
 
 **Local Impact:** SYNC NEEDED — local `attempt.ts:765-782` has the orphaned user-message repair path but may lack the sanitization fix
+
+### #13474: Distinguish Webhooks from Internal Hooks in Audit Summary
+
+**PR Status:** MERGED (2026-02-13)
+**Category:** hardening
+**Closes:** [#13466](https://github.com/openclaw/openclaw/issues/13466) (LOW)
+
+**Changes:**
+- `src/security/audit-extra.sync.ts` — splits `hooks:` summary into `hooks.webhooks:` and `hooks.internal:` in attack surface output
+- `src/security/audit-extra.sync.test.ts` — updated test coverage
+
+**Local Impact:** ALREADY SYNCED — `hooks.webhooks:` at `src/security/audit-extra.sync.ts:315` and `hooks.internal:` at line 317 already present in local code
+
+### #15390: OC-02 Block sessions_spawn via HTTP Gateway + Fix ACP Auto-Approval
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** security-fix
+**Closes:** (OC-02 Aether AI security audit finding)
+
+**Security Impact:** OC-02 Critical RCE (CWE-78, CVSS 9.8). Two attack vectors:
+1. HTTP POST to `/tools/invoke` with `tool=sessions_spawn` spawns agent sessions with full exec access
+2. ACP client auto-approves all permission requests including exec, fs_write
+
+**Changes:**
+- `src/config/types.gateway.ts` — adds `GatewayToolsConfig` type with `tools.allow` / `tools.deny`
+- `src/gateway/tools-invoke-http.ts` — adds `DEFAULT_GATEWAY_HTTP_TOOL_DENY` constant blocking dangerous tools
+- `src/acp/client.ts` — replaces auto-approve with danger-aware permission handler
+
+**Local Validation:**
+- `src/gateway/tools-invoke-http.ts:300` — NO deny list exists; `subagentFiltered.find()` allows any tool including `sessions_spawn`
+- No `DEFAULT_GATEWAY_HTTP_TOOL_DENY` or equivalent filtering in local code
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. When merged, local code will need deny list.
+
+### #15384: OC-01 Validate setupCommand to Prevent Shell Injection
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** security-fix
+**Closes:** (OC-01 Aether AI security audit finding)
+
+**Security Impact:** CWE-78 shell injection. `setupCommand` config field passed verbatim to `sh -lc` in Docker container creation.
+
+**Greptile Review:** 4 files, 2 security comments:
+1. Allowlist only covers `npm`, `pip`, etc.; existing configs with `echo work` will break (breaking change)
+2. On validation failure, code logs and continues (should fail hard); allowed prefixes still allow `npm run postinstall` / `npx <pkg>`
+
+**Changes:**
+- `src/agents/sandbox/validate-setup-command.ts` — NEW allowlist-based validation function
+- `src/agents/sandbox/docker.ts` — adds validation gate before shell execution
+- `src/config/zod-schema.agent-runtime.ts` — Zod `.superRefine()` defense-in-depth
+
+**Local Validation:**
+- `src/agents/sandbox/docker.ts:248-249` — `cfg.setupCommand` passed directly to `["exec", "-i", name, "sh", "-lc", cfg.setupCommand]` with only `?.trim()` check
+- No `validateSetupCommand` function exists locally
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Local code is vulnerable to shell injection via setupCommand.
+
+### #15314: Arbitrary Code Execution via Browser Evaluate Endpoint
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** security-fix
+**Closes:** [#15313](https://github.com/openclaw/openclaw/issues/15313) (HIGH — CVSS 8.8)
+
+**Security Impact:** The `/act` endpoint with `kind: "evaluate"` allows arbitrary JavaScript execution via `eval()` and `new Function()` in browser context when `evaluateEnabled=true` (current default).
+
+**Changes:**
+- `src/browser/constants.ts` — changes `DEFAULT_BROWSER_EVALUATE_ENABLED` from `true` to `false`
+- `src/agents/skills/config.ts` — updated truthiness helper
+- `src/hooks/config.ts` — updated truthiness helper
+
+**Local Validation:**
+- `src/browser/constants.ts:2` — `DEFAULT_BROWSER_EVALUATE_ENABLED = true` (enabled by default!)
+- `src/browser/config.ts:143` — fallback to default when not configured
+- `src/browser/routes/agent.act.ts:293-299` — evaluate handler checks flag but default is permissive
+- Existing test at `server.agent-contract-form-layout-act-commands.test.ts:374` verifies blocking when false
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Local code defaults to enabled.
+
+### #15379: Strip Unsigned Thinking Blocks in Agent Loop via transformContext
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** hardening
+**Closes:** [#13826](https://github.com/openclaw/openclaw/issues/13826)
+
+**Changes:**
+- `src/agents/pi-embedded-runner/run/attempt.ts` — uses `Agent.transformContext` hook to run `sanitizeAntigravityThinkingBlocks` before every API call (not just at session load)
+
+**Local Validation:**
+- `src/agents/pi-embedded-runner/run/attempt.ts:778-779` — `sanitizeAntigravityThinkingBlocks` only at orphaned user-message repair (session load)
+- No `transformContext` hook usage in local `pi-embedded-runner` (grep confirmed)
+- `src/agents/pi-embedded-runner/google.ts:67` — `sanitizeAntigravityThinkingBlocks` function exists but only called from `attempt.ts:779` and `google.ts:458`
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Relates to #14218 (thinking sanitization bypass).
+
+### #15360: Prevent Subagent Announce from Leaking Internal Prompts and Stats
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** hardening
+**Closes:** [#6669](https://github.com/openclaw/openclaw/issues/6669)
+
+**Changes:**
+- `src/agents/subagent-announce.ts` — moves findings and LLM instructions from user-visible `message` to `extraSystemPrompt` (hidden)
+- `src/agents/subagent-announce-queue.ts` — adds `extraSystemPrompt` field to `AnnounceQueueItem`
+- Removes `statsLine` (token counts, session IDs, file paths, costs) from announce payload; logs internally instead
+
+**Greptile Review:** Notes queue draining logic may drop `extraSystemPrompt` when messages are combined or summarized.
+
+**Local Validation:**
+- `src/agents/subagent-announce.ts:479-506` — `statsLine` (token counts, session IDs, file paths, costs) in user-visible `message`; `Findings:` heading and `Summarize this naturally` instructions also exposed
+- No `extraSystemPrompt` field in local `AnnounceQueueItem`
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Internal stats and instructions leak to users.
+
+### #15296: Harden Config Redaction Defaults; Add --show-secrets Opt-in
+
+**PR Status:** OPEN (2026-02-13)
+**Category:** hardening
+
+**Changes:**
+- `src/cli/config-cli.ts` — CLI `openclaw config get` redacts by default; adds `--show-secrets` flag with warning
+- `src/gateway/protocol/schema/config.ts` — gateway `config.get` supports `showSecrets?: boolean`
+- `src/gateway/server-methods/config.ts` — default behavior returns redacted config
+
+**Local Validation:**
+- No `--show-secrets` flag exists in local CLI (grep confirmed on `src/cli/`)
+- `src/commands/status-all/channels.ts` has `showSecrets` parameter for channel display but `config get` path has no redaction by default
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Config get returns unredacted values locally by default.
 
 ### #14659: Add --ignore-scripts to Skills Install Commands
 

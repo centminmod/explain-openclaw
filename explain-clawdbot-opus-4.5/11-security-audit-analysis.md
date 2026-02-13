@@ -183,7 +183,7 @@ All 8 claims were verified against the source code. None are exploitable as desc
 
 **Verdict: Partially true, heavily overstated.**
 
-The `setupCommand` field does execute a shell command (`src/agents/sandbox/docker.ts:242-243`):
+The `setupCommand` field does execute a shell command (`src/agents/sandbox/docker.ts:248-249`):
 ```
 await execDocker(["exec", "-i", name, "sh", "-lc", cfg.setupCommand]);
 ```
@@ -879,6 +879,14 @@ No line shifts. No new CVEs.
 **Line shifts:** `redact-snapshot.ts` +16 (whitelist: 15→31, 48-50→67-69, 117-126→136-145). `server-http.ts` +18 at 350 (plugin auth: 350→368, 374-394→393-412, 443→461, 436-458→454-476).
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 note: `.agents/skills/` adds unscanned skill loading path).
+
+### Post-Merge Hardening (Feb 13 sync 6) — 35 upstream commits
+
+**Security relevance: MEDIUM** — 2 credential security fixes, 3 exec/sandbox improvements, 3 audit/config improvements. Credential `String(undefined)` coercion fix (`ec44e262b`, PR #12287 — 12 occurrences across 6 auth files). Config `resolved` field redaction (`2a9745c9a` — prevents env-substituted secrets leaking via config.get). Heredoc support in exec allowlist (`e90caa66d`, PR #13811 — major `exec-approvals.ts` rewrite, +199/-54 lines). Browser sandbox forced bridge network (`23e418360`, PR #6961). Docker env passthrough (`92567765e` + `a067565db`, PR #15138). Audit hooks split (`e355f6e09`, PR #13474 — fixes #13466). Config default-free persistence (`7c25696ab` + `9e8d9f114` + `3189e2f11`). Feishu DM policy (`f05553413`).
+
+**Line shifts:** `docker.ts` +6 at 158 (env loop): old 242-243→248-249 (setupCommand). `audit-extra.sync.ts` +3 at 306 (hooks split): old 502-532→505-535. `redact-snapshot.ts` +3 at 140 (resolved redaction): old 136-145→136-150. `exec-approvals.ts` +145 (heredoc rewrite).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 unchanged).
 
 ---
 

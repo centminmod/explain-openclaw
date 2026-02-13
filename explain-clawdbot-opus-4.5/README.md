@@ -142,7 +142,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 | # | Claim | Verdict | Explanation |
 |---|-------|---------|-------------|
-| 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container (not host) (`src/agents/sandbox/docker.ts:242-243`). Config changes require gateway auth. Container has `no-new-privileges`. Real risk: Medium. |
+| 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container (not host) (`src/agents/sandbox/docker.ts:248-249`). Config changes require gateway auth. Container has `no-new-privileges`. Real risk: Medium. |
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks validation (`src/agents/tools/nodes-tool.ts:344-347`), but writes to paired node device, not gateway host. Requires node pairing approval. Real risk: Low-Medium. |
 | 3 | Log traversal via `logs.tail` | **False** | `LogsTailParamsSchema` has `additionalProperties: false` with only `cursor`, `limit`, `maxBytes`. File path from `getResolvedLoggerSettings().file` (config), not user input. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` (`src/infra/net/ssrf.ts:209-247`) pin DNS resolution. Redirect-to-private-IP explicitly tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
@@ -540,6 +540,14 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 **Line shifts:** `redact-snapshot.ts` +16 (117-126→136-145). `server-http.ts` +18 (374-394→393-412, 443→461).
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 note: `.agents/skills/` adds unscanned path).
+
+### Post-Merge Hardening (Feb 13 sync 6) — 35 upstream commits
+
+**Security relevance: MEDIUM** — 2 credential security fixes (String(undefined) coercion in 12 auth inputs, resolved field redaction in config snapshots), 3 exec/sandbox improvements (heredoc allowlist parsing, browser sandbox forced bridge, docker.env passthrough), 3 audit/config improvements (hooks split in audit summary, default-free config persistence, Feishu DM policy).
+
+**Line shifts:** `docker.ts` +6 at 158 (env loop): old 242-243→248-249 (setupCommand). `audit-extra.sync.ts` +3 at 306 (hooks split). `redact-snapshot.ts` +3 at 140 (resolved redaction). `exec-approvals.ts` +145 (heredoc rewrite).
+
+**Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
