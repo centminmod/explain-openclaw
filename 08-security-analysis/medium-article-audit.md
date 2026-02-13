@@ -8,11 +8,11 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 | Model | Coverage | Accuracy |
 |-------|----------|----------|
-| [Opus 4.5](../../explain-clawdbot-opus-4.5/11-security-audit-analysis.md#second-security-audit-medium-article-january-2026) | Most thorough: full 8-claim analysis with code file/line references, CVSS comparison, 3 legitimate gaps identified | All verdicts match source code review |
-| [Copilot GPT-5.2](../../explain-clawdbot-copilot-gpt-5.2/README.md#security-note-medium-audit-article-jan-2026) | Covers all 8 claims individually with code references and nuanced "attacker needs admin access" framing | High accuracy; minor error on claim 3 (logs.tail called "partially accurate" when schema fully blocks arbitrary paths) |
-| [GLM 4.7](../../explain-clawdbot-glm-4.7/README.md#audit-2-medium-article-why-clawdbot-is-a-bad-idea-saad-khalid) | 5-row table, but the claims analyzed do not match the article's actual findings | **Inaccurate** -- appears to have hallucinated or confused the article's claims with a different report (e.g., lists "CVE-2024-44946 Directory Traversal" and "Insecure Dependencies" which the article does not mention) |
-| [Gemini 3.0 Pro](../../explain-clawdbot-gemini-3.0-pro/README.md) | Brief bullet-point summary; correctly notes DNS rebinding is mitigated | **Mostly inaccurate** -- accepted auth bypass (#5), arbitrary read (#3), and RCE (#1) claims at face value without verifying against RBAC, schema validation, or Docker isolation |
-| [Kimi K2.5](../../explain-clawdbot-kilocode-kimi-k2.5/security-analysis.md#saad-khalids-security-audit) | Detailed coverage of all claims with CVSS scores, attack scenarios, "Auditor's Verdict" quote | **Inaccurate** -- accepts SSRF/DNS rebinding, logic bombs, self-approval bypass, and LD_PRELOAD claims at face value; does not verify against DNS pinning (`ssrf.ts`), Docker isolation, RBAC enforcement, or human approval flow; quotes auditor's "Do Not Deploy" verdict without challenge |
+| [Opus 4.5](../explain-clawdbot-opus-4.5/11-security-audit-analysis.md#second-security-audit-medium-article-january-2026) | Most thorough: full 8-claim analysis with code file/line references, CVSS comparison, 3 legitimate gaps identified | All verdicts match source code review |
+| [Copilot GPT-5.2](../explain-clawdbot-copilot-gpt-5.2/README.md#security-note-medium-audit-article-jan-2026) | Covers all 8 claims individually with code references and nuanced "attacker needs admin access" framing | High accuracy; minor error on claim 3 (logs.tail called "partially accurate" when schema fully blocks arbitrary paths) |
+| [GLM 4.7](../explain-clawdbot-glm-4.7/README.md#audit-2-medium-article-why-clawdbot-is-a-bad-idea-saad-khalid) | 5-row table, but the claims analyzed do not match the article's actual findings | **Inaccurate** -- appears to have hallucinated or confused the article's claims with a different report (e.g., lists "CVE-2024-44946 Directory Traversal" and "Insecure Dependencies" which the article does not mention) |
+| [Gemini 3.0 Pro](../explain-clawdbot-gemini-3.0-pro/README.md) | Brief bullet-point summary; correctly notes DNS rebinding is mitigated | **Mostly inaccurate** -- accepted auth bypass (#5), arbitrary read (#3), and RCE (#1) claims at face value without verifying against RBAC, schema validation, or Docker isolation |
+| [Kimi K2.5](../explain-clawdbot-kilocode-kimi-k2.5/security-analysis.md#saad-khalids-security-audit) | Detailed coverage of all claims with CVSS scores, attack scenarios, "Auditor's Verdict" quote | **Inaccurate** -- accepts SSRF/DNS rebinding, logic bombs, self-approval bypass, and LD_PRELOAD claims at face value; does not verify against DNS pinning (`ssrf.ts`), Docker isolation, RBAC enforcement, or human approval flow; quotes auditor's "Do Not Deploy" verdict without challenge |
 
 **Key disagreements resolved:**
 
@@ -58,6 +58,6 @@ The article claims a "Complete White Box Penetration Test" but demonstrates a pa
 
 For defense-in-depth gap status and post-merge hardening notes, see [Post-merge security hardening](./post-merge-hardening.md).
 
-For full detailed analysis: [Opus 4.5 Security Audit Analysis](../../explain-clawdbot-opus-4.5/11-security-audit-analysis.md#second-security-audit-medium-article-january-2026)
+For full detailed analysis: [Opus 4.5 Security Audit Analysis](../explain-clawdbot-opus-4.5/11-security-audit-analysis.md#second-security-audit-medium-article-january-2026)
 
 Article: [Why Clawdbot is a Bad Idea (Medium)](https://saadkhalidhere.medium.com/why-clawdbot-is-a-bad-idea-critical-zero-days-found-in-my-audit-full-report-634602cb053f)

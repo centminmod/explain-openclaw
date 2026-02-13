@@ -2,7 +2,7 @@
 
 > **Note:** This guide is for OpenClaw (formerly Moltbot/Clawdbot). Moltworker is a proof-of-concept serverless deployment — not an official Cloudflare product.
 
-> **Supplementary resource:** [Kimi K2.5 Cloudflare Guide](../../explain-clawdbot-kilocode-kimi-k2.5/cloudflare-moltworker.md) provides additional explanations for D1 Database, KV, and Queues with beginner-friendly analogies. Note: it does not cover Sandbox SDK (the core runtime) and its security analysis contains inaccuracies -- use this guide for actual deployment.
+> **Supplementary resource:** [Kimi K2.5 Cloudflare Guide](../explain-clawdbot-kilocode-kimi-k2.5/cloudflare-moltworker.md) provides additional explanations for D1 Database, KV, and Queues with beginner-friendly analogies. Note: it does not cover Sandbox SDK (the core runtime) and its security analysis contains inaccuracies -- use this guide for actual deployment.
 
 ## Table of contents (Explain OpenClaw)
 
