@@ -4,12 +4,13 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 14-02-2026 (14:08 AEST)
+> **Last checked:** 14-02-2026 (16:13 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#16036](https://github.com/openclaw/openclaw/pull/16036) | OPEN | hardening | Use 0o600 permissions for session transcript files (CWE-732; world-readable -> owner-only) | [#8751](https://github.com/openclaw/openclaw/issues/8751) | OPEN/PENDING |
 | [#15940](https://github.com/openclaw/openclaw/pull/15940) | OPEN | hardening | Add trusted-proxy auth mode types and schema (delegated auth to reverse proxy) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | OPEN/PENDING |
 | [#15924](https://github.com/openclaw/openclaw/pull/15924) | OPEN | security-fix | Prevent shell injection in macOS keychain credential write (CWE-78; execSync -> execFileSync) | — | OPEN/PENDING |
 | [#15757](https://github.com/openclaw/openclaw/pull/15757) | OPEN | hardening | Add hardening gap audit checks (sandbox.mode_not_all, tools.dangerous_not_denied, etc.) | — | OPEN/PENDING |
@@ -130,8 +131,10 @@
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | CLOSED | hardening | Add `--harden` CLI flag for security-hardened gateway mode (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 | [#15608](https://github.com/openclaw/openclaw/pull/15608) | CLOSED | hardening | Prune expired hook auth failure entries (closed 2026-02-14; superseded by #15848 MERGED) | — | NOT AFFECTED |
 
-**Total:** 109 tracked PRs (32 merged, 65 open, 2 draft, 10 closed)
+**Total:** 110 tracked PRs (32 merged, 66 open, 2 draft, 10 closed)
 
+> **Status change log (14-02-2026 16:13 AEST):** 0 state changes detected. 1 new PR added: #16036 (OPEN hardening, session transcript file permissions CWE-732).
+>
 > **Status change log (14-02-2026 14:08 AEST):** 0 state changes detected. 2 new PRs added: #15924 (OPEN security-fix, macOS keychain shell injection CWE-78), #15940 (OPEN hardening, trusted-proxy auth mode).
 >
 > **Status change log (14-02-2026 11:36 AEST):** 1 state change detected. #15608 OPEN->CLOSED (superseded by #15848). 1 new PR added: #15848 (MERGED hardening, prune hook auth failure state, ALREADY SYNCED).
@@ -219,6 +222,7 @@
 | [#15848](https://github.com/openclaw/openclaw/pull/15848) | (rate-limit state pruning) | LOW | MERGED | Prune expired hook auth failure entries; local `server-http.ts:209-226` has prune-then-evict logic; ALREADY SYNCED |
 | [#15924](https://github.com/openclaw/openclaw/pull/15924) | (macOS keychain shell injection) | HIGH | OPEN | `execSync` with string interpolation at `cli-credentials.ts:408-409`; CWE-78 via `$()` and backtick expansion; fix: `execFileSync` |
 | [#15940](https://github.com/openclaw/openclaw/pull/15940) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | MEDIUM | OPEN | Trusted-proxy auth mode; `authorizeTrustedProxy()` + `GatewayTrustedProxyConfig` not in local code; CIDR matching for proxy IP validation |
+| [#16036](https://github.com/openclaw/openclaw/pull/16036) | [#8751](https://github.com/openclaw/openclaw/issues/8751) | MEDIUM | OPEN | Session transcript `.jsonl` files use default `0o644` (world-readable); fix: `0o600` across 7+ write paths; Greptile 5/5 confidence |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
 
@@ -580,7 +584,7 @@
 **Changes (24 files):**
 - `src/gateway/auth-rate-limit.ts` (NEW) — sliding-window rate limiter with per-scope counters
 - `src/gateway/auth.ts` — integrates rate limiter with `check()` / `recordFailure()` / `reset()`
-- `src/gateway/server.impl.ts:275-277` — creates rate limiter from `gateway.auth.rateLimit` config
+- `src/gateway/server.impl.ts:301-304` — creates rate limiter from `gateway.auth.rateLimit` config
 - All gateway entry points (HTTP, WebSocket, tools-invoke, openai-http, openresponses-http) — pass rate limiter
 
 **Local Impact:** ALREADY SYNCED — `auth-rate-limit.ts` exists with full implementation; integrated across all gateway entry points
@@ -825,3 +829,35 @@
 - `src/config/types.gateway.ts` locally has `GatewayAuthMode` without `trusted-proxy` option
 
 **Local Impact:** OPEN/PENDING — PR not yet merged. No trusted-proxy auth infrastructure exists locally.
+
+### #16036: Use 0o600 Permissions for Session Transcript Files
+
+**PR Status:** OPEN (2026-02-14)
+**Category:** hardening
+**Closes:** [#8751](https://github.com/openclaw/openclaw/issues/8751)
+
+**Security Impact:** CWE-732 — Session transcript `.jsonl` files contain full conversation history including user messages, tool call arguments, and model responses. Created with default `0o644` (world-readable) permissions. Fix restricts all session file write paths to `0o600` (owner-only), matching the permission model already used by `saveJsonFile()` for credential and config files.
+
+**Changes (8 files):**
+- `src/config/sessions/transcript.ts` — `ensureSessionHeader()` adds `mode: 0o600`
+- `src/agents/pi-embedded-helpers/bootstrap.ts` — `ensureSessionHeader()` adds `mode: 0o600`
+- `src/agents/pi-embedded-runner/session-manager-init.ts` — session reset adds `mode: 0o600`
+- `src/auto-reply/reply/session.ts` — `forkSessionFromParent()` adds `mode: 0o600`
+- `src/config/sessions/store.ts` — Windows-specific write path adds `mode: 0o600`
+- `src/gateway/server-methods/chat.ts` — `ensureTranscriptFile()` adds `mode: 0o600`
+- `src/gateway/server-methods/sessions.ts` — manual compaction adds `mode: 0o600`
+- `src/agents/session-file-repair.ts` — backup and repair writes add `mode: 0o600`
+
+**Greptile Review:** Confidence 5/5. "Safe to merge — focused security fix with no logic changes." All modifications follow the same `{ encoding: "utf-8", mode: 0o600 }` pattern consistently.
+
+**Local Validation:**
+- `src/config/sessions/transcript.ts:75` — `writeFile(params.sessionFile, ..., "utf-8")` — no `mode: 0o600`
+- `src/agents/pi-embedded-helpers/bootstrap.ts:159` — `writeFile(file, ..., "utf-8")` — no `mode: 0o600`
+- `src/gateway/server-methods/chat.ts:89` — `writeFileSync(params.transcriptPath, ..., "utf-8")` — no `mode: 0o600`
+- `src/auto-reply/reply/session.ts:92` — `writeFileSync(sessionFile, ..., "utf-8")` — no `mode: 0o600`
+- `src/agents/pi-embedded-runner/session-manager-init.ts:46` — `writeFile(params.sessionFile, "", "utf-8")` — no `mode: 0o600`
+- `src/gateway/server-methods/sessions.ts:490` — `writeFileSync(filePath, ..., "utf-8")` — no `mode: 0o600`
+- `src/agents/session-file-repair.ts:77,81` — `writeFile(..., "utf-8")` — no `mode: 0o600`
+- Note: `src/config/sessions/store.ts:544,559` already uses `{ mode: 0o600 }` for sessions.json
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. 7+ local transcript write paths use default world-readable permissions.
