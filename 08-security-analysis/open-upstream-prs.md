@@ -4,12 +4,14 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 14-02-2026 (11:36 AEST)
+> **Last checked:** 14-02-2026 (14:08 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#15940](https://github.com/openclaw/openclaw/pull/15940) | OPEN | hardening | Add trusted-proxy auth mode types and schema (delegated auth to reverse proxy) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | OPEN/PENDING |
+| [#15924](https://github.com/openclaw/openclaw/pull/15924) | OPEN | security-fix | Prevent shell injection in macOS keychain credential write (CWE-78; execSync -> execFileSync) | — | OPEN/PENDING |
 | [#15757](https://github.com/openclaw/openclaw/pull/15757) | OPEN | hardening | Add hardening gap audit checks (sandbox.mode_not_all, tools.dangerous_not_denied, etc.) | — | OPEN/PENDING |
 | [#15756](https://github.com/openclaw/openclaw/pull/15756) | OPEN | security-fix | Strip provider apiKey from models.json before prompt serialization (credential exposure) | — | OPEN/PENDING |
 | [#15615](https://github.com/openclaw/openclaw/pull/15615) | OPEN | security-fix | Restrict PATH override to exact match in node-host sanitizeEnv | — | OPEN/PENDING |
@@ -128,8 +130,10 @@
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | CLOSED | hardening | Add `--harden` CLI flag for security-hardened gateway mode (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 | [#15608](https://github.com/openclaw/openclaw/pull/15608) | CLOSED | hardening | Prune expired hook auth failure entries (closed 2026-02-14; superseded by #15848 MERGED) | — | NOT AFFECTED |
 
-**Total:** 107 tracked PRs (32 merged, 63 open, 2 draft, 10 closed)
+**Total:** 109 tracked PRs (32 merged, 65 open, 2 draft, 10 closed)
 
+> **Status change log (14-02-2026 14:08 AEST):** 0 state changes detected. 2 new PRs added: #15924 (OPEN security-fix, macOS keychain shell injection CWE-78), #15940 (OPEN hardening, trusted-proxy auth mode).
+>
 > **Status change log (14-02-2026 11:36 AEST):** 1 state change detected. #15608 OPEN->CLOSED (superseded by #15848). 1 new PR added: #15848 (MERGED hardening, prune hook auth failure state, ALREADY SYNCED).
 >
 > **Status change log (14-02-2026 06:04 AEST):** 1 state change detected. #15652 OPEN->MERGED (ALREADY SYNCED). No new PRs added (#15734 assessed as feature addition, not tracked).
@@ -213,6 +217,8 @@
 | [#15652](https://github.com/openclaw/openclaw/pull/15652) | (browser path traversal) | MEDIUM | MERGED | Constrain browser trace/download output paths; local `path-output.ts` has `resolvePathWithinRoot()`; ALREADY SYNCED |
 | [#15608](https://github.com/openclaw/openclaw/pull/15608) | (rate-limit state reset) | LOW | CLOSED | Superseded by #15848 (MERGED); NOT AFFECTED |
 | [#15848](https://github.com/openclaw/openclaw/pull/15848) | (rate-limit state pruning) | LOW | MERGED | Prune expired hook auth failure entries; local `server-http.ts:209-226` has prune-then-evict logic; ALREADY SYNCED |
+| [#15924](https://github.com/openclaw/openclaw/pull/15924) | (macOS keychain shell injection) | HIGH | OPEN | `execSync` with string interpolation at `cli-credentials.ts:408-409`; CWE-78 via `$()` and backtick expansion; fix: `execFileSync` |
+| [#15940](https://github.com/openclaw/openclaw/pull/15940) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | MEDIUM | OPEN | Trusted-proxy auth mode; `authorizeTrustedProxy()` + `GatewayTrustedProxyConfig` not in local code; CIDR matching for proxy IP validation |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
 
@@ -773,3 +779,49 @@
 - No `hookAuthFailures.clear()` call exists locally
 
 **Local Impact:** ALREADY SYNCED — all changes from PR #15848 are present in local code
+
+### #15924: Prevent Shell Injection in macOS Keychain Credential Write
+
+**PR Status:** OPEN (2026-02-14)
+**Category:** security-fix
+**Closes:** (OC-28 shell injection in keychain write)
+
+**Security Impact:** OC-28 — CWE-78 shell injection. `writeClaudeCliKeychainCredentials()` uses `execSync()` with string interpolation for `security add-generic-password`. The single-quote escaping via `replace(/'/g, "'\"'\"'")` is insufficient; `$()` command substitution and backtick expansion bypass the protection. Malicious OAuth token values from a compromised OAuth provider could execute arbitrary commands as the gateway user.
+
+**Changes:**
+- `src/agents/cli-credentials.ts` — replace `execSync` with `execFileSync` (array args, no shell parsing)
+- `src/agents/cli-credentials.e2e.test.ts` — updated tests for `execFileSync` API + new injection payload tests
+
+**Greptile Review:** No Greptile review available.
+
+**Local Validation:**
+- `src/agents/cli-credentials.ts:408-409` — local code uses `execSync` with `'${newValue.replace(/'/g, "'\"'\"'")}'` — vulnerable to `$()` and backtick command substitution
+- `src/agents/cli-credentials.ts:386` — `execSyncImpl` defaults to Node's `execSync`
+- `src/agents/cli-credentials.ts:388-389` — read operation also uses `execSync` but with constant-only interpolation (lower risk)
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. Local `cli-credentials.ts:408-409` has the vulnerable `execSync` pattern.
+
+### #15940: Add Trusted-Proxy Auth Mode Types and Schema
+
+**PR Status:** OPEN (2026-02-14)
+**Category:** hardening
+**Closes:** [#1560](https://github.com/openclaw/openclaw/issues/1560)
+
+**Security Impact:** Adds `trusted-proxy` to `GatewayAuthMode` union for delegating authentication to reverse proxies (Pomerium, Caddy, nginx + OAuth). Includes `authorizeTrustedProxy()` helper, CIDR matching for proxy IP validation, security audit integration (critical finding when enabled), and 10 new auth tests.
+
+**Changes (25 files):**
+- `src/gateway/auth.ts` — new `authorizeTrustedProxy()` helper, updated `authorizeGatewayConnect()` for trusted-proxy mode
+- `src/config/types.gateway.ts` — `GatewayTrustedProxyConfig` type with `userHeader`, `requiredHeaders`, `allowUsers`
+- `src/config/zod-schema.ts` — validation for new config fields
+- `src/gateway/net.ts` — CIDR matching for proxy IP validation
+- `src/security/audit.ts` and `audit-extra.sync.ts` — critical audit finding when trusted-proxy auth enabled
+
+**Greptile Review:** 25 files reviewed, 2 comments. 1 inline comment on `src/gateway/net.ts:183` about bitwise left shift on negative values needing unsigned right shift for mask calculation.
+
+**Local Validation:**
+- `authorizeTrustedProxy()` does NOT exist locally (grep confirmed)
+- `GatewayTrustedProxyConfig` does NOT exist locally (grep confirmed)
+- `src/gateway/auth.ts` locally has `authorizeGatewayConnect()` but no trusted-proxy auth path
+- `src/config/types.gateway.ts` locally has `GatewayAuthMode` without `trusted-proxy` option
+
+**Local Impact:** OPEN/PENDING — PR not yet merged. No trusted-proxy auth infrastructure exists locally.

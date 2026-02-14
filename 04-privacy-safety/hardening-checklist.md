@@ -311,7 +311,7 @@ cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
 openclaw gateway restart
 ```
 
-Source: `src/config/io.ts:291-310` (backup rotation)
+Source: `src/config/io.ts:343-362` (backup rotation)
 
 **Consider version-controlling your config** for change tracking:
 
@@ -319,6 +319,21 @@ Source: `src/config/io.ts:291-310` (backup rotation)
 cd ~/.openclaw && git init && git add openclaw.json && git commit -m "known good baseline"
 # After any change: git diff to see what changed
 ```
+
+**Forensic config audit log** (added in sync 10): Every config write is now logged to `$STATE_DIR/logs/config-audit.jsonl` with PID, PPID, content hashes, byte sizes, and anomaly flags. Review with:
+
+```bash
+# Show recent config writes with anomalies
+cat ~/.openclaw/logs/config-audit.jsonl | python3 -c "
+import sys,json
+for line in sys.stdin:
+  r = json.loads(line)
+  if r.get('suspicious'):
+    print(f\"{r['ts']} pid={r['pid']} {r['suspicious']}\")
+"
+```
+
+Source: `src/config/io.ts:370-413` (audit helpers), `:958-1062` (audit record builder)
 
 See: [AI Self-Misconfiguration Guide](../05-worst-case-security/ai-self-misconfiguration.md), [Attack #28](../05-worst-case-security/prompt-injection-attacks.md#-attack-28-config-self-modification-via-gateway-tool)
 

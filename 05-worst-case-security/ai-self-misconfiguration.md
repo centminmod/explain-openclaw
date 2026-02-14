@@ -54,7 +54,7 @@ ls -la ~/.openclaw/openclaw.json.bak*
 diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
 ```
 
-Source: `src/config/io.ts:291-310` — `rotateConfigBackups()` keeps `.bak` files before each write.
+Source: `src/config/io.ts:343-362` — `rotateConfigBackups()` keeps `.bak` files before each write.
 
 ---
 
@@ -1038,17 +1038,18 @@ OpenClaw has several built-in protections. Understanding them helps you build on
 
 | Protection | What It Does | Source |
 |-----------|-------------|--------|
-| **Config backup rotation** | Keeps 5 `.bak` files before each config write | `src/config/io.ts:291-310` |
+| **Config backup rotation** | Keeps 5 `.bak` files before each config write | `src/config/io.ts:343-362` |
 | **baseHash optimistic locking** | Prevents concurrent config overwrites (not a security control — AI reads the hash first) | `src/gateway/server-methods/config.ts:152-459` |
 | **Credential redaction** | API keys replaced with `__OPENCLAW_REDACTED__` in `config.get` responses | `src/config/redact-snapshot.ts:42,273-310` |
 | **Dangerous env var blocklist** | Blocks `LD_PRELOAD`, `NODE_OPTIONS`, etc. from being set via exec tools | `src/agents/bash-tools.exec.ts:61-78` |
 | **Small model risk audit** | Warns when small/older models have tool access | `src/security/audit-extra.sync.ts:713-760` |
 | **ALLOWED_FILE_NAMES** | Restricts which agent bootstrap files can be modified via `agents.files.set` | `src/gateway/server-methods/agents.ts:454-506` |
-| **File permissions** | Config files created with `0o600`, directories with `0o700` | `src/config/io.ts:852,818` |
+| **File permissions** | Config files created with `0o600`, directories with `0o700` | `src/config/io.ts:1027,919` |
 | **Tool profiles** | `"coding"` profile excludes the gateway tool entirely | `src/agents/tool-policy.ts:63-80` |
 | **System prompt warning** | Soft instruction to not run `config.apply` without user request | `src/agents/system-prompt.ts:430-432` |
 | **Restart sentinel** | Logs timestamp, session key, message, and stats on config-triggered restarts | `src/infra/restart-sentinel.ts:30-48` |
 | **Strict schema validation** | Zod `.strict()` rejects unknown top-level keys and type errors | `src/config/zod-schema.ts:599-600` |
+| **Forensic config write audit** | Every config write logged to `config-audit.jsonl` with PID, PPID, CWD, argv, content hashes, byte sizes, gateway-mode changes, and anomaly flags (size drops >50%, missing meta, gateway-mode removal) | `src/config/io.ts:370-413` (audit helpers), `:958-1062` (audit record builder + append) |
 
 ---
 

@@ -194,6 +194,7 @@ openclaw config set gateway.auth.token "$(openssl rand -hex 32)"
 5. If your cloud account is compromised, attacker gets everything
 
 **Credentials That Get Synced:**
+
 | Credential | What It Controls | Potential Cost |
 |------------|------------------|----------------|
 | Anthropic API key | Full API access | $100+/month |
@@ -374,7 +375,7 @@ If you suspect compromise, do these in order:
 |------------------|-------------|-------|
 | Silent binding fallback | `src/gateway/net.ts` | 203-208 |
 | canBindToHost() test | `src/gateway/net.ts` | 256-270 |
-| File permissions (0o700) | `src/config/io.ts` | 720 |
-| File permissions (0o600) | `src/config/io.ts` | 749 |
+| File permissions (0o700) | `src/config/io.ts` | 919 |
+| File permissions (0o600) | `src/config/io.ts` | 1027 |
 | Shell security settings | `src/agents/bash-tools.exec.ts` | (tool handler) |
 | Security audit checks | `src/security/audit.ts` | 334-353 |

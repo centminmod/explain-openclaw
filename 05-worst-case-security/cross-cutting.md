@@ -497,7 +497,7 @@ If you suspect any compromise:
 | Tool security settings | `src/agents/bash-tools.exec.ts` | Tool handler |
 | RBAC enforcement | `src/gateway/server-methods.ts` | 95-165 |
 | Session key isolation | `src/routing/session-key.ts` | 119, 135 |
-| File permissions | `src/config/io.ts` | 720, 749 |
+| File permissions | `src/config/io.ts` | 919, 1027 |
 | Message envelope format | Agent runtime | Wraps user messages |
 | External content wrapping | Web fetch tools | Marks untrusted content |
 | SSRF protection | `src/infra/net/ssrf.ts`, `src/infra/net/fetch-guard.ts` | DNS pinning for web/media fetches |

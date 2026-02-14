@@ -73,6 +73,7 @@ openclaw config set gateway.auth.token "$(openssl rand -hex 32)"
 4. Default credentials may exist that you forgot to change
 
 **Risk Factors in Pre-Built Images:**
+
 | Factor | Risk | What to Check |
 |--------|------|---------------|
 | Default SSH keys | Someone else has access | `cat ~/.ssh/authorized_keys` |
@@ -240,6 +241,7 @@ ls -la ~/.openclaw/credentials/
 4. Now they're on the host system with full access
 
 **Dangerous Docker Flags:**
+
 | Flag | Why It's Dangerous |
 |------|-------------------|
 | `--privileged` | Container has nearly host-level access |
@@ -273,6 +275,7 @@ docker run \
 4. These backdoors are designed to be hidden
 
 **Common Persistence Mechanisms:**
+
 | Mechanism | Where to Check |
 |-----------|---------------|
 | Cron jobs | `crontab -l` and `/etc/cron.*` |
@@ -501,8 +504,8 @@ Additionally, set up **billing alerts** on whatever account runs OpenClaw. Unusu
 | Security Control | Source File | Lines |
 |------------------|-------------|-------|
 | Network binding modes | `src/gateway/net.ts` | 142-166 |
-| File permissions (0o700) | `src/config/io.ts` | 818 |
-| File permissions (0o600) | `src/config/io.ts` | 852 |
+| File permissions (0o700) | `src/config/io.ts` | 919 |
+| File permissions (0o600) | `src/config/io.ts` | 1027 |
 | Gateway auth | `src/gateway/auth.ts` | Authentication logic |
 | Docker sandbox | `src/agents/sandbox/docker.ts` | Container isolation |
 | Security audit | `src/security/audit.ts` | 334-353 |

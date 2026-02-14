@@ -152,7 +152,7 @@ Yes, but the risk level varies dramatically depending on your deployment. Here's
 
 > "OpenClaw automatically downloads a small embedding model (embeddinggemma-300M) from HuggingFace the first time you use memory search with `provider: "local"` or `"auto"` (and no API keys configured). This model doesn't generate text or execute tools — it only converts text into numbers for similarity search. A poisoned embedding model couldn't run commands or send messages. The most it could do is bias which memories get retrieved, which could indirectly steer the main model's behavior."
 
-- Code ref: `src/memory/embeddings.ts:58` — default model `hf:ggml-org/embeddinggemma-300M-GGUF`
+- Code ref: `src/memory/embeddings.ts:65-66` — default model `hf:ggml-org/embeddinggemma-300m-qat-q8_0-GGUF`
 - Download triggered by `ensureContext()` on first `embedQuery()`/`embedBatch()` call
 - Delegated to `node-llama-cpp.resolveModelFile()` — OpenClaw has **zero integrity verification** (no checksums, no signatures)
 - Cached to `~/.cache/node-llama-cpp/` (or custom `local.modelCacheDir`)
@@ -309,8 +309,8 @@ No. There are no checksums, signatures, or hash verification for model downloads
 | Security Control | Source File | Notes |
 |---|---|---|
 | Local model config | `docs/gateway/local-models.md` | Setup + existing security warnings |
-| Embedding model default | `src/memory/embeddings.ts:58` | Auto-download from HuggingFace |
-| Embedding providers | `src/memory/embeddings.ts:32-34` | openai/local/gemini/voyage options |
+| Embedding model default | `src/memory/embeddings.ts:65-66` | Auto-download from HuggingFace (QAT variant) |
+| Embedding providers | `src/memory/embeddings.ts:32` | openai/local/gemini/voyage options |
 | API model providers | `src/agents/models-config.providers.ts` | All API provider configs |
 | Ollama HTTP endpoint | `src/agents/models-config.providers.ts:77-86` | `http://127.0.0.1:11434/v1` |
 | Tool security settings | `src/agents/bash-tools.exec.ts` | allowlist/ask/full modes |

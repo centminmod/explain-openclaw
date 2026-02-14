@@ -123,7 +123,7 @@ These tests describe genuine indirect injection scenarios but deliver them incor
 2. Prepends a security warning instructing the model to IGNORE embedded instructions (`src/security/external-content.ts:53-64`)
 3. Detects suspicious patterns (regex: "ignore previous instructions", "you are now a", etc.) and logs warnings (`src/security/external-content.ts:15-28`)
 4. Sanitizes boundary markers in content to prevent escape (`src/security/external-content.ts:127-167`) including fullwidth Unicode homoglyph folding (`src/security/external-content.ts:89-125`)
-5. Is actively integrated into web search (`src/agents/tools/web-search.ts:577,604,654,656`), web fetch (`src/agents/tools/web-fetch.ts:250-271`), cron hooks (`src/cron/isolated-agent/run.ts:340-346`), Discord (`src/discord/monitor/message-handler.process.ts:142-145`), and Slack (`src/slack/monitor/message-handler/prepare.ts:445-448`)
+5. Is actively integrated into web search (`src/agents/tools/web-search.ts:603,630,680,682`), web fetch (`src/agents/tools/web-fetch.ts:250-271`), cron hooks (`src/cron/isolated-agent/run.ts:340-346`), Discord (`src/discord/monitor/message-handler.process.ts:142-145`), and Slack (`src/slack/monitor/message-handler/prepare.ts:445-448`)
 
 #### Category C: Social Engineering / False Context (Tests 14-21) -- User Messages, Not External Content
 
@@ -200,7 +200,7 @@ ZeroLeeks tested **only** the bottom two tiers and rated the system CRITICAL.
 | Boundary marker sanitization | `src/security/external-content.ts:127-167` | Prevents content from escaping the wrapper |
 | Unicode homoglyph normalization | `src/security/external-content.ts:89-125` | Fullwidth character folding to prevent visual spoofing (12 homoglyphs) |
 | Channel metadata isolation | `src/security/channel-metadata.ts:21-45` | Truncation (400 char/entry, 800 total), dedup, wrapping |
-| Web search wrapping | `src/agents/tools/web-search.ts:577,604,654,656` | All search snippets wrapped via `wrapWebContent()` |
+| Web search wrapping | `src/agents/tools/web-search.ts:603,630,680,682` | All search snippets wrapped via `wrapWebContent()` |
 | Web fetch wrapping | `src/agents/tools/web-fetch.ts:250-271` | All fetched content wrapped with security warnings |
 | Cron/hook wrapping | `src/cron/isolated-agent/run.ts:327-346` | External hooks wrapped via `buildSafeExternalPrompt()` with suspicious pattern logging |
 | Discord metadata isolation | `src/discord/monitor/message-handler.process.ts:142-145` | Channel topics wrapped via `buildUntrustedChannelMetadata()` |
