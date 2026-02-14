@@ -4,7 +4,7 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 14-02-2026 (08:10 AEST)
+> **Last checked:** 14-02-2026 (11:36 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
@@ -13,7 +13,6 @@
 | [#15757](https://github.com/openclaw/openclaw/pull/15757) | OPEN | hardening | Add hardening gap audit checks (sandbox.mode_not_all, tools.dangerous_not_denied, etc.) | — | OPEN/PENDING |
 | [#15756](https://github.com/openclaw/openclaw/pull/15756) | OPEN | security-fix | Strip provider apiKey from models.json before prompt serialization (credential exposure) | — | OPEN/PENDING |
 | [#15615](https://github.com/openclaw/openclaw/pull/15615) | OPEN | security-fix | Restrict PATH override to exact match in node-host sanitizeEnv | — | OPEN/PENDING |
-| [#15608](https://github.com/openclaw/openclaw/pull/15608) | OPEN | hardening | Prune expired hook auth failure entries instead of clearing all rate-limit state | — | OPEN/PENDING |
 | [#15379](https://github.com/openclaw/openclaw/pull/15379) | OPEN | hardening | Strip unsigned thinking blocks in agent loop via `transformContext` hook | [#13826](https://github.com/openclaw/openclaw/issues/13826) | OPEN/PENDING |
 | [#15360](https://github.com/openclaw/openclaw/pull/15360) | OPEN | hardening | Prevent subagent announce from leaking internal prompts and stats | [#6669](https://github.com/openclaw/openclaw/issues/6669) | OPEN/PENDING |
 | [#15296](https://github.com/openclaw/openclaw/pull/15296) | OPEN | hardening | Harden config redaction defaults; add explicit `--show-secrets` opt-in | — | OPEN/PENDING |
@@ -81,6 +80,7 @@
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#15848](https://github.com/openclaw/openclaw/pull/15848) | MERGED | hardening | Prune expired hook auth failure entries instead of clearing all rate-limit state (merged 2026-02-14; supersedes #15608) | — | ALREADY SYNCED |
 | [#15652](https://github.com/openclaw/openclaw/pull/15652) | MERGED | hardening | Constrain browser trace/download output paths to OpenClaw temp roots (merged 2026-02-13) | — | ALREADY SYNCED |
 | [#15604](https://github.com/openclaw/openclaw/pull/15604) | MERGED | security-fix | Block private/loopback/metadata IPs in link-understanding URL detection (SSRF hardening) | — | ALREADY SYNCED |
 | [#15592](https://github.com/openclaw/openclaw/pull/15592) | MERGED | hardening | Sanitize and truncate untrusted WebSocket header values before logging (merged 2026-02-13) | — | ALREADY SYNCED |
@@ -126,9 +126,12 @@
 | [#13680](https://github.com/openclaw/openclaw/pull/13680) | CLOSED | hardening | Per-IP rate limiting for gateway auth (closed 2026-02-13; superseded by #15035 MERGED) | — | NOT AFFECTED |
 | [#11152](https://github.com/openclaw/openclaw/pull/11152) | CLOSED | security-fix | Add `place_id` validation to prevent path traversal SSRF (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | CLOSED | hardening | Add `--harden` CLI flag for security-hardened gateway mode (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
+| [#15608](https://github.com/openclaw/openclaw/pull/15608) | CLOSED | hardening | Prune expired hook auth failure entries (closed 2026-02-14; superseded by #15848 MERGED) | — | NOT AFFECTED |
 
-**Total:** 104 tracked PRs (31 merged, 63 open, 2 draft, 9 closed)
+**Total:** 107 tracked PRs (32 merged, 63 open, 2 draft, 10 closed)
 
+> **Status change log (14-02-2026 11:36 AEST):** 1 state change detected. #15608 OPEN->CLOSED (superseded by #15848). 1 new PR added: #15848 (MERGED hardening, prune hook auth failure state, ALREADY SYNCED).
+>
 > **Status change log (14-02-2026 06:04 AEST):** 1 state change detected. #15652 OPEN->MERGED (ALREADY SYNCED). No new PRs added (#15734 assessed as feature addition, not tracked).
 >
 > **Status change log (14-02-2026 03:12 AEST):** 6 state changes detected. #13129 OPEN->MERGED, #13184 OPEN->MERGED, #13185 OPEN->MERGED, #13767 OPEN->MERGED, #14661 OPEN->MERGED (all ALREADY SYNCED). #14350 OPEN->CLOSED (no replacement). 1 new PR added: #15592 (WebSocket log header sanitization, OPEN).
@@ -207,8 +210,9 @@
 | [#15592](https://github.com/openclaw/openclaw/pull/15592) | (log injection) | LOW | MERGED | Sanitize WebSocket log headers; local `ws-connection.ts:39-54` has `sanitizeLogValue()`; ALREADY SYNCED |
 | [#15604](https://github.com/openclaw/openclaw/pull/15604) | (link-understanding SSRF) | MEDIUM | MERGED | Block private/loopback/metadata IPs in link-understanding; local `detect.ts:35-42` has `isBlockedHost()`; ALREADY SYNCED |
 | [#15615](https://github.com/openclaw/openclaw/pull/15615) | (PATH shadow attack) | MEDIUM | OPEN | Restrict PATH override to exact match; local `runner.ts:230-233` allows prepending via `endsWith()` |
-| [#15652](https://github.com/openclaw/openclaw/pull/15652) | (browser path traversal) | MEDIUM | OPEN | Constrain browser trace/download output paths; no `resolvePathWithinRoot` exists locally |
-| [#15608](https://github.com/openclaw/openclaw/pull/15608) | (rate-limit state reset) | LOW | OPEN | Prune expired hook auth failure entries instead of `clear()`; local `server-http.ts` may have same pattern |
+| [#15652](https://github.com/openclaw/openclaw/pull/15652) | (browser path traversal) | MEDIUM | MERGED | Constrain browser trace/download output paths; local `path-output.ts` has `resolvePathWithinRoot()`; ALREADY SYNCED |
+| [#15608](https://github.com/openclaw/openclaw/pull/15608) | (rate-limit state reset) | LOW | CLOSED | Superseded by #15848 (MERGED); NOT AFFECTED |
+| [#15848](https://github.com/openclaw/openclaw/pull/15848) | (rate-limit state pruning) | LOW | MERGED | Prune expired hook auth failure entries; local `server-http.ts:209-226` has prune-then-evict logic; ALREADY SYNCED |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
 
@@ -720,7 +724,7 @@
 
 ### #15652: Constrain Browser Trace/Download Output Paths to OpenClaw Temp Roots
 
-**PR Status:** OPEN (2026-02-13)
+**PR Status:** MERGED (2026-02-13T19:24:33Z)
 **Category:** hardening
 
 **Security Impact:** Browser file-output routes (`POST /trace/stop`, `POST /wait/download`, `POST /download`) accept arbitrary paths, creating a path traversal/escape vector. This PR constrains them to OpenClaw temp roots.
@@ -733,24 +737,39 @@
 **Greptile Review:** Confidence 4/5. Flags edge case where `resolvePathWithinRoot` rejects paths that resolve exactly to the root directory.
 
 **Local Validation:**
-- No `resolvePathWithinRoot` or `path-output.ts` module exists locally (grep confirmed)
-- Browser routes at `agent.debug.ts` and `agent.act.ts` lack output path constraints
+- `src/browser/routes/path-output.ts:1-29` — local code has complete `resolvePathWithinRoot()` implementation
+- `src/browser/routes/agent.debug.ts:7,17,135-146` — imports and uses `resolvePathWithinRoot()` for trace endpoint
+- `src/browser/routes/agent.act.ts:17,443-455,484-492` — imports and uses `resolvePathWithinRoot()` for downloads
 
-**Local Impact:** OPEN/PENDING — PR not yet merged. Local browser routes accept arbitrary output paths.
+**Local Impact:** ALREADY SYNCED — all changes from PR #15652 are present in local code
 
 ### #15608: Prune Expired Hook Auth Failure Entries Instead of Clearing All State
 
-**PR Status:** OPEN (2026-02-13)
+**PR Status:** CLOSED (2026-02-14, without merge — superseded by #15848)
 **Category:** hardening
 
 **Security Impact:** Hook auth failure tracking used `hookAuthFailures.clear()` when at capacity (2048 entries), resetting ALL rate limiting state. Previously-throttled clients could bypass limits by triggering the capacity clear. The fix prunes expired entries first, then evicts the oldest half.
 
-**Changes:**
-- `src/gateway/server-http.ts` — replaces `clear()` with prune-then-evict logic
+**Note:** This PR was closed without merge. The same fix was merged via [#15848](https://github.com/openclaw/openclaw/pull/15848) at 2026-02-14T00:46:12Z.
 
-**Greptile Review:** Confidence 3/5. Flags that eviction by Map insertion order does not reflect recent activity for existing keys, so active/throttled clients can be evicted under sustained traffic.
+**Local Impact:** NOT AFFECTED — PR closed without merge; see #15848 (ALREADY SYNCED)
+
+### #15848: Prune Expired Hook Auth Failure Entries (Merged Implementation)
+
+**PR Status:** MERGED (2026-02-14T00:46:12Z)
+**Category:** hardening
+**Supersedes:** #15608 (CLOSED)
+
+**Security Impact:** Hook auth failure tracking used `hookAuthFailures.clear()` when at capacity (2048 entries), resetting ALL rate limiting state. Fix: two-phase eviction — prune expired entries first, then evict oldest half. Refresh Map insertion order on update via delete+re-insert so active clients are not evicted before dormant ones.
+
+**Changes:**
+- `src/gateway/server-http.ts` — replaces `clear()` with prune-then-evict logic + insertion order refresh
+
+**Greptile Review:** 1 comment. Flags HTTP status regression: `readJsonBody()` timeout case collapsed into 400 instead of 408.
 
 **Local Validation:**
-- `src/gateway/server-http.ts` — local hook auth failure handling exists; would need to check if `clear()` pattern is present at capacity
+- `src/gateway/server-http.ts:209-226` — prune expired entries at lines 211-214, drop oldest half at lines 217-225
+- `src/gateway/server-http.ts:233-238` — delete-before-set refreshes insertion order for recently-active clients
+- No `hookAuthFailures.clear()` call exists locally
 
-**Local Impact:** OPEN/PENDING — PR not yet merged.
+**Local Impact:** ALREADY SYNCED — all changes from PR #15848 are present in local code
