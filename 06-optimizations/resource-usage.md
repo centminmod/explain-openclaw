@@ -4,6 +4,16 @@
 
 Users report OpenClaw can be resource-intensive. This guide documents every resource-consuming subsystem with verified source references, plain-English explanations, and practical optimization strategies.
 
+## Contents
+
+- [A. CPU-Intensive Operations](#a-cpu-intensive-operations)
+- [B. Memory-Intensive Operations](#b-memory-intensive-operations)
+- [C. Disk-Intensive Operations](#c-disk-intensive-operations)
+- [D. Optimization Strategies for Users](#d-optimization-strategies-for-users)
+- [E. Monitoring & Profiling Guide](#e-monitoring--profiling-guide)
+- [F. How OpenClaw Memory Works (Architecture Deep-Dive)](#f-how-openclaw-memory-works-architecture-deep-dive)
+- [Summary](#summary)
+
 ---
 
 ## A. CPU-Intensive Operations
@@ -78,7 +88,7 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 | Telegram sent msgs outer map | `src/telegram/sent-message-cache.ts:13` | Per-chat TTL, **outer map never evicts dead chat keys** | Low-Medium |
 
 > *Session store cache:* Like photocopying an entire filing cabinet every time you check one folder — works, but wastes desk space.
-
+>
 > *Unbounded Maps (seqByRun, agentRunSeq):* Like a guest book that records every visitor but never tears out old pages — after months, it's a thick ledger eating memory for no reason.
 
 ### Browser memory
@@ -123,9 +133,9 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 | Voice-call `calls.jsonl` | `extensions/voice-call/src/manager/store.ts:7-10` | **Append-only, no rotation** + full-file reads on load |
 
 > *Transcript JSONL files:* Like a chat log that records every message forever but never archives or deletes old conversations — a busy bot can accumulate gigabytes over months.
-
+>
 > *Browser user-data profiles:* Like a real web browser's cache, cookies, and history — it grows the more pages the bot visits, just like your own browser.
-
+>
 > *commands.log:* Like a security camera that records 24/7 but never overwrites old footage — eventually the DVR fills up.
 
 ### Bounded/managed resources
@@ -540,6 +550,299 @@ For most single-instance deployments (Mac mini, small VPS), the tools above are 
 - You're already running a monitoring stack for other services
 
 Setting up Prometheus/Grafana is beyond the scope of this guide — see the [Prometheus docs](https://prometheus.io/docs/introduction/overview/) for getting started.
+
+---
+
+## F. How OpenClaw Memory Works (Architecture Deep-Dive)
+
+*Sections A–E covered CPU, RAM, disk, optimizations, and monitoring. This section zooms in on OpenClaw's memory system — the persistent knowledge layer that lets the AI remember things across conversations. Understanding how it works helps you tune resource usage (embedding inference, SQLite storage, sync frequency) and explains why certain CPU/disk costs from earlier sections exist.*
+
+### F1. The two ways memory reaches the AI
+
+*Plain English: Memory reaches the AI through two separate paths — like having both a briefcase of essential notes you always carry AND a searchable filing cabinet you can query on demand.*
+
+**Path 1 — Bootstrap injection (the briefcase)**
+
+At the start of every session, OpenClaw loads `MEMORY.md` (or `memory.md`) from the workspace directory and injects its contents into the AI's first message as a context file. This happens unconditionally for all primary sessions — the only filtering is for subagent sessions, which receive only `AGENTS.md` and `TOOLS.md`.
+
+- Resolution: `src/agents/workspace.ts:228-263` — scans for `MEMORY.md` and `memory.md`, deduplicates
+- Loading: `src/agents/workspace.ts:265-319` — reads file contents into `WorkspaceBootstrapFile[]`
+- Filtering: `src/agents/workspace.ts:323-331` — `filterBootstrapFilesForSession()` only filters subagent sessions via an allowlist; all other sessions (including group chats) receive the full set
+- Context building: `src/agents/pi-embedded-helpers/bootstrap.ts:162-191` — trims to `bootstrapMaxChars` (default 20,000 chars) using head/tail strategy
+- Orchestration: `src/agents/bootstrap-files.ts:21-60` — wires resolution → filtering → context building
+
+> **Correction vs. third-party articles:** Some sources claim MEMORY.md is "never injected in group chats, for privacy." This is inaccurate. Bootstrap injection happens for all non-subagent sessions regardless of chat type. What *is* suppressed in groups is memory search *citations* (see F5).
+
+**Path 2 — On-demand search tools (the filing cabinet)**
+
+The AI can actively query its memory index using two tools:
+
+| Tool | Purpose | Source |
+|------|---------|--------|
+| `memory_search` | Semantic hybrid search across all indexed memory files; returns top snippets with path + line numbers | `src/agents/tools/memory-tool.ts:25-88` |
+| `memory_get` | Read a specific file or line range from `MEMORY.md` or `memory/*.md`; use after `memory_search` to pull exact content | `src/agents/tools/memory-tool.ts:90-135` |
+
+The `memory_search` tool description instructs the AI to use it as a "mandatory recall step" before answering questions about prior work, decisions, preferences, or dates.
+
+### F2. Where memory files live
+
+| Resource | Default path | Source |
+|----------|-------------|--------|
+| Workspace directory | `~/.openclaw/workspace/` | `src/agents/workspace.ts:10-19` |
+| Primary memory file | `~/.openclaw/workspace/MEMORY.md` (or `memory.md`) | `src/agents/workspace.ts:30-31` |
+| Memory subdirectory | `~/.openclaw/workspace/memory/*.md` (recursive) | `src/memory/internal.ts:78-144` |
+| SQLite index database | `~/.openclaw/memory/{agentId}.sqlite` | `src/agents/memory-search.ts:110-118` |
+| Additional paths | Configured via `memorySearch.extraPaths[]` | `src/memory/internal.ts:33-44` |
+
+The `listMemoryFiles()` function (`internal.ts:78-144`) scans these locations, skips symlinks, filters for `.md` extensions only, and deduplicates by resolved path.
+
+**Memory sources** (configurable via `memorySearch.sources`):
+
+- `"memory"` (default) — files from MEMORY.md + memory/ directory + extraPaths
+- `"sessions"` — session transcript JSONL files, indexed as searchable content (requires `experimental.sessionMemory: true`)
+
+### F3. Chunking: how files become searchable pieces
+
+*Plain English: Like cutting a book into overlapping pages so you can search for any phrase, even one that falls on a page boundary. Each "page" shares a few lines with its neighbors to avoid losing context at the edges.*
+
+The `chunkMarkdown()` function (`src/memory/internal.ts:166-247`) splits memory file content into searchable chunks:
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `chunking.tokens` | 400 | Max chunk size in tokens (≈ 1,600 chars since `maxChars = tokens × 4`) |
+| `chunking.overlap` | 80 | Overlap between adjacent chunks in tokens (≈ 320 chars) |
+
+**How it works:**
+
+1. Split content into lines
+2. Accumulate lines until `currentChars + lineSize > maxChars`
+3. Flush the current chunk (recording `startLine`, `endLine`, SHA-256 `hash`)
+4. **Walk-backward overlap** (`internal.ts:201-222`): carry the last N chars worth of lines from the flushed chunk into the next chunk's starting state
+5. Long lines (> `maxChars`) are split into segments, each preserving the original line number
+6. Repeat until all lines are processed
+
+Source references: defaults at `src/agents/memory-search.ts:76-77`
+
+### F4. Embedding providers
+
+*Plain English: To search by meaning (not just keywords), OpenClaw converts text into numerical "fingerprints" called embeddings. It can do this locally on your machine or send text to a cloud API.*
+
+| Provider | Model | Max tokens | Dimensions | Runs where |
+|----------|-------|-----------|------------|------------|
+| **OpenAI** | `text-embedding-3-small` | 8,192 | 1,536 | Cloud API |
+| **Gemini** | `gemini-embedding-001` | 2,048 | 768 | Cloud API |
+| **Voyage** | `voyage-4-large` | 32,000 | 1,024 | Cloud API |
+| **Local** | `embeddinggemma-300M` (GGUF) | varies | ~300 | On-device via `node-llama-cpp` |
+
+Source: model defaults at `src/agents/memory-search.ts:73-75`, local model at `src/memory/embeddings.ts:59`
+
+**Auto-selection order** (`src/memory/embeddings.ts:156-188`):
+
+1. **Local** — but only if the model file already exists on disk (won't auto-download)
+2. **OpenAI** — if API key is available
+3. **Gemini** — if API key is available
+4. **Voyage** — if API key is available
+5. If none work, throws an error
+
+A configurable **fallback provider** (`memorySearch.fallback`) is tried if the primary provider fails (`embeddings.ts:190-213`).
+
+> **Cross-reference:** Local embedding inference is CPU item #3 in [Section A](#a-cpu-intensive-operations). Use `provider: "openai"` to offload this cost to the cloud.
+
+### F5. Hybrid search: vector + keyword scoring
+
+*Plain English: Like searching a library with both a card catalog (meaning-based) and a word index (exact term matches), then combining the results. The meaning search finds conceptually related content; the keyword search catches exact phrases the meaning search might miss.*
+
+**How a search query is processed:**
+
+1. **Embed the query** — convert to a vector using the configured embedding provider
+2. **Vector search** — find similar chunks via `vec_distance_cosine()` in sqlite-vec, or fall back to O(n) cosine similarity scan if sqlite-vec is unavailable (`src/memory/manager-search.ts:20-94`)
+3. **Keyword search** — FTS5 BM25 ranking via the `chunks_fts` virtual table (`src/memory/manager-search.ts:136-187`)
+4. **Merge results** — combined score: `vectorWeight × vectorScore + textWeight × textScore` (`src/memory/hybrid.ts:102-103`)
+5. **Filter and cap** — discard results below `minScore`, return top `maxResults`
+
+**Default parameters:**
+
+| Parameter | Default | Source |
+|-----------|---------|--------|
+| `vectorWeight` | 0.7 | `src/agents/memory-search.ts:84` |
+| `textWeight` | 0.3 | `src/agents/memory-search.ts:85` |
+| `candidateMultiplier` | 4 (fetch 4× candidates, then trim) | `src/agents/memory-search.ts:86` |
+| `maxResults` | 6 | `src/agents/memory-search.ts:81` |
+| `minScore` | 0.35 | `src/agents/memory-search.ts:82` |
+| Snippet cap | 700 chars | `src/memory/manager.ts:31` |
+
+With defaults: 24 candidates are fetched (6 × 4), merged and scored, then the top 6 with score ≥ 0.35 are returned, each snippet capped at 700 characters.
+
+**Citation suppression in groups:** The `memory_search` tool suppresses source citations in group/channel chats by default (`memory-tool.ts:190-218`). In `auto` mode, citations appear only in direct chats. This is configurable via `memory.citations` (`"on"`, `"off"`, or `"auto"`).
+
+> **Cross-reference:** The O(n) cosine fallback (when sqlite-vec is unavailable) is CPU item #5 in [Section A](#a-cpu-intensive-operations). Install sqlite-vec to avoid it.
+
+### F6. SQLite storage internals
+
+The memory index is stored in a SQLite database with six tables:
+
+| Table | Type | Purpose |
+|-------|------|---------|
+| `meta` | Regular | Stores index metadata (model, provider, chunk settings, vector dims) |
+| `files` | Regular | Tracks indexed files with path, hash, mtime, size, source |
+| `chunks` | Regular | Stores chunk text, embedding vectors (as JSON), line ranges, hashes |
+| `chunks_vec` | Virtual (`vec0`) | sqlite-vec index for fast cosine distance queries |
+| `chunks_fts` | Virtual (`fts5`) | FTS5 full-text index for BM25 keyword search |
+| `embedding_cache` | Regular | Caches embeddings to avoid re-processing unchanged content |
+
+Source: `src/memory/memory-schema.ts:9-82`
+
+**Embedding cache** prevents re-embedding unchanged chunks. The composite primary key is `(provider, model, provider_key, hash)` (`memory-schema.ts:47`), so switching providers or models naturally invalidates the cache. A configurable `cache.maxEntries` limit can be set to cap cache growth.
+
+> **Cross-reference:** SQLite databases have no automatic `VACUUM` — WAL files can bloat over time. See [Section C](#c-disk-intensive-operations) and the `VACUUM` tip in [Section D](#d-optimization-strategies-for-users).
+
+### F7. Sync, dirty detection, and file watching
+
+*Plain English: Like a librarian who notices when you edit a book and automatically re-catalogs it — but waits a moment in case you're still editing before starting the work.*
+
+**File watcher** (chokidar): watches `MEMORY.md`, `memory.md`, `memory/`, and any `extraPaths` for changes.
+
+| Setting | Default | Effect |
+|---------|---------|--------|
+| `sync.watch` | `true` | Enable file watching |
+| `sync.watchDebounceMs` | 1,500ms | Wait this long after last file change before syncing |
+| `sync.onSessionStart` | `true` | Sync when a new session starts |
+| `sync.onSearch` | `true` | Sync before search if dirty flag is set |
+| `sync.intervalMinutes` | 0 (disabled) | Periodic sync timer |
+
+Source: `src/memory/manager-sync-ops.ts:262-296` (watcher setup), `src/agents/memory-search.ts:78` (debounce default)
+
+**Session delta tracking** (for session memory source):
+
+| Setting | Default | Effect |
+|---------|---------|--------|
+| `sync.sessions.deltaBytes` | 100,000 (100KB) | Re-index session after this many new bytes |
+| `sync.sessions.deltaMessages` | 50 | Re-index session after this many new messages |
+
+Source: `src/agents/memory-search.ts:79-80`, `src/memory/manager-sync-ops.ts:314-363`
+
+**Sync triggers** in order of priority:
+
+1. **Session start** — if `sync.onSessionStart` is true (`manager.ts:182-196`)
+2. **Before search** — if dirty flag is set and `sync.onSearch` is true (`manager.ts:207-211`)
+3. **File watch** — after debounce period (`manager-sync-ops.ts:485-498`)
+4. **Session delta** — when byte/message threshold is exceeded (`manager-sync-ops.ts:327-363`)
+5. **Interval timer** — if `intervalMinutes > 0` (`manager-sync-ops.ts:472-483`)
+
+During sync, unchanged files are skipped (hash comparison against the `files` table), and stale files are removed from the index.
+
+### F8. Pre-compaction memory flush
+
+*Plain English: Before the AI's conversation notebook gets summarized (compacted) to free up space, it gets one special turn to save important notes to disk — like a student quickly writing down key formulas before an exam booklet is collected.*
+
+When the conversation approaches the context window limit, OpenClaw inserts a silent "memory flush" turn before running compaction:
+
+**Trigger condition** (`src/auto-reply/reply/memory-flush.ts:78-109`):
+
+```
+totalTokens >= contextWindow - reserveTokens - softThreshold
+```
+
+| Parameter | Default | Source |
+|-----------|---------|--------|
+| `softThresholdTokens` | 4,000 | `memory-flush.ts:8` |
+| Flush prompt | "Store durable memories now (use `memory/YYYY-MM-DD.md`)" | `memory-flush.ts:10-15` |
+
+**Double-flush prevention:** The system tracks `memoryFlushCompactionCount` per session. If it already matches the current `compactionCount`, the flush is skipped (`memory-flush.ts:102-106`). This prevents the same flush from running twice for the same compaction cycle.
+
+> **Important clarification:** Some third-party articles describe "daily log files" (`memory/YYYY-MM-DD.md`) as a built-in automatic system. This is inaccurate. The flush prompt *instructs the AI agent* to write to that filename pattern — the agent decides what (if anything) to save. The system creates the turn; the agent creates the file. If there's nothing worth saving, the agent replies with a silent token and no file is created.
+
+### F9. Session memory hook
+
+*Plain English: When you type `/new` to start a fresh conversation, the old conversation gets saved as a dated memory file — like tearing out your notepad page and filing it before starting a blank one.*
+
+The session memory hook (`src/hooks/bundled/session-memory/handler.ts:73-204`) triggers on the `/new` command:
+
+1. Reads the last N messages from the current session's JSONL transcript file (default: 15 messages, `handler.ts:28`)
+2. Generates a descriptive slug via LLM (e.g., `"debugging-auth-flow"`) or falls back to HHMM timestamp (`handler.ts:146-150`)
+3. Creates `memory/YYYY-MM-DD-{slug}.md` with session metadata and conversation content (`handler.ts:153-185`)
+
+**Configurable settings** (via hook config `session-memory`):
+
+| Setting | Default | Effect |
+|---------|---------|--------|
+| `messages` | 15 | Number of recent messages to include |
+| `llmSlug` | `true` (unless test env) | Whether to use LLM to generate a descriptive filename slug |
+
+This hook is *not* automatic — it only runs when the user explicitly types `/new`. It does not run on session timeout or process restart.
+
+### F10. QMD alternative backend
+
+OpenClaw includes an experimental alternative memory backend using the external `qmd` CLI tool (`src/memory/qmd-manager.ts`). Instead of the built-in SQLite + sqlite-vec approach, QMD provides:
+
+- BM25 keyword search + vector similarity + reranking in a single external process
+- Managed as a sidecar process spawned by OpenClaw
+- Configured via `agents.defaults.memoryBackend: "qmd"` with its own config block
+
+This is experimental and not the default backend. The built-in SQLite backend (Sections F3–F8) is the standard path.
+
+### F11. Memory configuration reference
+
+All settings live under `agents.defaults.memorySearch` in the OpenClaw config. Per-agent overrides are supported via `agents.{agentId}.memorySearch`.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `enabled` | boolean | `true` | Enable/disable memory search entirely |
+| `provider` | string | `"auto"` | Embedding provider: `"openai"`, `"gemini"`, `"voyage"`, `"local"`, or `"auto"` |
+| `fallback` | string | `"none"` | Fallback provider if primary fails |
+| `model` | string | *(per provider)* | Embedding model name (see F4 table) |
+| `sources` | string[] | `["memory"]` | Data sources: `"memory"`, `"sessions"` |
+| `extraPaths` | string[] | `[]` | Additional directories/files to index |
+| `local.modelPath` | string | `"hf:ggml-org/..."` | Path or HuggingFace URI for local GGUF model |
+| `local.modelCacheDir` | string | — | Directory for cached model files |
+| `store.driver` | string | `"sqlite"` | Storage driver (only `"sqlite"` currently) |
+| `store.path` | string | `~/.openclaw/memory/{agentId}.sqlite` | SQLite database path |
+| `store.vector.enabled` | boolean | `true` | Enable sqlite-vec for fast vector search |
+| `store.vector.extensionPath` | string | — | Custom path to sqlite-vec shared library |
+| `chunking.tokens` | number | `400` | Max chunk size in tokens |
+| `chunking.overlap` | number | `80` | Overlap between chunks in tokens |
+| `sync.onSessionStart` | boolean | `true` | Sync index when session starts |
+| `sync.onSearch` | boolean | `true` | Sync before search if files changed |
+| `sync.watch` | boolean | `true` | Watch memory files for changes |
+| `sync.watchDebounceMs` | number | `1500` | Debounce delay for file watcher |
+| `sync.intervalMinutes` | number | `0` | Periodic sync interval (0 = disabled) |
+| `sync.sessions.deltaBytes` | number | `100000` | Re-index session after this many new bytes |
+| `sync.sessions.deltaMessages` | number | `50` | Re-index session after this many new messages |
+| `query.maxResults` | number | `6` | Max results returned per search |
+| `query.minScore` | number | `0.35` | Minimum score threshold |
+| `query.hybrid.enabled` | boolean | `true` | Enable hybrid vector + keyword search |
+| `query.hybrid.vectorWeight` | number | `0.7` | Weight for vector similarity score |
+| `query.hybrid.textWeight` | number | `0.3` | Weight for BM25 keyword score |
+| `query.hybrid.candidateMultiplier` | number | `4` | Fetch this many × maxResults candidates |
+| `cache.enabled` | boolean | `true` | Enable embedding cache |
+| `cache.maxEntries` | number | — | Max cached embeddings (unlimited if unset) |
+| `experimental.sessionMemory` | boolean | `false` | Enable session transcript indexing |
+
+Source: `src/agents/memory-search.ts:8-307`
+
+### F12. Resource impact summary
+
+This section cross-references memory system costs back to Sections A–C:
+
+| Resource | Memory system cost | Cross-reference |
+|----------|-------------------|-----------------|
+| **CPU** | Local embedding inference (GGUF model on device) | [A #3](#a-cpu-intensive-operations) |
+| **CPU** | O(n) cosine similarity fallback without sqlite-vec | [A #5](#a-cpu-intensive-operations) |
+| **CPU** | Markdown chunking + SHA-256 hashing during sync | [A #11](#a-cpu-intensive-operations) |
+| **Disk** | SQLite database per agent (chunks, vectors, cache) | [C — unbounded growth](#c-disk-intensive-operations) |
+| **Disk** | WAL files can bloat without periodic VACUUM | [C — unbounded growth](#c-disk-intensive-operations) |
+| **Disk** | `memory/*.md` files accumulate from flush + session hook | [C — unbounded growth](#c-disk-intensive-operations) |
+| **RAM** | Embedding vectors held in SQLite during sync/search | [B — in-memory caches](#b-memory-intensive-operations) |
+| **RAM** | Index manager singleton cached per agent+workspace | [B — in-memory caches](#b-memory-intensive-operations) |
+| **Network** | API calls to OpenAI/Gemini/Voyage for cloud embeddings | N/A (external) |
+
+**Key optimization levers:**
+
+- Set `provider: "openai"` (or another cloud provider) to eliminate local CPU cost
+- Install sqlite-vec to avoid the O(n) cosine fallback
+- Set `sync.intervalMinutes: 0` and `sync.watch: false` if memory files rarely change
+- Set `cache.maxEntries` to limit embedding cache disk growth
+- Periodically run `sqlite3 ~/.openclaw/memory/*.sqlite VACUUM` (see [Section D](#d-optimization-strategies-for-users))
 
 ---
 
