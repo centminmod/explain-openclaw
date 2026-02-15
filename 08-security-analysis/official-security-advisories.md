@@ -4,7 +4,7 @@
 
 > **Source:** [github.com/openclaw/openclaw/security](https://github.com/openclaw/openclaw/security)
 >
-> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (6 new advisories) patched in v2026.2.1-2.2.
+> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (26 new advisories, 10 HIGH + 10 MEDIUM + 6 previously tracked) patched in v2026.2.1-2.2+.
 
 ### Advisory Summary
 
@@ -41,6 +41,26 @@
 | [GHSA-33rq-m5x2-fvgf](https://github.com/openclaw/openclaw/security/advisories/GHSA-33rq-m5x2-fvgf) | HIGH | Twitch allowFrom Not Enforced in Optional Plugin | - | pending | - |
 | [GHSA-3hcm-ggvf-rch5](https://github.com/openclaw/openclaw/security/advisories/GHSA-3hcm-ggvf-rch5) | HIGH | Exec Allowlist Bypass via Command Substitution/Backticks | CWE-78 | >= v2026.2.2 | @simecek |
 | [GHSA-mr32-vwc2-5j6h](https://github.com/openclaw/openclaw/security/advisories/GHSA-mr32-vwc2-5j6h) | HIGH | Browser Relay /cdp WebSocket Missing Auth | - | >= v2026.2.1 | @johnatzeropath, @LeftenantZero, @yueyueL |
+| [GHSA-8jpq-5h99-ff5r](https://github.com/openclaw/openclaw/security/advisories/GHSA-8jpq-5h99-ff5r) | HIGH | Local File Disclosure via sendMediaFeishu in Feishu Extension | CWE-22 | pending | - |
+| [GHSA-xw4p-pw82-hqr7](https://github.com/openclaw/openclaw/security/advisories/GHSA-xw4p-pw82-hqr7) | HIGH | Sandbox Skill Mirroring Path Traversal | CWE-22 | pending | - |
+| [GHSA-7q2j-c4q5-rm27](https://github.com/openclaw/openclaw/security/advisories/GHSA-7q2j-c4q5-rm27) | HIGH | macOS Deep Link Confirmation Truncation | CWE-451 | pending | - |
+| [GHSA-j27p-hq53-9wgc](https://github.com/openclaw/openclaw/security/advisories/GHSA-j27p-hq53-9wgc) | HIGH | DoS via Unbounded URL-Backed Media Fetch | CWE-400 | pending | - |
+| [GHSA-q447-rj3r-2cgh](https://github.com/openclaw/openclaw/security/advisories/GHSA-q447-rj3r-2cgh) | HIGH | DoS via Unbounded Webhook Request Body Buffering | CWE-400 | pending | - |
+| [GHSA-3fqr-4cg8-h96q](https://github.com/openclaw/openclaw/security/advisories/GHSA-3fqr-4cg8-h96q) | HIGH | CSRF Through Loopback Browser Mutation Endpoints | CWE-352 | pending | - |
+| [GHSA-rq6g-px6m-c248](https://github.com/openclaw/openclaw/security/advisories/GHSA-rq6g-px6m-c248) | HIGH | Google Chat Webhook Cross-Account Policy Misrouting | CWE-284, CWE-639 | pending | - |
+| [GHSA-pv58-549p-qh99](https://github.com/openclaw/openclaw/security/advisories/GHSA-pv58-549p-qh99) | HIGH | Discovery TXT Records Could Steer Routing and TLS Pinning | CWE-345 | pending | - |
+| [GHSA-cv7m-c9jx-vg7q](https://github.com/openclaw/openclaw/security/advisories/GHSA-cv7m-c9jx-vg7q) | HIGH | Path Traversal in Browser Upload | CWE-22 | pending | - |
+| [GHSA-g6q9-8fvw-f7rf](https://github.com/openclaw/openclaw/security/advisories/GHSA-g6q9-8fvw-f7rf) | HIGH | Gateway Tool Unrestricted gatewayUrl Override | CWE-918 | pending | - |
+| [GHSA-4hg8-92x6-h2f3](https://github.com/openclaw/openclaw/security/advisories/GHSA-4hg8-92x6-h2f3) | HIGH | Missing Webhook Auth in Telnyx Provider | CWE-306 | pending | - |
+| [GHSA-jmm5-fvh5-gf4p](https://github.com/openclaw/openclaw/security/advisories/GHSA-jmm5-fvh5-gf4p) | MEDIUM | Non-Constant-Time Token Comparison in Hooks Auth | CWE-208 | pending | - |
+| [GHSA-47q7-97xp-m272](https://github.com/openclaw/openclaw/security/advisories/GHSA-47q7-97xp-m272) | MEDIUM | Config Writes Persist Resolved ${VAR} Secrets to Disk | - | pending | - |
+| [GHSA-w2cg-vxx6-5xjg](https://github.com/openclaw/openclaw/security/advisories/GHSA-w2cg-vxx6-5xjg) | MEDIUM | DoS via Large Base64 Media Buffer Allocation | CWE-400 | pending | - |
+| [GHSA-h89v-j3x9-8wqj](https://github.com/openclaw/openclaw/security/advisories/GHSA-h89v-j3x9-8wqj) | MEDIUM | DoS via Unguarded Archive Extraction (ZIP/TAR) | CWE-400 | pending | - |
+| [GHSA-mj5r-hh7j-4gxf](https://github.com/openclaw/openclaw/security/advisories/GHSA-mj5r-hh7j-4gxf) | MEDIUM | Telegram Allowlist Accepted Mutable Usernames | CWE-284, CWE-290 | pending | - |
+| [GHSA-g34w-4xqq-h79m](https://github.com/openclaw/openclaw/security/advisories/GHSA-g34w-4xqq-h79m) | MEDIUM | iMessage Group Allowlist Cross-Context Authorization | CWE-284, CWE-863 | pending | - |
+| [GHSA-8mh7-phf8-xgfm](https://github.com/openclaw/openclaw/security/advisories/GHSA-8mh7-phf8-xgfm) | MEDIUM | skills.status Leaks Secrets to operator.read Clients | CWE-200 | pending | - |
+| [GHSA-c37p-4qqg-3p76](https://github.com/openclaw/openclaw/security/advisories/GHSA-c37p-4qqg-3p76) | MEDIUM | Twilio Voice Webhook Auth Bypass via ngrok Loopback | CWE-306 | pending | - |
+| [GHSA-pg2v-8xwh-qhcc](https://github.com/openclaw/openclaw/security/advisories/GHSA-pg2v-8xwh-qhcc) | MEDIUM | SSRF in Optional Tlon (Urbit) Extension Auth | CWE-918 | pending | - |
 
 ### CVE-2026-24763: Docker PATH Command Injection
 
@@ -352,6 +372,186 @@
 **Impact:** Disclosure of sensitive information (session cookies from other tabs), JavaScript execution in other tab contexts.
 
 **Fix:** Commit `a1e89afcc`. Now requires per-instance `x-openclaw-relay-token` header, rejects `/cdp` upgrades when Origin is present but not `chrome-extension://`, and refuses connections unless the extension is connected. Patched in >= v2026.2.1. See also [PR #11 hardening](./post-merge-hardening.md#post-merge-hardening-pr-11--21-commits).
+
+### GHSA-8jpq-5h99-ff5r: Local File Disclosure via Feishu Extension
+
+**Severity:** HIGH (CWE-22: Path Traversal)
+**Published:** 2026-02-15
+
+**Description:** The `sendMediaFeishu` function in the optional Feishu extension could be abused to read arbitrary local files by manipulating the media path parameter. Requires Feishu extension to be installed and active.
+
+**Impact:** Disclosure of local files accessible to the OpenClaw process.
+
+### GHSA-xw4p-pw82-hqr7: Sandbox Skill Mirroring Path Traversal
+
+**Severity:** HIGH (CWE-22: Path Traversal)
+**Published:** 2026-02-15
+
+**Description:** The sandbox skill mirroring feature could be tricked into writing files outside the designated sandbox workspace directory via path traversal in skill file paths.
+
+**Impact:** Arbitrary file write outside sandbox boundaries, potentially overwriting system or configuration files.
+
+### GHSA-7q2j-c4q5-rm27: macOS Deep Link Confirmation Truncation
+
+**Severity:** HIGH (CWE-451: UI Misrepresentation)
+**Published:** 2026-02-15
+
+**Description:** The macOS deep link confirmation dialog could truncate the displayed agent message, concealing the actual command or action to be executed. An attacker could craft a message with benign-looking text at the start followed by malicious content beyond the truncation point.
+
+**Impact:** User approves execution of a concealed malicious agent message via truncated deep link dialog.
+
+### GHSA-j27p-hq53-9wgc: DoS via Unbounded URL-Backed Media Fetch
+
+**Severity:** HIGH (CWE-400: Uncontrolled Resource Consumption)
+**Published:** 2026-02-15
+
+**Description:** URL-backed media fetch operations did not enforce size limits, allowing an attacker to trigger downloads of arbitrarily large files that exhaust memory or disk.
+
+**Impact:** Denial of service via memory/disk exhaustion through crafted media URLs.
+
+### GHSA-q447-rj3r-2cgh: DoS via Unbounded Webhook Body Buffering
+
+**Severity:** HIGH (CWE-400: Uncontrolled Resource Consumption)
+**Published:** 2026-02-15
+
+**Description:** Webhook request body buffering did not enforce size limits, allowing arbitrarily large POST bodies to exhaust server memory.
+
+**Impact:** Denial of service via memory exhaustion through oversized webhook payloads.
+
+### GHSA-3fqr-4cg8-h96q: CSRF Through Loopback Browser Mutation Endpoints
+
+**Severity:** HIGH (CWE-352: Cross-Site Request Forgery)
+**Published:** 2026-02-15
+
+**Description:** Browser mutation endpoints accessible via loopback did not validate Origin headers, enabling cross-site request forgery from malicious websites when the user visits them with OpenClaw running locally.
+
+**Impact:** Unauthorized state mutations (config changes, command execution) via CSRF when visiting malicious websites.
+
+### GHSA-rq6g-px6m-c248: Google Chat Webhook Cross-Account Misrouting
+
+**Severity:** HIGH (CWE-284, CWE-639: Authorization Bypass, IDOR)
+**Published:** 2026-02-15
+
+**Description:** Google Chat's shared webhook path structure created ambiguity in webhook target resolution, allowing cross-account policy-context misrouting when multiple Google Chat integrations share a deployment.
+
+**Impact:** Webhook messages could be routed to the wrong account's policy context, bypassing access controls.
+
+### GHSA-pv58-549p-qh99: Discovery TXT Records Routing Manipulation
+
+**Severity:** HIGH (CWE-345: Insufficient Verification of Data Authenticity)
+**Published:** 2026-02-15
+
+**Description:** Unauthenticated DNS TXT discovery records could be injected to steer gateway routing and TLS pinning decisions, potentially redirecting traffic to attacker-controlled endpoints.
+
+**Impact:** Traffic redirection and TLS downgrade via spoofed discovery records.
+
+### GHSA-cv7m-c9jx-vg7q: Path Traversal in Browser Upload
+
+**Severity:** HIGH (CWE-22: Path Traversal)
+**Published:** 2026-02-15
+
+**Description:** The browser upload endpoint did not properly validate file paths, allowing path traversal sequences to read arbitrary local files accessible to the OpenClaw process.
+
+**Impact:** Disclosure of local files via crafted upload path parameters.
+
+### GHSA-g6q9-8fvw-f7rf: Gateway Tool Unrestricted gatewayUrl Override
+
+**Severity:** HIGH (CWE-918: SSRF)
+**Published:** 2026-02-15
+
+**Description:** The gateway tool allowed unrestricted `gatewayUrl` override, enabling SSRF by redirecting gateway requests to arbitrary URLs including internal network endpoints.
+
+**Impact:** Server-side request forgery to internal services, potential credential exfiltration via URL parameters.
+
+### GHSA-4hg8-92x6-h2f3: Missing Webhook Auth in Telnyx Provider
+
+**Severity:** HIGH (CWE-306: Missing Authentication)
+**Published:** 2026-02-15
+
+**Description:** The Telnyx telephony provider extension did not verify webhook request authenticity, allowing unauthenticated requests to trigger agent actions.
+
+**Impact:** Unauthorized message injection and agent command execution via forged Telnyx webhooks.
+
+### GHSA-jmm5-fvh5-gf4p: Non-Constant-Time Token Comparison in Hooks
+
+**Severity:** MEDIUM (CWE-208: Observable Timing Discrepancy)
+**Published:** 2026-02-15
+
+**Description:** Hook authentication token comparison used standard string equality instead of constant-time comparison, potentially leaking token characters through timing side-channel.
+
+**Impact:** Theoretical token recovery via timing attack (requires many requests with precise timing measurement).
+
+### GHSA-47q7-97xp-m272: Config Writes Persist Resolved Secrets
+
+**Severity:** MEDIUM
+**Published:** 2026-02-15
+
+**Description:** Config write operations could persist resolved `${VAR}` environment variable values to disk in plaintext, instead of preserving the variable reference syntax.
+
+**Impact:** Secret values from environment variables written to config files in plaintext, surviving beyond the process lifetime.
+
+### GHSA-w2cg-vxx6-5xjg: DoS via Large Base64 Media Buffers
+
+**Severity:** MEDIUM (CWE-400: Uncontrolled Resource Consumption)
+**Published:** 2026-02-15
+
+**Description:** Large base64-encoded media files triggered buffer allocation before size limit checks, allowing memory exhaustion.
+
+**Impact:** Denial of service via memory allocation triggered by oversized base64 media payloads.
+
+### GHSA-h89v-j3x9-8wqj: DoS via Unguarded Archive Extraction
+
+**Severity:** MEDIUM (CWE-400: Uncontrolled Resource Consumption)
+**Published:** 2026-02-15
+
+**Description:** Archive extraction (ZIP/TAR) did not enforce expansion ratio limits, allowing zip bombs or tar archives with high compression ratios to exhaust disk/memory.
+
+**Impact:** Denial of service via resource exhaustion through crafted archives.
+
+### GHSA-mj5r-hh7j-4gxf: Telegram Allowlist Mutable Username Bypass
+
+**Severity:** MEDIUM (CWE-284, CWE-290: Authorization Bypass, Spoofing)
+**Published:** 2026-02-15
+
+**Description:** The Telegram allowlist authorization accepted mutable usernames as identifiers. Since Telegram usernames can be changed, an authorized user could transfer their username to an unauthorized user who would then pass the allowlist check.
+
+**Impact:** Allowlist bypass via Telegram username transfer to unauthorized parties.
+
+### GHSA-g34w-4xqq-h79m: iMessage Group Allowlist Cross-Context Authorization
+
+**Severity:** MEDIUM (CWE-284, CWE-863: Authorization Bypass)
+**Published:** 2026-02-15
+
+**Description:** iMessage group allowlist authorization inherited DM pairing-store identities, enabling cross-context command authorization where a user authorized in DMs could execute commands in group contexts they shouldn't have access to.
+
+**Impact:** Command execution in unauthorized group contexts via inherited DM authorization.
+
+### GHSA-8mh7-phf8-xgfm: skills.status Secrets Leak
+
+**Severity:** MEDIUM (CWE-200: Information Disclosure)
+**Published:** 2026-02-15
+
+**Description:** The `skills.status` endpoint could leak secret configuration values to clients with only `operator.read` scope, which should not have access to sensitive configuration data.
+
+**Impact:** Disclosure of secret configuration values to lower-privileged gateway clients.
+
+### GHSA-c37p-4qqg-3p76: Twilio Voice Webhook Auth Bypass
+
+**Severity:** MEDIUM (CWE-306: Missing Authentication)
+**Published:** 2026-02-15
+
+**Description:** The Twilio voice-call webhook verification could be bypassed when ngrok loopback compatibility mode was enabled, as the loopback detection overrode webhook signature verification.
+
+**Impact:** Unauthenticated voice-call webhook injection when using ngrok loopback mode.
+
+### GHSA-pg2v-8xwh-qhcc: SSRF in Tlon (Urbit) Extension
+
+**Severity:** MEDIUM (CWE-918: SSRF)
+**Published:** 2026-02-15
+
+**Description:** The optional Tlon (Urbit) extension authentication flow was vulnerable to SSRF, allowing requests to internal network endpoints through the authentication redirect mechanism.
+
+**Impact:** Server-side request forgery to internal services via Tlon authentication redirect.
 
 ### Relationship to Third-Party Audits
 

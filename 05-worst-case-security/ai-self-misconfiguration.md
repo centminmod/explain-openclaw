@@ -282,7 +282,7 @@ openclaw config set gateway.controlUi.dangerouslyDisableDeviceAuth false
 openclaw config set gateway.controlUi.allowInsecureAuth false
 ```
 
-**Does `openclaw security audit` catch this?** Yes — both `dangerously*` flags are flagged as severity "critical" (`src/security/audit.ts:343-363`).
+**Does `openclaw security audit` catch this?** Yes — both `dangerously*` flags are flagged as severity "critical" (`src/security/audit.ts:347-367`).
 
 ---
 
@@ -1002,7 +1002,7 @@ openclaw security audit --deep  # Extended checks
 openclaw security audit --fix   # Auto-fix common issues
 ```
 
-Source: `src/security/audit.ts:624-706`
+Source: `src/security/audit.ts:605-687`
 
 ### `openclaw doctor`
 

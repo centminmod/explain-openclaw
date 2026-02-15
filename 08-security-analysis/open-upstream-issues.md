@@ -4,12 +4,12 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 14-02-2026 (14:06 AEST)
+> **Last checked:** 16-02-2026 (02:48 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
 | [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass gateway authentication | `src/gateway/server/plugins-http.ts:17-59` |
-| [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path validation bypass via `startsWith` prefix | `src/infra/archive.ts:119,153` - `validateArchiveEntryPath()` + `resolveCheckedOutPath()` (hardened Feb 15 sync 2) |
+| [#3277](https://github.com/openclaw/openclaw/issues/3277) | ~~HIGH~~ FIXED | Path validation bypass via `startsWith` prefix | Fixed upstream (COMPLETED 2026-02-15); `src/infra/archive.ts:119,153` - `validateArchiveEntryPath()` + `resolveCheckedOutPath()` (hardened Feb 15 sync 2) |
 | [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:59` - auth middleware extracted to `src/browser/server-middleware.ts:24-35`; no Host header validation |
 | [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH | Arbitrary JS execution via browser evaluate (default on) | `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true` |
 | [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage dmPolicy auto-responds with pairing codes | `src/imessage/monitor/monitor-provider.ts:184,342-381` |
@@ -22,7 +22,7 @@
 | [#8516](https://github.com/openclaw/openclaw/issues/8516) | HIGH | Browser download/trace endpoints arbitrary file write | `src/browser/routes/agent.act.ts:450-518` — now uses `resolvePathWithinRoot()` (hardened Feb 15 sync 2) |
 | [#8586](https://github.com/openclaw/openclaw/issues/8586) | ~~HIGH~~ FIXED | Configurable bypass allows unrestricted command exec | Fixed upstream (COMPLETED 2026-02-14); `src/agents/bash-tools.exec.ts:202-210,272-274` |
 | [#8591](https://github.com/openclaw/openclaw/issues/8591) | HIGH (WONTFIX) | Env vars exposed via shell commands | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/agents/bash-tools.exec.ts:293,301` |
-| [#8590](https://github.com/openclaw/openclaw/issues/8590) | HIGH | Status endpoint exposes sensitive internal info | `src/gateway/server-methods/health.ts:28-31` |
+| [#8590](https://github.com/openclaw/openclaw/issues/8590) | ~~HIGH~~ FIXED | Status endpoint exposes sensitive internal info | Fixed upstream (COMPLETED 2026-02-15); `src/gateway/server-methods/health.ts:28-31` |
 | [#8696](https://github.com/openclaw/openclaw/issues/8696) | HIGH | Playwright download path traversal | `src/browser/pw-tools-core.downloads.ts:20-50` — `sanitizeDownloadFileName()` + `buildTempDownloadPath()` (hardened Feb 15 sync 2) |
 | [#8776](https://github.com/openclaw/openclaw/issues/8776) | ~~HIGH~~ FIXED | soul-evil hook silently hijacks agent | Fixed in PR [#14757](https://github.com/openclaw/openclaw/pull/14757) — soul-evil hook completely removed |
 | [#9435](https://github.com/openclaw/openclaw/issues/9435) | ~~HIGH~~ FIXED | Gateway auth token exposed in URL query params | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token acceptance removed from `src/gateway/hooks.ts`, dashboard URL no longer passes `?token=` |
@@ -33,7 +33,7 @@
 | [#11126](https://github.com/openclaw/openclaw/issues/11126) | HIGH (DUP #9627, WONTFIX) | Config write paths resolve ${VAR} to cleartext | Closed upstream as NOT_PLANNED (2026-02-13); same as #9627/#9813 — `src/config/io.ts:820-1045` |
 | [#9795](https://github.com/openclaw/openclaw/issues/9795) | LOW | sanitizeMimeType regex not end-anchored (by design) | `src/media-understanding/apply.ts:96-106` |
 | [#9792](https://github.com/openclaw/openclaw/issues/9792) | INVALID | validateHostEnv skips baseEnv (by design) | `src/agents/bash-tools.exec-runtime.ts:54` (definition) + `src/agents/bash-tools.exec.ts:300` (call) |
-| [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID | Fullwidth marker bypass (fold is length-preserving) | `src/security/external-content.ts:127-167` |
+| [#9791](https://github.com/openclaw/openclaw/issues/9791) | INVALID (CLOSED) | Fullwidth marker bypass (fold is length-preserving) | Closed upstream (COMPLETED 2026-02-15); `src/security/external-content.ts:127-167` |
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check — remains open) |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` (note: upstream issue still OPEN) |
@@ -46,14 +46,14 @@
 | [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | No detection of encoded/obfuscated commands | `src/infra/exec-safety.ts:1-44` |
 | [#8588](https://github.com/openclaw/openclaw/issues/8588) | MEDIUM | Sensitive config files accessible when sandbox is home dir | `src/agents/sandbox/context.ts:42-49` (workspaceAccess=rw) |
 | [#8589](https://github.com/openclaw/openclaw/issues/8589) | LOW | Sandbox file read lacks content filtering | `src/agents/pi-tools.read.ts:286-302` (no redaction on read) |
-| [#8593](https://github.com/openclaw/openclaw/issues/8593) | MEDIUM | chat.send handler lacks input length validation | `src/gateway/protocol/schema/logs-chat.ts:34-45` |
+| [#8593](https://github.com/openclaw/openclaw/issues/8593) | ~~MEDIUM~~ FIXED | chat.send handler lacks input length validation | Fixed upstream (COMPLETED 2026-02-15); `src/gateway/protocol/schema/logs-chat.ts:34-45` |
 | [#8594](https://github.com/openclaw/openclaw/issues/8594) | MEDIUM (WONTFIX) | No rate limiting on gateway endpoints | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/gateway/server-constants.ts` (no rate limit controls) |
 | [#9007](https://github.com/openclaw/openclaw/issues/9007) | LOW | Google Places URL path interpolation (skill, not core) | `skills/local-places/src/local_places/google_places.py:238` |
 | [#9065](https://github.com/openclaw/openclaw/issues/9065) | LOW | ~/.openclaw group-writable after sudo install | Operational - code uses `0o700` but sudo bypasses |
 | [#10324](https://github.com/openclaw/openclaw/issues/10324) | MEDIUM | Memory index multi-write lacks transactions | `src/memory/manager.ts:2198-2301` (DELETEs+INSERTs without BEGIN/COMMIT) |
 | [#10326](https://github.com/openclaw/openclaw/issues/10326) | ~~MEDIUM~~ FIXED | Child process stop() lacks SIGKILL escalation | Fixed upstream (COMPLETED 2026-02-14); `src/imessage/client.ts:110-131`, `src/signal/daemon.ts:96-100` |
 | [#10330](https://github.com/openclaw/openclaw/issues/10330) | MEDIUM | TOCTOU race in device auth token storage | `src/infra/device-auth-store.ts:92-119` (read+write with no lock) |
-| [#10331](https://github.com/openclaw/openclaw/issues/10331) | ~~MEDIUM~~ FIXED | Session store stale cache inside write lock | Fixed upstream (COMPLETED 2026-02-14); `src/config/sessions/store.ts:667,729` |
+| [#10331](https://github.com/openclaw/openclaw/issues/10331) | ~~MEDIUM~~ FIXED | Session store stale cache inside write lock | Fixed upstream (COMPLETED 2026-02-14); `src/config/sessions/store.ts:760,816` |
 | [#10333](https://github.com/openclaw/openclaw/issues/10333) | ~~MEDIUM~~ FIXED | BlueBubbles filename multipart header injection | Fixed in PR [#11093](https://github.com/openclaw/openclaw/pull/11093) — `sanitizeFilename()` at `extensions/bluebubbles/src/attachments.ts:27-29` |
 | [#10646](https://github.com/openclaw/openclaw/issues/10646) | HIGH | Weak UUID: Math.random() fallback + tool call IDs | `ui/src/ui/uuid.ts:23-33` (fallback), `src/auto-reply/reply/get-reply-inline-actions.ts:191` (toolCallId) |
 | [#7139](https://github.com/openclaw/openclaw/issues/7139) | MEDIUM | Default config: sandbox off, plaintext creds | `src/agents/sandbox/config.ts:166` (mode="off"), gateway loopback is safe; creds 0o600 |
@@ -61,6 +61,7 @@
 | [#11900](https://github.com/openclaw/openclaw/issues/11900) | MEDIUM | Context files (USER.md, SOUL.md) loaded for all senders | `src/agents/bootstrap-files.ts:43-60` — no `senderIsOwner` check; `attempt.ts:192` calls unconditionally |
 | [#12571](https://github.com/openclaw/openclaw/issues/12571) | MEDIUM | Session isolation leak in cron jobs after ~24h | `src/cron/service/jobs.ts` — isolated sessions leak to main session after extended runtime |
 | [#11832](https://github.com/openclaw/openclaw/issues/11832) | MEDIUM | Per-agent tools.exec config not applied | `src/auto-reply/reply/get-reply-directives.ts:66-81` — `resolveExecOverrides()` ignores `agentCfg` |
+| [#12541](https://github.com/openclaw/openclaw/issues/12541) | LOW | Voice-call webhook spoofing via signature bypass config | `extensions/voice-call/src/config.ts` — `skipSignatureVerification` config disables HMAC-SHA256 verification; opt-in, not default |
 | [#6304](https://github.com/openclaw/openclaw/issues/6304) | LOW | Matrix plugin transitive dep vuln (request pkg) | `extensions/matrix/package.json` — transitive via `@vector-im/matrix-bot-sdk` (CVE-2023-28155) |
 | [#4807](https://github.com/openclaw/openclaw/issues/4807) | LOW | Sandbox setup script missing from npm package | `package.json` files array excludes `scripts/`; `scripts/sandbox-common-setup.sh` not shipped |
 | [#3359](https://github.com/openclaw/openclaw/issues/3359) | ~~MEDIUM~~ MITIGATED | npm audit vulns in tar/hono | `package.json` pnpm.overrides: tar@7.5.7, hono@4.11.8 (above vuln thresholds) |
@@ -90,6 +91,10 @@
 | [#14117](https://github.com/openclaw/openclaw/issues/14117) | ~~MEDIUM~~ FIXED | Session isolation & message attribution failure | Fixed upstream (COMPLETED 2026-02-14); cross-session message leakage; relates to #12571 |
 | [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM (WONTFIX, DUP #9627) | apiKey resolved to plaintext in models.json cache | Closed upstream as NOT_PLANNED (2026-02-13); `src/agents/models-config.ts:126-142` — `normalizeProviders()` includes resolved apiKey; relates to #9627/#13683 |
 | [#11202](https://github.com/openclaw/openclaw/issues/11202) | MEDIUM | Model catalog apiKeys injected into LLM prompt context every turn | `src/agents/models-config.ts` — `normalizeProviders()` includes resolved `apiKey` in model catalog serialized to LLM; all provider keys sent to active provider |
+| [#16059](https://github.com/openclaw/openclaw/issues/16059) | MEDIUM | Extension relay /extension WebSocket unauthenticated | `src/browser/extension-relay.ts:454-478` — loopback-only but Origin check bypassable; /cdp has token auth, /extension does not |
+| [#10992](https://github.com/openclaw/openclaw/issues/10992) | MEDIUM | Sub-agents bypass exec approvals for safeBins commands | `src/agents/bash-tools.exec.ts:137,265-277,333` — safeBins allowlist bypasses approval workflow for sub-agents |
+| [#15990](https://github.com/openclaw/openclaw/issues/15990) | MEDIUM | Context compaction leaks content between sessions | `src/agents/pi-embedded-runner/compact.ts` — cross-session data bleed during compaction; relates to #12571/#14117 |
+| [#12542](https://github.com/openclaw/openclaw/issues/12542) | MEDIUM | Diagnostics-OTEL exports unredacted session/chat IDs | `extensions/diagnostics-otel/src/service.ts:391,427-494` — no redaction pipeline; requires opt-in config |
 | [#12173](https://github.com/openclaw/openclaw/issues/12173) | ~~MEDIUM~~ FIXED | apply_patch tool path traversal when sandbox disabled | Fixed by `5544646a0` — `resolvePatchPath()` now calls `assertSandboxPath()` at `src/agents/apply-patch.ts:274` regardless of sandbox mode; further hardened by `5e7c3250c` adding `workspaceOnly` guards |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
@@ -118,6 +123,10 @@ mode: agentSandbox?.mode ?? agent?.mode ?? "off"
 A Docker sandbox implementation exists with proper isolation (`--network none`, `--cap-drop ALL`, `--read-only`) but is opt-in only. Gateway bind defaults to "loopback" (safe). Credentials are plaintext with 0o600 permissions, flagged by `collectSecretsInConfigFindings()`. File permission hardening is extensive (80+ locations use 0o600/0o700).
 
 ### #3277: Path Validation Bypasses
+
+**Status: FIXED** -- closed as COMPLETED upstream 2026-02-15
+
+**Severity:** ~~HIGH~~ FIXED
 
 **Vulnerability:** `startsWith(params.destDir)` is bypassable when paths share prefixes (e.g., `/tmp/foo` vs `/tmp/foobar`). Tar extraction has zero path validation.
 
@@ -392,14 +401,16 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 ### #8590: Status Endpoint Exposes Sensitive Internal Info
 
-**Severity:** HIGH
+**Status: FIXED** -- closed as COMPLETED upstream 2026-02-15
+
+**Severity:** ~~HIGH~~ FIXED
 **CWE:** CWE-200 (Exposure of Sensitive Information)
 
 **Vulnerability:** Gateway status/health endpoint returns unredacted internal information including file paths, session IDs, agent IDs, and model configuration to any connected client.
 
 **Affected code:**
 - `src/gateway/server-methods/health.ts:28-31` - returns full unredacted `getStatusSummary()`
-- `src/commands/status.summary.ts:134-195` - exposes paths, session IDs, agent IDs, model configs
+- `src/commands/status.summary.ts:135-200` - exposes paths, session IDs, agent IDs, model configs
 
 ### #8591: Env Vars Exposed via Shell Commands
 
@@ -423,9 +434,13 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Affected code:** `src/infra/exec-safety.ts:1-44` - validates executable names only; obfuscated arguments pass through.
 
+**Cross-ref:** [PR #16907](https://github.com/openclaw/openclaw/pull/16907) (OPEN) — obfuscated command detection
+
 ### #8593: chat.send Handler Lacks Input Length Validation
 
-**Severity:** MEDIUM (partially affected)
+**Status: FIXED** -- closed as COMPLETED upstream 2026-02-15
+
+**Severity:** ~~MEDIUM~~ FIXED
 **CWE:** CWE-20 (Improper Input Validation)
 
 **Vulnerability:** `ChatSendParamsSchema` validates structure but the message field has no `maxLength` constraint. Extremely large messages could cause resource exhaustion.
@@ -573,6 +588,8 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 - `src/agents/sandbox-paths.ts:33-47` - path escape protection only, no sensitive dir exclusion
 - `src/agents/sandbox/config.ts:168` - default `workspaceAccess: "none"` (safe)
 
+**Cross-ref:** [PR #16929](https://github.com/openclaw/openclaw/pull/16929) (OPEN) — block sensitive dirs in sandbox
+
 **Note:** Default configuration is SAFE. Only manifests with explicit non-default workspace + rw config.
 
 ### #8589: Sandbox File Read Lacks Content Filtering
@@ -652,9 +669,9 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Two session store write methods call `loadSessionStore()` without `skipCache: true`, reading stale cached data even though they hold the write lock. Concurrent requests to the same session can silently lose metadata updates.
 
 **Affected code:**
-- `src/config/sessions/store.ts:667` — `updateSessionStoreEntry()` inside `withSessionStoreLock()` calls `loadSessionStore(storePath)` **without `skipCache: true`**
-- `src/config/sessions/store.ts:729` — `updateLastRoute()` same pattern
-- `src/config/sessions/store.ts:575` — `updateSessionStore()` NOW correctly uses `{ skipCache: true }` (bug partially fixed in session pruning refactor)
+- `src/config/sessions/store.ts:760` — `updateSessionStoreEntry()` inside `withSessionStoreLock()` calls `loadSessionStore(storePath)` **without `skipCache: true`**
+- `src/config/sessions/store.ts:816` — `updateLastRoute()` same pattern
+- `src/config/sessions/store.ts:590` — `updateSessionStore()` NOW correctly uses `{ skipCache: true }` (bug partially fixed in session pruning refactor)
 
 **Impact:** 8 callers in hot paths (agent runner, channels, Slack, LINE, web) can lose session metadata updates under concurrent load.
 
@@ -1023,6 +1040,78 @@ All changes take effect immediately via automatic restart.
 **Context:** The inline comment says "This app is primarily used on a trusted tailnet; allow cleartext for IP-based endpoints too." While this is true for Tailscale deployments, the production APK is distributed to all users, many of whom use non-Tailscale setups where cleartext traffic is actively dangerous.
 
 **Impact:** Gateway auth tokens, API keys, and conversation data can be intercepted via MITM on any untrusted network. The `tools:ignore="InsecureBaseConfiguration"` annotation deliberately suppresses the Android lint warning for this security issue.
+
+### #16059: Extension Relay /extension WebSocket Unauthenticated
+
+**Severity:** MEDIUM
+**CWE:** CWE-306 (Missing Authentication for Critical Function)
+
+**Vulnerability:** The browser extension relay server's `/extension` WebSocket endpoint accepts connections with only a loopback address check and a bypassable Origin header check. Unlike the `/cdp` WebSocket endpoint on the same server (which requires a cryptographic `relayAuthToken`), the `/extension` path has no token-based authentication. Any local process can connect as the Chrome extension by omitting the Origin header, allowing it to intercept CDP commands, inject forged responses, and impersonate the browser extension.
+
+**Affected code:**
+- `src/browser/extension-relay.ts:454-478` -- WebSocket upgrade handler: `/extension` path has no token check
+- `src/browser/extension-relay.ts:464-468` -- Origin check: `if (origin && !origin.startsWith("chrome-extension://"))` only rejects non-chrome-extension origins that are present; missing Origin header passes through
+- `src/browser/extension-relay.ts:481-486` -- `/cdp` path correctly requires `relayAuthToken` via `RELAY_AUTH_HEADER`
+
+**Mitigation:** Loopback-only binding at line 459 (`isLoopbackAddress(remote)`) limits attack surface to local processes. Not exploitable from the network.
+
+### #10992: Sub-Agents Bypass Exec Approvals for safeBins Commands
+
+**Severity:** MEDIUM
+**CWE:** CWE-863 (Incorrect Authorization)
+
+**Vulnerability:** Sub-agents created via `sessions_spawn` can bypass the exec approval mechanism when executing commands. Commands matching the `safeBins` allowlist execute without triggering approval requests, even when the parent agent's security mode is set to `allowlist` with `ask: "on-miss"`.
+
+**Affected code:**
+- `src/agents/bash-tools.exec.ts:137` -- `safeBins` resolved from `defaults?.safeBins`
+- `src/agents/bash-tools.exec.ts:265-277` -- security/ask resolution reads from `defaults` parameter
+- `src/agents/bash-tools.exec.ts:333` -- `resolveExecApprovals(agentId, { security, ask })` uses the resolved security mode
+- `src/agents/tools/sessions-spawn-tool.ts` -- sub-agents inherit global safeBins allowlist
+
+**Impact:** An attacker with access to spawn sub-agents can bypass the approval workflow by having sub-agents execute commands that match safeBins patterns. Requires exec access with safeBins configured (non-default).
+
+### #15990: Context Compaction Leaks Content Between Sessions
+
+**Severity:** MEDIUM
+**CWE:** CWE-200 (Exposure of Sensitive Information) / CWE-362 (Race Condition)
+
+**Vulnerability:** During context compaction (when a session approaches context window limits), foreign content from a different session/conversation can leak into the current agent's message queue. The agent then outputs the leaked content to the wrong user.
+
+**Affected code:**
+- `src/agents/pi-embedded-runner/compact.ts` -- compaction logic
+- Session isolation code paths across 25+ files
+
+**Evidence:** Reporter documented a full recipe appearing in an unrelated session during compaction recovery. Forensic analysis confirmed zero recipe-related content in the agent's own session files; content originated from a completely different context.
+
+**Relationship:** Distinct from #12571 (cron-specific after 24h) and #14117 (cross-session routing, now FIXED). Different trigger pathway: context compaction during session recovery with concurrent active sessions.
+
+### #12542: Diagnostics-OTEL Exports Unredacted Sensitive Data
+
+**Severity:** MEDIUM
+**CWE:** CWE-532 (Insertion of Sensitive Information into Log File)
+
+**Vulnerability:** The diagnostics-otel plugin exports ALL diagnostic events to an external OTLP collector without PII filtering or secret redaction. Session IDs, chat IDs, model names, and potentially sensitive conversation metadata are all exported unredacted.
+
+**Affected code:**
+- `extensions/diagnostics-otel/src/service.ts:391` -- exports `evt.sessionId` to OTLP spans
+- `extensions/diagnostics-otel/src/service.ts:427-428,449-450,493-494` -- exports `evt.chatId`
+- `extensions/diagnostics-otel/src/service.ts:343` -- exports `evt.model`
+- No imports of `redactSensitive` or any redaction functions in the file
+
+**Mitigation:** Requires explicit opt-in configuration (`diagnostics.otel.enabled: true`). Not enabled by default (line 53: `if (!cfg?.enabled || !otel?.enabled)`). Low practical risk unless user deliberately enables OTEL export.
+
+### #12541: Voice-Call Webhook Spoofing via Signature Bypass Config
+
+**Severity:** LOW
+**CWE:** CWE-287 (Improper Authentication)
+
+**Vulnerability:** The voice-call server implements HMAC-SHA256 signature verification for webhooks but provides a `skipSignatureVerification` config option that bypasses it entirely. When enabled, any forged telephony webhook is accepted as legitimate.
+
+**Affected code:**
+- `extensions/voice-call/src/config.ts` -- `skipSignatureVerification` option in config schema
+- `extensions/voice-call/src/runtime.ts` -- bypass logic when option is enabled
+
+**Mitigation:** Optional extension. Config option is intended for development/testing and is not enabled by default. Production deployments should never enable it. Low severity because it requires deliberate misconfiguration.
 
 ### Notable Non-Core Issues
 

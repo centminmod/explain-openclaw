@@ -107,7 +107,7 @@ Create a dedicated macOS user just for OpenClaw:
 When you tell OpenClaw to only listen on "localhost" (127.0.0.1), it tries to do exactly that. But if binding to localhost fails for any reason (rare, but possible due to network configuration issues), the code has a fallback:
 
 ```typescript
-// From src/gateway/net.ts lines 256-261
+// From src/gateway/net.ts lines 276-281
 if (mode === "loopback") {
   // 127.0.0.1 rarely fails, but handle gracefully
   if (await canBindToHost("127.0.0.1")) return "127.0.0.1";
@@ -373,9 +373,9 @@ If you suspect compromise, do these in order:
 
 | Security Control | Source File | Lines |
 |------------------|-------------|-------|
-| Silent binding fallback | `src/gateway/net.ts` | 256-261 |
-| canBindToHost() test | `src/gateway/net.ts` | 309-322 |
+| Silent binding fallback | `src/gateway/net.ts` | 276-281 |
+| canBindToHost() test | `src/gateway/net.ts` | 328-340 |
 | File permissions (0o700) | `src/config/io.ts` | 890 |
 | File permissions (0o600) | `src/config/io.ts` | 998 |
 | Shell security settings | `src/agents/bash-tools.exec.ts` | (tool handler) |
-| Security audit checks | `src/security/audit.ts` | 343-363 |
+| Security audit checks | `src/security/audit.ts` | 347-367 |

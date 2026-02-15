@@ -4,15 +4,28 @@
 
 > **Status:** These PRs in upstream openclaw/openclaw fix or harden security-related code. Monitor merge status and sync locally when merged.
 >
-> **Last checked:** 14-02-2026 (16:13 AEST)
+> **Last checked:** 16-02-2026 (02:49 AEST)
 
 ### OPEN/DRAFT PRs (monitor for merge)
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#17182](https://github.com/openclaw/openclaw/pull/17182) | OPEN | security-fix | LINE webhook fail closed when token/secret are missing (fail-open risk) | [#17158](https://github.com/openclaw/openclaw/issues/17158) | OPEN/PENDING |
+| [#16992](https://github.com/openclaw/openclaw/pull/16992) | OPEN | security-fix | Escape XML entities in file.filename to prevent prompt injection in OpenResponses | — | OPEN/PENDING |
+| [#16990](https://github.com/openclaw/openclaw/pull/16990) | OPEN | security-fix | Strip auth headers on cross-origin redirect in downloadToFile (credential leakage) | — | OPEN/PENDING |
+| [#16967](https://github.com/openclaw/openclaw/pull/16967) | OPEN | security-fix | OC-19: Sanitize CWD path injection in LLM system prompts (control char stripping) | — | OPEN/PENDING |
+| [#16965](https://github.com/openclaw/openclaw/pull/16965) | OPEN | security-fix | Validate tool access against Docker bind mounts (workspace guard) | [#16379](https://github.com/openclaw/openclaw/issues/16379) | OPEN/PENDING |
+| [#16963](https://github.com/openclaw/openclaw/pull/16963) | OPEN | hardening | Enable auth rate limiting by default (was opt-in only) | [#16876](https://github.com/openclaw/openclaw/issues/16876) | OPEN/PENDING |
+| [#16961](https://github.com/openclaw/openclaw/pull/16961) | OPEN | docs | Warn against storing secrets in injected workspace files (supersedes closed #13290) | — | OPEN/PENDING |
+| [#16959](https://github.com/openclaw/openclaw/pull/16959) | OPEN | security-fix | Prevent symlink and path traversal in skill packager (CWE-426; CVSS 7.7) | [#12536](https://github.com/openclaw/openclaw/issues/12536) | OPEN/PENDING |
+| [#16958](https://github.com/openclaw/openclaw/pull/16958) | OPEN | security-fix | Escape user input in HTML gallery to prevent stored XSS (CWE-79; CVSS 7.5) | [#12538](https://github.com/openclaw/openclaw/issues/12538) | OPEN/PENDING |
+| [#16947](https://github.com/openclaw/openclaw/pull/16947) | OPEN | security-fix | OC-13: Block dangerous Docker sandbox configs to prevent container escape (CWE-250; CVSS 8.2) | — | OPEN/PENDING |
+| [#16936](https://github.com/openclaw/openclaw/pull/16936) | OPEN | security-fix | Feishu mention stripping vulnerable to regex injection (unsanitized RegExp construction) | — | OPEN/PENDING |
+| [#16929](https://github.com/openclaw/openclaw/pull/16929) | OPEN | security-fix | Block access to sensitive directories (~/.openclaw/) from within sandbox | [#8588](https://github.com/openclaw/openclaw/issues/8588) | OPEN/PENDING |
+| [#16928](https://github.com/openclaw/openclaw/pull/16928) | OPEN | security-fix | OC-07: Redact session history credentials and enforce Telegram webhook secret (CWE-209, CWE-346) | — | OPEN/PENDING |
+| [#16907](https://github.com/openclaw/openclaw/pull/16907) | OPEN | hardening | Detect obfuscated commands (base64, hex, variable expansion) that bypass allowlist filters | [#8592](https://github.com/openclaw/openclaw/issues/8592) | OPEN/PENDING |
+| [#16898](https://github.com/openclaw/openclaw/pull/16898) | OPEN | security-fix | Zalo webhook secret comparison vulnerable to timing attacks (plain `===`) | — | OPEN/PENDING |
 | [#16036](https://github.com/openclaw/openclaw/pull/16036) | OPEN | hardening | Use 0o600 permissions for session transcript files (CWE-732; world-readable -> owner-only) | [#8751](https://github.com/openclaw/openclaw/issues/8751) | OPEN/PENDING |
-| [#15940](https://github.com/openclaw/openclaw/pull/15940) | OPEN | hardening | Add trusted-proxy auth mode types and schema (delegated auth to reverse proxy) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | OPEN/PENDING |
-| [#15924](https://github.com/openclaw/openclaw/pull/15924) | OPEN | security-fix | Prevent shell injection in macOS keychain credential write (CWE-78; execSync -> execFileSync) | — | OPEN/PENDING |
 | [#15757](https://github.com/openclaw/openclaw/pull/15757) | OPEN | hardening | Add hardening gap audit checks (sandbox.mode_not_all, tools.dangerous_not_denied, etc.) | — | OPEN/PENDING |
 | [#15756](https://github.com/openclaw/openclaw/pull/15756) | OPEN | security-fix | Strip provider apiKey from models.json before prompt serialization (credential exposure) | — | OPEN/PENDING |
 | [#15615](https://github.com/openclaw/openclaw/pull/15615) | OPEN | security-fix | Restrict PATH override to exact match in node-host sanitizeEnv | — | OPEN/PENDING |
@@ -37,9 +50,7 @@
 | [#10257](https://github.com/openclaw/openclaw/pull/10257) | OPEN | security-fix | Anchor MIME sanitization regex and block fullwidth bypass | — | OPEN/PENDING |
 | [#10238](https://github.com/openclaw/openclaw/pull/10238) | OPEN | security-fix | Fix TwiML injection via unescaped locale/language/voice parameters | — | OPEN/PENDING |
 | [#9529](https://github.com/openclaw/openclaw/pull/9529) | OPEN | security-fix | Validate archive entries against path traversal (Zip Slip) | [#3277](https://github.com/openclaw/openclaw/issues/3277) | OPEN/PENDING |
-| [#9513](https://github.com/openclaw/openclaw/pull/9513) | OPEN | security-fix | Skill download archive path traversal checks | [#9512](https://github.com/openclaw/openclaw/issues/9512) | OPEN/PENDING |
 | [#8718](https://github.com/openclaw/openclaw/pull/8718) | OPEN | security-fix | Sanitize download filenames to prevent path traversal (CWE-22) | [#8696](https://github.com/openclaw/openclaw/issues/8696) | OPEN/PENDING |
-| [#8604](https://github.com/openclaw/openclaw/pull/8604) | OPEN | security-fix | Unauthenticated Nostr profile endpoints allow remote profile takeover | — | OPEN/PENDING |
 | [#8305](https://github.com/openclaw/openclaw/pull/8305) | OPEN | hardening | Add SSRF protection to browser navigation | — | OPEN/PENDING |
 | [#8186](https://github.com/openclaw/openclaw/pull/8186) | OPEN | security-fix | Validate sandbox `setupCommand` to prevent shell injection | — | OPEN/PENDING |
 | [#7616](https://github.com/openclaw/openclaw/pull/7616) | OPEN | security-fix | Harden zip extraction against path traversal | [#3277](https://github.com/openclaw/openclaw/issues/3277) | OPEN/PENDING |
@@ -65,8 +76,6 @@
 | [#13521](https://github.com/openclaw/openclaw/pull/13521) | OPEN | security-fix | Require webhook secret in Telegram runtime webhook mode | [#13116](https://github.com/openclaw/openclaw/issues/13116) | OPEN/PENDING |
 | [#13321](https://github.com/openclaw/openclaw/pull/13321) | OPEN | hardening | Android gateway device identity hardening and A2UI UX improvements | — | OPEN/PENDING |
 | [#13308](https://github.com/openclaw/openclaw/pull/13308) | OPEN | hardening | Address audit findings (gateway, CI, Docker) | — | OPEN/PENDING |
-| [#13290](https://github.com/openclaw/openclaw/pull/13290) | OPEN | docs | Warn against storing secrets in injected workspace files (TOOLS.md enters model context) | — | OPEN/PENDING |
-| [#13293](https://github.com/openclaw/openclaw/pull/13293) | OPEN | hardening | Block tainted sink calls from untrusted tool outputs | — | OPEN/PENDING |
 | [#13254](https://github.com/openclaw/openclaw/pull/13254) | OPEN | hardening | Harden archive extraction and plugin update rollback | — | OPEN/PENDING |
 | [#13169](https://github.com/openclaw/openclaw/pull/13169) | OPEN | hardening | Add `--ignore-scripts` to npm install during plugin/hook installation | — | OPEN/PENDING |
 | [#13144](https://github.com/openclaw/openclaw/pull/13144) | OPEN | hardening | Harden archive extraction, auth tokens, hook transforms, and queue limits | — | OPEN/PENDING |
@@ -83,6 +92,8 @@
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#15924](https://github.com/openclaw/openclaw/pull/15924) | MERGED | security-fix | OC-28: Prevent shell injection in macOS keychain credential write (CWE-78; execSync -> execFileSync; merged 2026-02-14) | — | ALREADY SYNCED |
+| [#15940](https://github.com/openclaw/openclaw/pull/15940) | MERGED | hardening | Add trusted-proxy auth mode types and schema (delegated auth to reverse proxy; merged 2026-02-14) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | ALREADY SYNCED |
 | [#15848](https://github.com/openclaw/openclaw/pull/15848) | MERGED | hardening | Prune expired hook auth failure entries instead of clearing all rate-limit state (merged 2026-02-14; supersedes #15608) | — | ALREADY SYNCED |
 | [#15652](https://github.com/openclaw/openclaw/pull/15652) | MERGED | hardening | Constrain browser trace/download output paths to OpenClaw temp roots (merged 2026-02-13) | — | ALREADY SYNCED |
 | [#15604](https://github.com/openclaw/openclaw/pull/15604) | MERGED | security-fix | Block private/loopback/metadata IPs in link-understanding URL detection (SSRF hardening) | — | ALREADY SYNCED |
@@ -120,6 +131,10 @@
 
 | PR | Status | Category | Summary | Related Issue | Local Impact |
 |----|--------|----------|---------|---------------|--------------|
+| [#8604](https://github.com/openclaw/openclaw/pull/8604) | CLOSED | security-fix | Unauthenticated Nostr profile endpoints allow remote profile takeover (closed 2026-02-15) | — | NOT AFFECTED |
+| [#9513](https://github.com/openclaw/openclaw/pull/9513) | CLOSED | security-fix | Skill download archive path traversal checks (closed 2026-02-15; #9529 covers Zip Slip scope) | [#9512](https://github.com/openclaw/openclaw/issues/9512) | NOT AFFECTED |
+| [#13290](https://github.com/openclaw/openclaw/pull/13290) | CLOSED | docs | Warn against storing secrets in workspace files (closed 2026-02-15; superseded by #16961) | — | NOT AFFECTED |
+| [#13293](https://github.com/openclaw/openclaw/pull/13293) | CLOSED | hardening | Block tainted sink calls from untrusted tool outputs (closed 2026-02-15) | — | NOT AFFECTED |
 | [#8757](https://github.com/openclaw/openclaw/pull/8757) | CLOSED | security-fix | Validate redirect destinations to prevent SSRF via open redirect (MS Teams) (closed 2026-02-13) | — | NOT AFFECTED |
 | [#14843](https://github.com/openclaw/openclaw/pull/14843) | CLOSED | security-fix | Strip `apiKey` from `models.json` cache to prevent credential exposure (closed: author banned) | [#14808](https://github.com/openclaw/openclaw/issues/14808) | NOT AFFECTED |
 | [#14655](https://github.com/openclaw/openclaw/pull/14655) | CLOSED | hardening | Allow trusted clients to request unredacted config via `includeSecrets` (closed: author banned) | [#14586](https://github.com/openclaw/openclaw/issues/14586) | NOT AFFECTED |
@@ -131,8 +146,10 @@
 | [#14350](https://github.com/openclaw/openclaw/pull/14350) | CLOSED | hardening | Add `--harden` CLI flag for security-hardened gateway mode (closed 2026-02-13; no replacement) | — | NOT AFFECTED |
 | [#15608](https://github.com/openclaw/openclaw/pull/15608) | CLOSED | hardening | Prune expired hook auth failure entries (closed 2026-02-14; superseded by #15848 MERGED) | — | NOT AFFECTED |
 
-**Total:** 110 tracked PRs (32 merged, 66 open, 2 draft, 10 closed)
+**Total:** 125 tracked PRs (34 merged, 77 open, 2 draft, 12 closed)
 
+> **Status change log (16-02-2026 02:49 AEST):** 6 state changes detected. #15924 OPEN->MERGED (ALREADY SYNCED), #15940 OPEN->MERGED (ALREADY SYNCED), #8604 OPEN->CLOSED, #9513 OPEN->CLOSED, #13290 OPEN->CLOSED (superseded by #16961), #13293 OPEN->CLOSED. 15 new PRs added: #16898, #16907, #16928, #16929, #16936, #16947, #16958, #16959, #16961, #16963, #16965, #16967, #16990, #16992, #17182.
+>
 > **Status change log (14-02-2026 16:13 AEST):** 0 state changes detected. 1 new PR added: #16036 (OPEN hardening, session transcript file permissions CWE-732).
 >
 > **Status change log (14-02-2026 14:08 AEST):** 0 state changes detected. 2 new PRs added: #15924 (OPEN security-fix, macOS keychain shell injection CWE-78), #15940 (OPEN hardening, trusted-proxy auth mode).
@@ -174,7 +191,7 @@
 | [#8718](https://github.com/openclaw/openclaw/pull/8718) | [#8696](https://github.com/openclaw/openclaw/issues/8696) (HIGH) | HIGH | OPEN | Sanitizes download filenames to prevent path traversal (CWE-22) |
 | [#13787](https://github.com/openclaw/openclaw/pull/13787) | [#13786](https://github.com/openclaw/openclaw/issues/13786) (HIGH) | HIGH | MERGED | Loopback bypass in BlueBubbles webhook auth (CVSS 8.6); related to #11742; merged 2026-02-12 |
 | [#13777](https://github.com/openclaw/openclaw/pull/13777) | [#13683](https://github.com/openclaw/openclaw/issues/13683) (HIGH) | HIGH | OPEN | Sandboxed agent credential exfil via `openclaw config get` — no redaction in CLI path |
-| [#13767](https://github.com/openclaw/openclaw/pull/13767) | [#13756](https://github.com/openclaw/openclaw/issues/13756) (MEDIUM) | MEDIUM | OPEN | `normalizeGatewayTokenInput()` accepts "undefined"/"null" strings as valid tokens |
+| [#13767](https://github.com/openclaw/openclaw/pull/13767) | [#13756](https://github.com/openclaw/openclaw/issues/13756) (MEDIUM) | MEDIUM | MERGED | `normalizeGatewayTokenInput()` rejects "undefined"/"null" strings; merged 2026-02-13; ALREADY SYNCED |
 | [#13876](https://github.com/openclaw/openclaw/pull/13876) | [#13196](https://github.com/openclaw/openclaw/issues/13196), [#13236](https://github.com/openclaw/openclaw/issues/13236) | HIGH | OPEN | CLI credential sync + config redaction regex fix + guard model |
 | [#14029](https://github.com/openclaw/openclaw/pull/14029) | (token leakage in URL) | MEDIUM | MERGED | Twilio stream auth token via `<Parameter>` instead of query string; merged 2026-02-12; ALREADY SYNCED locally |
 | [#14222](https://github.com/openclaw/openclaw/pull/14222) | (maintainer feedback on #8727) | MEDIUM | OPEN | Core `before_tool_call` hook extended with `needsApproval`; AgentShield moved to extension with encrypted approval store |
@@ -184,11 +201,11 @@
 | [#14843](https://github.com/openclaw/openclaw/pull/14843) | [#14808](https://github.com/openclaw/openclaw/issues/14808) | MEDIUM | CLOSED | `apiKey` credential exposure in `models.json` cache; author banned; duplicate #14836 still OPEN |
 | [#14665](https://github.com/openclaw/openclaw/pull/14665) | (homoglyph bypass) | MEDIUM | MERGED | `ANGLE_BRACKET_MAP` adds 10 Unicode homoglyphs to `foldMarkerChar()`; merged 2026-02-13; local code missing these -- SYNC NEEDED |
 | [#14662](https://github.com/openclaw/openclaw/pull/14662) | (XSS in control UI) | MEDIUM | OPEN | `JSON.stringify` in `<script>` tag at `control-ui.ts:173-179` does not escape `<` |
-| [#14661](https://github.com/openclaw/openclaw/pull/14661) | (canvas IP auth) | MEDIUM | OPEN | Canvas IP-based auth fallback at `server-http.ts:146` has no private network restriction; Greptile flags IPv6 `fe80::/10` misclass |
+| [#14661](https://github.com/openclaw/openclaw/pull/14661) | (canvas IP auth) | MEDIUM | MERGED | Canvas IP auth restricted to private networks; merged 2026-02-13; ALREADY SYNCED |
 | [#14655](https://github.com/openclaw/openclaw/pull/14655) | [#14586](https://github.com/openclaw/openclaw/issues/14586) | LOW | CLOSED | `includeSecrets` for config.get; author banned; no replacement PR identified |
 | [#14814](https://github.com/openclaw/openclaw/pull/14814) | (timing attack) | LOW | OPEN | Hook token at `server-http.ts:254` uses `safeEqualSecret()` while `auth.ts:256` uses `safeEqual()` |
 | [#14098](https://github.com/openclaw/openclaw/pull/14098) | (tool-call JSON leak) | LOW | OPEN | `stripJsonToolCallText()` prevents Ollama/local providers from leaking raw tool-call JSON to user surfaces |
-| [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | OPEN | `--harden` flag forces loopback bind + token auth + no Tailscale; no equivalent exists locally |
+| [#14350](https://github.com/openclaw/openclaw/pull/14350) | (security hardening CLI) | MEDIUM | CLOSED | `--harden` flag closed without merge 2026-02-13; no replacement PR |
 | [#14318](https://github.com/openclaw/openclaw/pull/14318) | (outbound channel control) | MEDIUM | OPEN | `enforceOutboundAllowlist()` blocks Discord sends to non-allowed channels; local `send.outbound.ts` has zero guards |
 | [#14689](https://github.com/openclaw/openclaw/pull/14689) | [#14688](https://github.com/openclaw/openclaw/issues/14688) | LOW | OPEN | Auto-set `per-channel-peer` dmScope during multi-channel onboarding; Greptile flags multi-account channels need `per-account-channel-peer` |
 | [#14512](https://github.com/openclaw/openclaw/pull/14512) | [#14433](https://github.com/openclaw/openclaw/issues/14433) | LOW | CLOSED | Author banned; `isPrivateNetworkAddress()` for Docker bridge relay needs re-implementation |
@@ -205,7 +222,7 @@
 | [#10525](https://github.com/openclaw/openclaw/pull/10525) | (A2UI path traversal) | MEDIUM | MERGED | `openFileWithinRoot()` at `a2ui.ts:75`; merged 2026-02-13; ALREADY SYNCED |
 | [#10529](https://github.com/openclaw/openclaw/pull/10529) | (WhatsApp cred perms) | MEDIUM | MERGED | `0o600` chmod at `auth-store.ts:72`, `session.ts:77,91`; merged 2026-02-13; ALREADY SYNCED |
 | [#15379](https://github.com/openclaw/openclaw/pull/15379) | [#13826](https://github.com/openclaw/openclaw/issues/13826) | LOW | OPEN | No `transformContext` hook in local `pi-embedded-runner`; sanitization only at session load (`attempt.ts:778-779`), not during tool-call iterations |
-| [#15360](https://github.com/openclaw/openclaw/pull/15360) | [#6669](https://github.com/openclaw/openclaw/issues/6669) | LOW | OPEN | `statsLine` with token counts, session IDs, file paths, costs in user-visible `message` at `subagent-announce.ts:479-506` |
+| [#15360](https://github.com/openclaw/openclaw/pull/15360) | [#6669](https://github.com/openclaw/openclaw/issues/6669) | LOW | OPEN | `statsLine` with token counts, session IDs, file paths, costs in user-visible `message` at `subagent-announce.ts:545-559` |
 | [#15296](https://github.com/openclaw/openclaw/pull/15296) | (config secret hardening) | MEDIUM | OPEN | No `--show-secrets` opt-in for CLI `config get`; gateway `config.get` returns unredacted by default |
 | [#8757](https://github.com/openclaw/openclaw/pull/8757) | (MS Teams SSRF redirect) | MEDIUM | CLOSED | Closed without merge 2026-02-13; MS Teams redirect validation SSRF fix; no replacement PR identified |
 | [#13129](https://github.com/openclaw/openclaw/pull/13129) | (dmScope UX) | LOW | MERGED | Uses `formatCliCommand()` for dmScope remediation; local `audit.ts:603` already uses it; ALREADY SYNCED |
@@ -220,9 +237,16 @@
 | [#15652](https://github.com/openclaw/openclaw/pull/15652) | (browser path traversal) | MEDIUM | MERGED | Constrain browser trace/download output paths; local `path-output.ts` has `resolvePathWithinRoot()`; ALREADY SYNCED |
 | [#15608](https://github.com/openclaw/openclaw/pull/15608) | (rate-limit state reset) | LOW | CLOSED | Superseded by #15848 (MERGED); NOT AFFECTED |
 | [#15848](https://github.com/openclaw/openclaw/pull/15848) | (rate-limit state pruning) | LOW | MERGED | Prune expired hook auth failure entries; local `server-http.ts:209-226` has prune-then-evict logic; ALREADY SYNCED |
-| [#15924](https://github.com/openclaw/openclaw/pull/15924) | (macOS keychain shell injection) | HIGH | OPEN | `execSync` with string interpolation at `cli-credentials.ts:377`; CWE-78 via `$()` and backtick expansion; fix: `execFileSync` |
-| [#15940](https://github.com/openclaw/openclaw/pull/15940) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | MEDIUM | OPEN | Trusted-proxy auth mode; `authorizeTrustedProxy()` + `GatewayTrustedProxyConfig` not in local code; CIDR matching for proxy IP validation |
+| [#15924](https://github.com/openclaw/openclaw/pull/15924) | (macOS keychain shell injection) | HIGH | MERGED | OC-28; merged 2026-02-14; local `cli-credentials.ts:338-376` uses `execFileSync` with array args; ALREADY SYNCED |
+| [#15940](https://github.com/openclaw/openclaw/pull/15940) | [#1560](https://github.com/openclaw/openclaw/issues/1560) | MEDIUM | MERGED | Trusted-proxy auth mode; merged 2026-02-14; `authorizeTrustedProxy()` + `GatewayTrustedProxyConfig` ALREADY SYNCED |
 | [#16036](https://github.com/openclaw/openclaw/pull/16036) | [#8751](https://github.com/openclaw/openclaw/issues/8751) | MEDIUM | OPEN | Session transcript `.jsonl` files use default `0o644` (world-readable); fix: `0o600` across 7+ write paths; Greptile 5/5 confidence |
+| [#16929](https://github.com/openclaw/openclaw/pull/16929) | [#8588](https://github.com/openclaw/openclaw/issues/8588) | HIGH | OPEN | Block sensitive dirs (~/.openclaw/) from sandbox; `isSensitivePath()` + post-symlink realpath check |
+| [#16907](https://github.com/openclaw/openclaw/pull/16907) | [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | OPEN | Detect obfuscated commands (base64, hex, variable expansion) bypassing allowlist |
+| [#16963](https://github.com/openclaw/openclaw/pull/16963) | [#16876](https://github.com/openclaw/openclaw/issues/16876) | MEDIUM | OPEN | Enable auth rate limiter by default; add `enabled` boolean for explicit opt-out |
+| [#16959](https://github.com/openclaw/openclaw/pull/16959) | [#12536](https://github.com/openclaw/openclaw/issues/12536) | MEDIUM | OPEN | Skill packager follows symlinks; `is_symlink()` check + path traversal validation |
+| [#16958](https://github.com/openclaw/openclaw/pull/16958) | [#12538](https://github.com/openclaw/openclaw/issues/12538) | MEDIUM | OPEN | Gallery `write_gallery()` embeds user prompts without `html.escape()` |
+| [#16965](https://github.com/openclaw/openclaw/pull/16965) | [#16379](https://github.com/openclaw/openclaw/issues/16379) | MEDIUM | OPEN | Workspace guard blocks Docker bind-mounted directories; `additionalRoots` option |
+| [#17182](https://github.com/openclaw/openclaw/pull/17182) | [#17158](https://github.com/openclaw/openclaw/issues/17158) | MEDIUM | OPEN | LINE webhook startup accepts empty auth; strict guards for `channelAccessToken` and `channelSecret` |
 
 ### #1795: Prevent Auth Bypass Behind Unconfigured Reverse Proxy
 
@@ -462,7 +486,7 @@
 **Greptile Review:** Notes queue draining logic may drop `extraSystemPrompt` when messages are combined or summarized.
 
 **Local Validation:**
-- `src/agents/subagent-announce.ts:479-506` — `statsLine` (token counts, session IDs, file paths, costs) in user-visible `message`; `Findings:` heading and `Summarize this naturally` instructions also exposed
+- `src/agents/subagent-announce.ts:545-559` — `statsLine` (token counts, session IDs, file paths, costs) in user-visible `message`; `Findings:` heading and `Summarize this naturally` instructions also exposed
 - No `extraSystemPrompt` field in local `AnnounceQueueItem`
 
 **Local Impact:** OPEN/PENDING — PR not yet merged. Internal stats and instructions leak to users.
@@ -784,30 +808,28 @@
 
 **Local Impact:** ALREADY SYNCED — all changes from PR #15848 are present in local code
 
-### #15924: Prevent Shell Injection in macOS Keychain Credential Write
+### #15924: OC-28 Prevent Shell Injection in macOS Keychain Credential Write
 
-**PR Status:** OPEN (2026-02-14)
+**PR Status:** MERGED (2026-02-14T16:06:10Z)
 **Category:** security-fix
 **Closes:** (OC-28 shell injection in keychain write)
 
-**Security Impact:** OC-28 — CWE-78 shell injection. `writeClaudeCliKeychainCredentials()` uses `execSync()` with string interpolation for `security add-generic-password`. The single-quote escaping via `replace(/'/g, "'\"'\"'")` is insufficient; `$()` command substitution and backtick expansion bypass the protection. Malicious OAuth token values from a compromised OAuth provider could execute arbitrary commands as the gateway user.
+**Security Impact:** OC-28 — CWE-78 shell injection. `writeClaudeCliKeychainCredentials()` previously used `execSync()` with string interpolation for `security add-generic-password`. The single-quote escaping was insufficient; `$()` command substitution and backtick expansion bypass the protection.
 
 **Changes:**
 - `src/agents/cli-credentials.ts` — replace `execSync` with `execFileSync` (array args, no shell parsing)
 - `src/agents/cli-credentials.e2e.test.ts` — updated tests for `execFileSync` API + new injection payload tests
 
-**Greptile Review:** No Greptile review available.
-
 **Local Validation:**
-- `src/agents/cli-credentials.ts:377` — local code uses `execSync` with `'${newValue.replace(/'/g, "'\"'\"'")}'` — vulnerable to `$()` and backtick command substitution
-- `src/agents/cli-credentials.ts:386` — `execSyncImpl` defaults to Node's `execSync`
-- `src/agents/cli-credentials.ts:358-362` — read operation also uses `execSync` but with constant-only interpolation (lower risk)
+- `src/agents/cli-credentials.ts:338` — `execFileSyncImpl` used (not `execSync`)
+- `src/agents/cli-credentials.ts:361-363` — Comment documents security rationale: "Use execFileSync to avoid shell interpretation of user-controlled token values"
+- `src/agents/cli-credentials.ts:363-376` — Array args passed to `execFileSync`, no shell parsing
 
-**Local Impact:** OPEN/PENDING — PR not yet merged. Local `cli-credentials.ts:377` has the vulnerable `execSync` pattern.
+**Local Impact:** ALREADY SYNCED — local code uses `execFileSync` with array args at the keychain write path
 
 ### #15940: Add Trusted-Proxy Auth Mode Types and Schema
 
-**PR Status:** OPEN (2026-02-14)
+**PR Status:** MERGED (2026-02-14T11:32:17Z)
 **Category:** hardening
 **Closes:** [#1560](https://github.com/openclaw/openclaw/issues/1560)
 
@@ -823,12 +845,15 @@
 **Greptile Review:** 25 files reviewed, 2 comments. 1 inline comment on `src/gateway/net.ts:183` about bitwise left shift on negative values needing unsigned right shift for mask calculation.
 
 **Local Validation:**
-- `authorizeTrustedProxy()` does NOT exist locally (grep confirmed)
-- `GatewayTrustedProxyConfig` does NOT exist locally (grep confirmed)
-- `src/gateway/auth.ts` locally has `authorizeGatewayConnect()` but no trusted-proxy auth path
-- `src/config/types.gateway.ts` locally has `GatewayAuthMode` without `trusted-proxy` option
+- `src/config/types.gateway.ts:79` — `GatewayAuthMode` includes `"trusted-proxy"`
+- `src/config/types.gateway.ts:86` — `GatewayTrustedProxyConfig` type with `userHeader`, `requiredHeaders`, `allowUsers`
+- `src/gateway/auth.ts:244` — `authorizeTrustedProxy()` function present
+- `src/gateway/auth.ts:300-315` — trusted-proxy auth path in `authorizeGatewayConnect()`
+- `src/security/audit.ts:377-436` — audit integration with critical findings for trusted-proxy
+- `src/config/zod-schema.ts:402` — Zod validation for trusted-proxy mode
+- 10+ test files with trusted-proxy coverage
 
-**Local Impact:** OPEN/PENDING — PR not yet merged. No trusted-proxy auth infrastructure exists locally.
+**Local Impact:** ALREADY SYNCED — full trusted-proxy auth infrastructure present locally
 
 ### #16036: Use 0o600 Permissions for Session Transcript Files
 
