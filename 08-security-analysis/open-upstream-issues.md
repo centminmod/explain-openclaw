@@ -38,7 +38,7 @@
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check — remains open) |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` (note: upstream issue still OPEN) |
 | [#5122](https://github.com/openclaw/openclaw/issues/5122) | ~~MEDIUM~~ MITIGATED | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:177-194` — now delegates to `readJsonBodyWithLimit()` from `src/infra/http-body.ts` with 30s timeout (commit `3cbcba10c`) |
-| [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:70-77` |
+| [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:53-60` |
 | [#5124](https://github.com/openclaw/openclaw/issues/5124) | ~~MEDIUM~~ FIXED | ReDoS in log redaction patterns | Fixed upstream (COMPLETED 2026-02-14); `src/logging/redact.ts:47-61` |
 | [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM (WONTFIX) | Timing attack in non-gateway token comparisons | Closed upstream as NOT_PLANNED (2026-02-13); partially mitigated locally (hook token + device pairing use `safeEqualSecret`); `src/infra/node-pairing.ts:277` still uses `===` |
 | [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `src/auto-reply/reply/session.ts:87` |
@@ -317,8 +317,8 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** User-supplied strings are compiled into regexes via `new RegExp()` without safeguards. Malicious patterns can cause catastrophic backtracking.
 
 **Affected code:**
-- `src/infra/exec-approval-forwarder.ts:70-77` - `matchSessionFilter()` compiles arbitrary user regex
-- `src/discord/monitor/exec-approvals.ts:270-273` - now uses `buildGatewayConnectionDetails()` (refactored Feb 15 sync 2)
+- `src/infra/exec-approval-forwarder.ts:53-60` - `matchSessionFilter()` compiles arbitrary user regex
+- `src/discord/monitor/exec-approvals.ts:395` - now uses `buildGatewayConnectionDetails()` (refactored Feb 15 sync 2, shifted by Discord CV2 rewrite Feb 16 sync 2)
 
 ### #5124: ReDoS in Log Redaction Patterns
 

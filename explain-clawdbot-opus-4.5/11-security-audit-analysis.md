@@ -1052,6 +1052,14 @@ No line shifts. No new CVEs.
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
 
+### Post-Merge Hardening (Feb 16 sync 2) — 60 upstream commits
+
+**Security relevance: MODERATE** — 7 security-relevant commits across exec-approvals, outbound media sandboxing, Discord CV2 approval framework, and channel type unification. **Exec-approvals socket management** (`a0e763168`): `mergeExecApprovalsSocketDefaults()` at `src/infra/exec-approvals.ts:244` centralizes socket defaults — Audit 2 Claim 6. **Agent-scoped outbound media** (`9adcccadb`): `MessageSendParams.agentId` at `src/infra/outbound/message.ts:35` enables per-agent media sandboxing — Audit 2 Claim 2, Gap #3. **Discord CV2** (`9203a2fdb`): 22-file rewrite with `DiscordExecApprovalHandler` class at `exec-approvals.ts:314` — Audit 2 Claim 5. **Cleanup path containment** (`3ce0e80f5`): `isPathWithin()` at `src/commands/cleanup-utils.ts:49` — Audit 1 Claims 5-6. **Channel type unification** (`c6b3736fe`): `BaseProbeResult`/`BaseTokenResult` across 23 files — Audit 1 Claim 8. **Env override dedup** (`a76777759`): centralized `applySkillConfigEnvOverrides()` — Gap #1. **ackReaction precedence** (`b6069fc68`): `resolveAckReaction()` at `src/agents/identity.ts:13`. Large refactor (5025 lines), 21 new files. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-2.md).
+
+**Line shifts:** `exec-approval-forwarder.ts` 70-77→53-60, `discord/monitor/exec-approvals.ts` 270-273→395.
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
 ---
 
 ## Recommended Hardening Measures

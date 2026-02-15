@@ -661,6 +661,14 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
 
+### Post-Merge Hardening (Feb 16 sync 2) — 60 upstream commits
+
+**Security relevance: MEDIUM-HIGH** — 7 security-relevant commits + 5 security-adjacent. **LARGE REFACTOR** (5025 net lines). **Exec-approval socket defaults** (`a0e763168`): `mergeExecApprovalsSocketDefaults()` centralizes token handling — Audit 2 Claim 6. **Probe/token base types** (`c6b3736fe`): common `BaseProbeResult`/`BaseTokenResult` hierarchy across 23 files — Audit 1 Claim 8. **Cleanup path containment** (`3ce0e80f5`): `buildCleanupPlan()` + `isPathWithin()` — Audit 1 Claims 5-6. **Agent-scoped outbound media** (`9adcccadb`): `OutboundSendPolicy.enforceAgentScope()` — Audit 2 Claim 2, Gap #3. **Env overrides dedup** (`a76777759`): `applySkillConfigEnvOverrides()` centralizes env var handling — Audit 2 Claim 8, Gap #1. **Discord CV2** (`9203a2fdb`): structured component approval framework — Audit 2 Claim 5. **Telegram allowFrom normalization** (`7773c5410`): related to GHSA-mj5r-hh7j-4gxf. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-2.md).
+
+**Line shifts:** `exec-approval-forwarder.ts` 70-77→53-60. `discord/monitor/exec-approvals.ts` 270-273→395.
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---
