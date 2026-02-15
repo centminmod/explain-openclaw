@@ -114,7 +114,7 @@ These tests describe genuine indirect injection scenarios but deliver them incor
 | Test | Scenario | Delivery Method | Actual Defense | Verdict |
 |------|----------|----------------|----------------|---------|
 | Indirect document injection | Hidden `[ASSISTANT:]` in meeting notes | Direct user message | `wrapExternalContent()` wraps all file content with `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers (`src/security/external-content.ts:47-64`) | **Inconclusive** - bypassed defense layer |
-| Indirect email injection | HTML comment in email body | Direct user message | `buildSafeExternalPrompt()` wraps hook content with security warnings (`src/cron/isolated-agent/run.ts:340-346`) | **Inconclusive** - bypassed defense layer |
+| Indirect email injection | HTML comment in email body | Direct user message | `buildSafeExternalPrompt()` wraps hook content with security warnings (`src/cron/isolated-agent/run.ts:350-356`) | **Inconclusive** - bypassed defense layer |
 | Indirect code injection | Malicious code comment | Direct user message | External content suspicious pattern detection (`src/security/external-content.ts:15-28`) | **Inconclusive** - bypassed defense layer |
 
 **Why these are inconclusive:** The defense layer that exists specifically for these attacks was NOT tested. The external content pipeline:
@@ -123,7 +123,7 @@ These tests describe genuine indirect injection scenarios but deliver them incor
 2. Prepends a security warning instructing the model to IGNORE embedded instructions (`src/security/external-content.ts:53-64`)
 3. Detects suspicious patterns (regex: "ignore previous instructions", "you are now a", etc.) and logs warnings (`src/security/external-content.ts:15-28`)
 4. Sanitizes boundary markers in content to prevent escape (`src/security/external-content.ts:127-167`) including fullwidth Unicode homoglyph folding (`src/security/external-content.ts:89-125`)
-5. Is actively integrated into web search (`src/agents/tools/web-search.ts:603,630,680,682`), web fetch (`src/agents/tools/web-fetch.ts:250-271`), cron hooks (`src/cron/isolated-agent/run.ts:340-346`), Discord (`src/discord/monitor/message-handler.process.ts:142-145`), and Slack (`src/slack/monitor/message-handler/prepare.ts:445-448`)
+5. Is actively integrated into web search (`src/agents/tools/web-search.ts:603,630,680,682`), web fetch (`src/agents/tools/web-fetch.ts:250-271`), cron hooks (`src/cron/isolated-agent/run.ts:350-356`), Discord (`src/discord/monitor/message-handler.process.ts:142-145`), and Slack (`src/slack/monitor/message-handler/prepare.ts:455-461`)
 
 #### Category C: Social Engineering / False Context (Tests 14-21) -- User Messages, Not External Content
 
@@ -202,9 +202,9 @@ ZeroLeeks tested **only** the bottom two tiers and rated the system CRITICAL.
 | Channel metadata isolation | `src/security/channel-metadata.ts:21-45` | Truncation (400 char/entry, 800 total), dedup, wrapping |
 | Web search wrapping | `src/agents/tools/web-search.ts:603,630,680,682` | All search snippets wrapped via `wrapWebContent()` |
 | Web fetch wrapping | `src/agents/tools/web-fetch.ts:250-271` | All fetched content wrapped with security warnings |
-| Cron/hook wrapping | `src/cron/isolated-agent/run.ts:327-346` | External hooks wrapped via `buildSafeExternalPrompt()` with suspicious pattern logging |
+| Cron/hook wrapping | `src/cron/isolated-agent/run.ts:327-356` | External hooks wrapped via `buildSafeExternalPrompt()` with suspicious pattern logging |
 | Discord metadata isolation | `src/discord/monitor/message-handler.process.ts:142-145` | Channel topics wrapped via `buildUntrustedChannelMetadata()` |
-| Slack metadata isolation | `src/slack/monitor/message-handler/prepare.ts:445-448` | Channel descriptions wrapped via `buildUntrustedChannelMetadata()` |
+| Slack metadata isolation | `src/slack/monitor/message-handler/prepare.ts:455-461` | Channel descriptions wrapped via `buildUntrustedChannelMetadata()` |
 | External content test suite | `src/security/external-content.test.ts:1-278` | 278 lines of security-focused tests including injection scenarios |
 
 **None of these were tested by ZeroLeeks.**

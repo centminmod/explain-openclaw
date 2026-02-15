@@ -67,21 +67,21 @@ OpenClaw has different "doors" depending on how you set it up:
 
 ## Quick Decision Guide
 
-### Choose Mac Mini if:
+### Choose Mac Mini
 - Privacy is your #1 priority
 - You're comfortable with basic Mac administration
 - You want full control over your data
 - You're okay with the device needing to be on
 - You want the ability to "pull the plug" in an emergency
 
-### Choose VPS if:
+### Choose VPS
 - You need 24/7 availability without a home server
 - You're comfortable with Linux servers
 - You can handle firewall configuration
 - You want remote access without exposing your home network
 - [DigitalOcean 1-Click](../03-deploy/isolated-vps.md#11-digitalocean-1-click-deploy) is available for automatic hardening
 
-### Choose Moltworker if:
+### Choose Moltworker
 - You're experimenting or doing a proof-of-concept
 - You don't want to manage infrastructure
 - You're okay with Cloudflare having access to your data
@@ -182,12 +182,12 @@ The security analysis in this guide is based on verified source code review:
 
 | Component | Source File | Key Security Control |
 |-----------|-------------|---------------------|
-| Network binding | `src/gateway/net.ts:197-247` | Fallback chain with silent 0.0.0.0 fallback |
+| Network binding | `src/gateway/net.ts:238-300` | Fallback chain with silent 0.0.0.0 fallback |
 | Authentication | `src/gateway/auth.ts` | Token and password validation |
-| File permissions | `src/config/io.ts:919,1027` | 0o700 directories, 0o600 files |
-| SSRF protection | `src/infra/net/ssrf.ts:253-305` | DNS pinning (Mac/VPS only) |
+| File permissions | `src/config/io.ts:890,998` | 0o700 directories, 0o600 files |
+| SSRF protection | `src/infra/net/ssrf.ts:391-429` | DNS pinning (Mac/VPS only) |
 | Shell execution | `src/agents/bash-tools.exec.ts` | Allowlist and human approval |
-| Security audit | `src/security/audit.ts:334-353` | Critical flag detection |
+| Security audit | `src/security/audit.ts:343-363` | Critical flag detection |
 
 ---
 

@@ -27,9 +27,9 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 | 1 | **Screenshot normalization** — nested loop of up to 7 sizes x 6 qualities = 42 sharp resize ops per screenshot | `src/browser/screenshot.ts:34-51` | Very High | Like resizing a photo 42 different ways to find which version fits in an envelope — each resize takes real effort |
 | 2 | **PNG image optimization** — grid of 5 sizes x 4 compression levels = 20 sharp ops (mozjpeg is CPU-heavy) | `src/media/image-ops.ts:400-457` | Very High | Like printing the same photo in 20 different quality settings to find the smallest file — each print job takes CPU time |
 | 3 | **Local embedding inference** — on-device GGUF model via node-llama-cpp, `Promise.all` over all texts | `src/memory/embeddings.ts:89-135` | Very High (when local) | Like running a mini-ChatGPT on your own machine to understand your notes — powerful but demands serious CPU |
-| 4 | **Plugin loading via jiti** — synchronous TypeScript transpilation per plugin at startup | `src/plugins/loader.ts:211-296` | High (startup) | Like compiling a recipe book from scratch every time you open the kitchen, instead of using a pre-printed copy |
+| 4 | **Plugin loading via jiti** — synchronous TypeScript transpilation per plugin at startup | `src/plugins/loader.ts:235-336` | High (startup) | Like compiling a recipe book from scratch every time you open the kitchen, instead of using a pre-printed copy |
 | 5 | **Cosine similarity fallback** — O(n) full-scan vector comparison when sqlite-vec unavailable | `src/memory/manager-search.ts:71-93` | High (per query) | Like comparing a new photo to every single photo in your album one-by-one, instead of using a smart index |
-| 6 | **PDF-to-image rendering** — per-page canvas creation + PNG encoding via `@napi-rs/canvas` | `src/media/input-files.ts:197-254` | High (per PDF) | Like photocopying each page of a PDF into a separate image file — each page takes a rendering pass |
+| 6 | **PDF-to-image rendering** — per-page canvas creation + PNG encoding via `@napi-rs/canvas` | `src/media/input-files.ts:260-321` | High (per PDF) | Like photocopying each page of a PDF into a separate image file — each page takes a rendering pass |
 | 7 | **Full AX tree traversal** — `Accessibility.getFullAXTree` on complex browser pages | `src/browser/cdp.ts:251-264` | Medium-High | Like reading every element on a web page aloud for accessibility — hundreds of elements on complex pages |
 | 8 | **Image resize via sips** — macOS-specific process spawning for each HEIC conversion/resize | `src/media/image-ops.ts:136-274` | Medium | Like opening a separate program for each photo conversion — the per-process overhead adds up |
 | 9 | **Media understanding** — sending media to AI providers (Whisper/Gemini/OpenAI) for transcription | `src/media-understanding/runner.ts:802-984` | Medium | CPU cost is mostly on the provider side, but local buffering and encoding still takes cycles |
@@ -54,8 +54,8 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 - SHA-256 hashing for content deduplication and caching
 
 **Child process stdout/stderr accumulation:**
-- `src/process/exec.ts:114-141` — unbounded string concatenation of process output
-- `src/memory/qmd-manager.ts:553-575` — same pattern for QMD processing
+- `src/process/exec.ts:133-162` — unbounded string concatenation of process output
+- `src/memory/qmd-manager.ts:645-663` — same pattern for QMD processing
 
 **Media fetch buffering:**
 - `src/media/fetch.ts:131-133` — full response body buffered into memory before processing
@@ -153,7 +153,7 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 
 | Type | Limit | Location |
 |------|-------|----------|
-| Images | 6MB (10MB input files) | `src/media/constants.ts:1`, `src/media/input-files.ts:101` |
+| Images | 6MB (10MB input files) | `src/media/constants.ts:1`, `src/media/input-files.ts:104` |
 | Audio | 16MB | `src/media/constants.ts:2` |
 | Video | 16MB | `src/media/constants.ts:3` |
 | Documents | 100MB | `src/media/constants.ts:4` |
@@ -566,10 +566,10 @@ Setting up Prometheus/Grafana is beyond the scope of this guide — see the [Pro
 At the start of every session, OpenClaw loads `MEMORY.md` (or `memory.md`) from the workspace directory and injects its contents into the AI's first message as a context file. This happens unconditionally for all primary sessions — the only filtering is for subagent sessions, which receive only `AGENTS.md` and `TOOLS.md`.
 
 - Resolution: `src/agents/workspace.ts:239-270` — scans for `MEMORY.md` and `memory.md`, deduplicates
-- Loading: `src/agents/workspace.ts:276-330` — reads file contents into `WorkspaceBootstrapFile[]`
-- Filtering: `src/agents/workspace.ts:334-342` — `filterBootstrapFilesForSession()` only filters subagent sessions via an allowlist; all other sessions (including group chats) receive the full set
-- Context building: `src/agents/pi-embedded-helpers/bootstrap.ts:162-191` — trims to `bootstrapMaxChars` (default 20,000 chars) using head/tail strategy
-- Orchestration: `src/agents/bootstrap-files.ts:21-60` — wires resolution → filtering → context building
+- Loading: `src/agents/workspace.ts:400-454` — reads file contents into `WorkspaceBootstrapFile[]`
+- Filtering: `src/agents/workspace.ts:458-466` — `filterBootstrapFilesForSession()` only filters subagent sessions via an allowlist; all other sessions (including group chats) receive the full set
+- Context building: `src/agents/pi-embedded-helpers/bootstrap.ts:187-239` — trims to `bootstrapMaxChars` (default 20,000 chars) using head/tail strategy with `totalMaxChars` cap (default 24,000)
+- Orchestration: `src/agents/bootstrap-files.ts:25-66` — wires resolution → filtering → context building
 
 > **Correction vs. third-party articles:** Some sources claim MEMORY.md is "never injected in group chats, for privacy." This is inaccurate. Bootstrap injection happens for all non-subagent sessions regardless of chat type. What *is* suppressed in groups is memory search *citations* (see F5).
 
@@ -710,7 +710,7 @@ Source: `src/memory/memory-schema.ts:9-82`
 | `sync.onSearch` | `true` | Sync before search if dirty flag is set |
 | `sync.intervalMinutes` | 0 (disabled) | Periodic sync timer |
 
-Source: `src/memory/manager-sync-ops.ts:262-296` (watcher setup), `src/agents/memory-search.ts:78` (debounce default)
+Source: `src/memory/manager-sync-ops.ts:277-318` (watcher setup), `src/agents/memory-search.ts:78` (debounce default)
 
 **Session delta tracking** (for session memory source):
 

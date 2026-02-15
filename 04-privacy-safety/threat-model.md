@@ -98,9 +98,9 @@ If you run a reverse proxy (e.g. nginx, Caddy, Traefik) in front of the Gateway,
 2. **IP checks see the proxy IP:** The Gateway sees the proxy's IP instead of the real client IP, breaking rate limiting and access controls.
 
 The Gateway solves this with a trust chain:
-- `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:142-148`)
-- `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:150-164`)
-- `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:96-117`)
+- `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:187-201`)
+- `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:203-217`)
+- `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:101-122`)
 
 **Configuration:**
 ```bash
@@ -112,7 +112,7 @@ openclaw config set gateway.trustedProxies '["127.0.0.1"]'
 - No reverse proxy? Leave `trustedProxies` empty (the default)
 - `openclaw security audit` flags this as `gateway.trusted_proxies_missing` when a proxy is detected but not configured
 
-Source: `src/gateway/auth.ts:73-94` (`resolveTailscaleClientIp()`, `resolveRequestClientIp()`), `src/security/audit.ts` (audit check)
+Source: `src/gateway/auth.ts:78-99` (`resolveTailscaleClientIp()`, `resolveRequestClientIp()`), `src/security/audit.ts` (audit check)
 
 ### 4) Local disk + secrets
 OpenClaw stores transcripts and credentials on disk under `~/.openclaw/`.
@@ -183,7 +183,7 @@ Source: `src/infra/bonjour.ts:12-26` (opts type), `src/infra/bonjour.ts:130-146`
 
 ### 7) Persistent memory files
 
-OpenClaw loads nine named workspace `.md` files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md) on every agent turn via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:276-330`). These are injected directly into the system prompt as trusted context — they do **not** carry `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers like fetched web pages or webhook payloads do. Each file is truncated at 20,000 characters (`src/agents/pi-embedded-helpers/bootstrap.ts:84`).
+OpenClaw loads nine named workspace `.md` files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md) on every agent turn via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:400-454`). These are injected directly into the system prompt as trusted context — they do **not** carry `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers like fetched web pages or webhook payloads do. Each file is truncated at 20,000 characters (`src/agents/pi-embedded-helpers/bootstrap.ts:85`).
 
 Additionally, `memory/*.md` directory files are accessed via `memory_search`/`memory_get` tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`).
 
@@ -193,9 +193,9 @@ Mitigations:
 - OS-level file permissions (restrict write access to the workspace directory)
 - Periodic content audit: `grep -rn "<!--" .` to detect hidden HTML comments
 - Run Cisco AI Defense scanner against workspace directory for deeper LLM-based analysis
-- Subagent exposure is limited: `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:334-342`) restricts subagents to only AGENTS.md + TOOLS.md
+- Subagent exposure is limited: `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:458-466`) restricts subagents to only AGENTS.md + TOOLS.md
 
-Source: `src/agents/workspace.ts:30-31` (file list), `src/agents/pi-embedded-helpers/bootstrap.ts:84,162-191` (injection), `src/memory/qmd-manager.ts:346-352` (QMD validation)
+Source: `src/agents/workspace.ts:30-31` (file list), `src/agents/pi-embedded-helpers/bootstrap.ts:85,187-239` (injection), `src/memory/qmd-manager.ts:418-424` (QMD validation)
 
 See: [Cisco AI Defense gap analysis](../08-security-analysis/cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned)
 
@@ -237,7 +237,7 @@ Each agent can have its own sandbox configuration controlling:
 
 Agent-specific settings override global defaults. Resolution order: agent config -> global agent defaults -> built-in defaults.
 
-Source: `src/agents/sandbox/config.ts:126` (`resolveSandboxConfigForAgent()`)
+Source: `src/agents/sandbox/config.ts:145` (`resolveSandboxConfigForAgent()`)
 
 ### Tool policies per agent
 

@@ -79,8 +79,8 @@ The Cisco blog post identifies four risk categories for OpenClaw deployments and
 2. **Install-time skill scanning** (`src/security/skill-scanner.ts:37-46`) — regex-based scanning of `.js`/`.ts` files at skill install time
 3. **Loopback default** (`src/gateway/server.impl.ts:112-118`) — gateway binds to 127.0.0.1 by default
 4. **Mandatory auth enforcement** (`src/gateway/server-runtime-config.ts:97-101`) — throws error if binding to non-loopback without auth credentials
-5. **SSRF protection** (`src/infra/net/ssrf.ts:86-141`) — DNS pinning with private IP blocking (10.x, 127.x, 169.254.x, 172.16-31.x, 192.168.x, 100.64-127.x, IPv6 link-local/ULA, plus metadata hostnames)
-6. **SSRF policy enforcement** (`src/infra/net/ssrf.ts:221-256`) — `resolvePinnedHostnameWithPolicy()` blocks both hostname-based and resolved-IP-based private network access
+5. **SSRF protection** (`src/infra/net/ssrf.ts:167-272`) — DNS pinning with private IP blocking (10.x, 127.x, 169.254.x, 172.16-31.x, 192.168.x, 100.64-127.x, IPv6 link-local/ULA including full-form IPv4-mapped IPv6, plus metadata hostnames)
+6. **SSRF policy enforcement** (`src/infra/net/ssrf.ts:337-389`) — `resolvePinnedHostnameWithPolicy()` blocks both hostname-based and resolved-IP-based private network access
 7. **RBAC on every call** (`src/gateway/server-methods.ts:99-169`) — `authorizeGatewayMethod()` enforces role + scope checks (operator/node roles, admin/approvals/pairing/read/write scopes) on every gateway method
 
 **Verdict:** FALSE — OpenClaw has extensive built-in security. The blog post appears to have evaluated an older version or did not examine the codebase beyond surface-level claims.
@@ -170,7 +170,7 @@ The SKILL.md gap extends to **all persistent `.md` files** in the workspace. Two
 
 **Path 1 — Bootstrap files (system prompt injection, high trust):**
 
-Nine named `.md` files are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:276-330`) and injected directly into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:162-191`). They appear as fully trusted context with **no content validation** — only truncation at 20,000 characters per file (`src/agents/pi-embedded-helpers/bootstrap.ts:84`).
+Nine named `.md` files are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:400-454`) and injected directly into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:187-239`). They appear as fully trusted context with **no content validation** — only truncation at 20,000 characters per file (`src/agents/pi-embedded-helpers/bootstrap.ts:85`).
 
 | Bootstrap file | Purpose | Max chars | Injection path |
 |----------------|---------|-----------|----------------|
@@ -184,17 +184,17 @@ Nine named `.md` files are loaded by `loadWorkspaceBootstrapFiles()` (`src/agent
 | `MEMORY.md` | Persistent memory context | 20,000 | System prompt |
 | `memory.md` | Persistent memory context (lowercase variant) | 20,000 | System prompt |
 
-Source: `src/agents/workspace.ts:30-31` (file list), `src/agents/pi-embedded-helpers/bootstrap.ts:84` (truncation limit)
+Source: `src/agents/workspace.ts:30-31` (file list), `src/agents/pi-embedded-helpers/bootstrap.ts:85` (truncation limit)
 
 **Total unscanned system prompt attack surface: 9 x 20,000 = 180,000 characters.**
 
 **Path 2 — Memory directory files (tool-call injection, lower trust):**
 
-Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. They go through a separate pipeline: `listMemoryFiles()` (`src/memory/internal.ts:78-107`) and `resolveDefaultCollections()` (`src/memory/backend-config.ts:233-252`), accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget — not as system prompt context. The QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:346-352`) but does **not** scan content.
+Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. They go through a separate pipeline: `listMemoryFiles()` (`src/memory/internal.ts:78-107`) and `resolveDefaultCollections()` (`src/memory/backend-config.ts:233-252`), accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget — not as system prompt context. The QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:418-424`) but does **not** scan content.
 
 **Neither path is scanned by the built-in skill scanner** (`src/security/skill-scanner.ts:37-46`), which only processes JS/TS files.
 
-**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:334-342` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
+**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:458-466` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
 
 **Risk scenario:** An attacker with workspace write access (via compromised skill, plugin, shared git repo, or social engineering) plants persistent prompt injection in any of these files. The injection persists across sessions and appears as trusted system context, making it significantly harder for the model to reject than runtime injection from user messages or fetched content.
 

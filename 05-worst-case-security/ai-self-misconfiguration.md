@@ -54,7 +54,7 @@ ls -la ~/.openclaw/openclaw.json.bak*
 diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
 ```
 
-Source: `src/config/io.ts:343-362` — `rotateConfigBackups()` keeps `.bak` files before each write.
+Source: `src/config/backup-rotation.ts:3` — `rotateConfigBackups()` keeps `.bak` files before each write (extracted from `config/io.ts` in Feb 15 sync 2).
 
 ---
 
@@ -81,7 +81,7 @@ This is not a problem with one specific model. It's a class of problem:
 - **Large models** (Opus, GPT-5, Sonnet) hallucinate less but can still confidently set dangerous-but-valid values
 - **All models** follow instructions — if a prompt injection says "fix the config," they will try
 
-OpenClaw's security audit warns about small/older models with tool access (`src/security/audit-extra.sync.ts:713-760`), but this risk exists at every model tier.
+OpenClaw's security audit warns about small/older models with tool access (`src/security/audit-extra.sync.ts:805-894`), but this risk exists at every model tier.
 
 ### Why "Secure by Default" Doesn't Help Here
 
@@ -141,7 +141,7 @@ GLM-5:
 4. Ran raw `rsync --delete` directly — **deleting files**
 5. Misinterpreted `disable-model-invocation: true` in the skill frontmatter as meaning the skill was "disabled"
 
-The `disable-model-invocation` flag is parsed at `src/agents/skills/frontmatter.ts:163-164` and used at `src/agents/skills/workspace.ts:230` to filter skills from the model prompt — it controls whether the *model* can invoke the skill unprompted, not whether the skill is "disabled." GLM-5 read the flag, hallucinated an incorrect interpretation, and acted on it.
+The `disable-model-invocation` flag is parsed at `src/agents/skills/frontmatter.ts:119` and used at `src/agents/skills/workspace.ts:230` to filter skills from the model prompt — it controls whether the *model* can invoke the skill unprompted, not whether the skill is "disabled." GLM-5 read the flag, hallucinated an incorrect interpretation, and acted on it.
 
 This is the same class of problem as the system prompt bypass above, but more severe: the SKILL.md contained explicit safety instructions, and the model read them, understood them, and decided to do something else anyway.
 
@@ -282,7 +282,7 @@ openclaw config set gateway.controlUi.dangerouslyDisableDeviceAuth false
 openclaw config set gateway.controlUi.allowInsecureAuth false
 ```
 
-**Does `openclaw security audit` catch this?** Yes — both `dangerously*` flags are flagged as severity "critical" (`src/security/audit.ts:334-353`).
+**Does `openclaw security audit` catch this?** Yes — both `dangerously*` flags are flagged as severity "critical" (`src/security/audit.ts:343-363`).
 
 ---
 
@@ -329,7 +329,7 @@ openclaw config set tools.elevated false
 **Severity:** 🟠 HIGH
 **Applicability:** Self-hosted
 
-OpenClaw's Docker sandbox ships with strong defaults (`src/agents/sandbox/config.ts:39-81`). But every hardened default can be overridden via config — meaning an AI (or a human) can systematically dismantle the sandbox one setting at a time.
+OpenClaw's Docker sandbox ships with strong defaults (`src/agents/sandbox/config.ts:54-97`). But every hardened default can be overridden via config — meaning an AI (or a human) can systematically dismantle the sandbox one setting at a time.
 
 #### 4a. Network Isolation Removal
 
@@ -354,7 +354,7 @@ OpenClaw's Docker sandbox ships with strong defaults (`src/agents/sandbox/config
 
 **Even worse:** `"host"` shares the host's network namespace directly — no isolation at all.
 
-Source: `src/agents/sandbox/docker.ts:245` — `args.push("--network", params.cfg.network)`
+Source: `src/agents/sandbox/docker.ts:263` — `args.push("--network", params.cfg.network)`
 
 #### 4b. Linux Capabilities Restoration
 
@@ -379,9 +379,9 @@ Source: `src/agents/sandbox/docker.ts:245` — `args.push("--network", params.cf
 
 With capabilities restored, a container escape via kernel exploits becomes significantly easier.
 
-**Note:** The `--security-opt no-new-privileges` flag is **hardcoded** and always applied (`src/agents/sandbox/docker.ts:259`). This cannot be disabled via config and prevents SUID binaries from gaining elevated privileges — a genuine defense-in-depth measure.
+**Note:** The `--security-opt no-new-privileges` flag is **hardcoded** and always applied (`src/agents/sandbox/docker.ts:277`). This cannot be disabled via config and prevents SUID binaries from gaining elevated privileges — a genuine defense-in-depth measure.
 
-Source: `src/agents/sandbox/docker.ts:256-258` — iterates `capDrop` array to build `--cap-drop` flags
+Source: `src/agents/sandbox/docker.ts:274-276` — iterates `capDrop` array to build `--cap-drop` flags
 
 #### 4c. Read-Only Root Filesystem Disabled
 
@@ -404,7 +404,7 @@ Source: `src/agents/sandbox/docker.ts:256-258` — iterates `capDrop` array to b
 - Write persistent files that survive container restarts (if volumes are mounted)
 - Create SUID binaries (though `no-new-privileges` limits exploitation)
 
-Source: `src/agents/sandbox/docker.ts:238` — `if (params.cfg.readOnlyRoot) args.push("--read-only")`
+Source: `src/agents/sandbox/docker.ts:256` — `if (params.cfg.readOnlyRoot) args.push("--read-only")`
 
 #### 4d. Workspace Access Escalation
 
@@ -426,7 +426,7 @@ Source: `src/agents/sandbox/docker.ts:238` — `if (params.cfg.readOnlyRoot) arg
 
 With `"rw"`, the sandboxed agent can modify files on the host filesystem — potentially overwriting config files, scripts, or source code outside the sandbox.
 
-Source: `src/agents/sandbox/docker.ts:322-332` — workspace mount with optional `:ro` suffix
+Source: `src/agents/sandbox/docker.ts:340-350` — workspace mount with optional `:ro` suffix
 
 #### 4e. Dangerous Bind Mounts
 
@@ -450,9 +450,9 @@ Source: `src/agents/sandbox/docker.ts:322-332` — workspace mount with optional
 - `/:/host:rw` — mounts the **entire host filesystem** read-write into the container. Complete host compromise.
 - `/var/run/docker.sock` — gives the container access to the Docker daemon. The sandboxed agent can now create new privileged containers, escape the sandbox entirely, and control the host.
 
-Any bind mount widens the attack surface. Agent-level binds are **concatenated** with global binds (`src/agents/sandbox/config.ts:55`), so per-agent overrides add to — not replace — the global list.
+Any bind mount widens the attack surface. Agent-level binds are **concatenated** with global binds (`src/agents/sandbox/config.ts:70`), so per-agent overrides add to — not replace — the global list.
 
-Source: `src/agents/sandbox/docker.ts:296-300` — iterates `binds` array to build `-v` flags
+Source: `src/agents/sandbox/docker.ts:314-318` — iterates `binds` array to build `-v` flags
 
 #### 4f. Resource Limits Removed
 
@@ -478,7 +478,7 @@ Source: `src/agents/sandbox/docker.ts:296-300` — iterates `binds` array to bui
 
 These are availability attacks, not confidentiality or integrity attacks — but on a shared host they can take down the gateway and other services.
 
-Source: `src/agents/sandbox/docker.ts:279-293` — resource limit flags
+Source: `src/agents/sandbox/docker.ts:294-313` — resource limit flags
 
 #### 4g. Custom DNS for Network Redirection
 
@@ -501,7 +501,7 @@ Source: `src/agents/sandbox/docker.ts:279-293` — resource limit flags
 
 Requires `network` to not be `"none"` — this attack only works when network isolation has already been weakened (4a).
 
-Source: `src/agents/sandbox/docker.ts:266-274` — DNS and extra hosts flags
+Source: `src/agents/sandbox/docker.ts:284-293` — DNS and extra hosts flags
 
 #### 4h. Security Profile Removal
 
@@ -521,7 +521,7 @@ Source: `src/agents/sandbox/docker.ts:266-274` — DNS and extra hosts flags
 
 **What blank values do:** Depending on Docker's handling, this may disable the default seccomp profile that blocks ~44 dangerous syscalls (including `mount`, `reboot`, `kexec_load`). Without seccomp filtering, a container has access to a wider kernel attack surface.
 
-Source: `src/agents/sandbox/docker.ts:260-264` — seccomp and AppArmor `--security-opt` flags
+Source: `src/agents/sandbox/docker.ts:278-283` — seccomp and AppArmor `--security-opt` flags
 
 #### Combined "Full Sandbox Dismantle" Example
 
@@ -906,7 +906,7 @@ No single change looks catastrophic. Together, they give anyone on the network u
 
 ### Schema-Valid but Unsafe Values
 
-OpenClaw uses Zod schemas with `.strict()` mode (`src/config/zod-schema.ts:599-600`). This means:
+OpenClaw uses Zod schemas with `.strict()` mode (`src/config/zod-schema.ts:635`). This means:
 - **Unknown top-level keys are rejected** — the AI can't add random keys
 - **Type errors are caught** — wrong types for known keys fail validation
 - **Semantic security errors pass** — `gateway.bind: "lan"` is a valid value for a known key, even though it's dangerous
@@ -1002,7 +1002,7 @@ openclaw security audit --deep  # Extended checks
 openclaw security audit --fix   # Auto-fix common issues
 ```
 
-Source: `src/security/audit.ts:966-1044`
+Source: `src/security/audit.ts:624-706`
 
 ### `openclaw doctor`
 
@@ -1038,18 +1038,18 @@ OpenClaw has several built-in protections. Understanding them helps you build on
 
 | Protection | What It Does | Source |
 |-----------|-------------|--------|
-| **Config backup rotation** | Keeps 5 `.bak` files before each config write | `src/config/io.ts:343-362` |
+| **Config backup rotation** | Keeps 5 `.bak` files before each config write | `src/config/backup-rotation.ts:3` |
 | **baseHash optimistic locking** | Prevents concurrent config overwrites (not a security control — AI reads the hash first) | `src/gateway/server-methods/config.ts:152-459` |
 | **Credential redaction** | API keys replaced with `__OPENCLAW_REDACTED__` in `config.get` responses | `src/config/redact-snapshot.ts:42,273-310` |
 | **Dangerous env var blocklist** | Blocks `LD_PRELOAD`, `NODE_OPTIONS`, etc. from being set via exec tools | `src/agents/bash-tools.exec.ts:61-78` |
-| **Small model risk audit** | Warns when small/older models have tool access | `src/security/audit-extra.sync.ts:713-760` |
+| **Small model risk audit** | Warns when small/older models have tool access | `src/security/audit-extra.sync.ts:805-894` |
 | **ALLOWED_FILE_NAMES** | Restricts which agent bootstrap files can be modified via `agents.files.set` | `src/gateway/server-methods/agents.ts:454-506` |
-| **File permissions** | Config files created with `0o600`, directories with `0o700` | `src/config/io.ts:1027,919` |
+| **File permissions** | Config files created with `0o600`, directories with `0o700` | `src/config/io.ts:998,890` |
 | **Tool profiles** | `"coding"` profile excludes the gateway tool entirely | `src/agents/tool-policy.ts:63-80` |
 | **System prompt warning** | Soft instruction to not run `config.apply` without user request | `src/agents/system-prompt.ts:430-432` |
 | **Restart sentinel** | Logs timestamp, session key, message, and stats on config-triggered restarts | `src/infra/restart-sentinel.ts:30-48` |
-| **Strict schema validation** | Zod `.strict()` rejects unknown top-level keys and type errors | `src/config/zod-schema.ts:599-600` |
-| **Forensic config write audit** | Every config write logged to `config-audit.jsonl` with PID, PPID, CWD, argv, content hashes, byte sizes, gateway-mode changes, and anomaly flags (size drops >50%, missing meta, gateway-mode removal) | `src/config/io.ts:370-413` (audit helpers), `:958-1062` (audit record builder + append) |
+| **Strict schema validation** | Zod `.strict()` rejects unknown top-level keys and type errors | `src/config/zod-schema.ts:635` |
+| **Forensic config write audit** | Every config write logged to `config-audit.jsonl` with PID, PPID, CWD, argv, content hashes, byte sizes, gateway-mode changes, and anomaly flags (size drops >50%, missing meta, gateway-mode removal) | `src/config/io.ts:376-390` (audit helpers), `:900-1020` (audit record builder + append) |
 
 ---
 

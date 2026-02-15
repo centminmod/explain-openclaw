@@ -231,7 +231,7 @@ openclaw security audit
 
 If you're not using a reverse proxy, leave `trustedProxies` empty (the default).
 
-Source: `src/gateway/net.ts:142-164`
+Source: `src/gateway/net.ts:187-217`
 
 See: [Threat model - Trusted proxies](./threat-model.md#trusted-proxies-reverse-proxy-configuration)
 
@@ -311,7 +311,7 @@ cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
 openclaw gateway restart
 ```
 
-Source: `src/config/io.ts:343-362` (backup rotation)
+Source: `src/config/backup-rotation.ts:3` (backup rotation, extracted from `config/io.ts`)
 
 **Consider version-controlling your config** for change tracking:
 
@@ -333,7 +333,7 @@ for line in sys.stdin:
 "
 ```
 
-Source: `src/config/io.ts:370-413` (audit helpers), `:958-1062` (audit record builder)
+Source: `src/config/io.ts:376-390` (audit helpers), `:900-1020` (audit record builder)
 
 See: [AI Self-Misconfiguration Guide](../05-worst-case-security/ai-self-misconfiguration.md), [Attack #28](../05-worst-case-security/prompt-injection-attacks.md#-attack-28-config-self-modification-via-gateway-tool)
 

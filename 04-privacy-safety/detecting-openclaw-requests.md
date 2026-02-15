@@ -24,7 +24,7 @@ When OpenClaw downloads media files (images, audio, video) attached to incoming 
 User-Agent: OpenClaw-Gateway/1.0
 ```
 
-**Source:** `src/media/input-files.ts:149`
+**Source:** `src/media/input-files.ts:179`
 ```typescript
 init: { headers: { "User-Agent": "OpenClaw-Gateway/1.0" } },
 ```
@@ -40,7 +40,7 @@ User-Agent: openclaw
 Accept: application/vnd.github+json
 ```
 
-**Source:** `src/commands/signal-install.ts:124`
+**Source:** `src/commands/signal-install.ts:221`
 ```typescript
 headers: {
   "User-Agent": "openclaw",
@@ -341,8 +341,8 @@ export type GatewayClientInfo = {
 
 | Header | Where it's set | Notes |
 |---|---|---|
-| `User-Agent: OpenClaw-Gateway/1.0` | `src/media/input-files.ts:149` | Media file downloads |
-| `User-Agent: openclaw` | `src/commands/signal-install.ts:124` | Signal CLI installation |
+| `User-Agent: OpenClaw-Gateway/1.0` | `src/media/input-files.ts:179` | Media file downloads |
+| `User-Agent: openclaw` | `src/commands/signal-install.ts:221` | Signal CLI installation |
 | `User-Agent: openclaw` | `src/infra/provider-usage.fetch.claude.ts:119` | Anthropic usage check |
 | `HTTP-Referer: https://openclaw.ai` | `src/agents/pi-embedded-runner/extra-params.ts:8` | OpenRouter/Perplexity |
 | `X-Title: OpenClaw` | `src/agents/pi-embedded-runner/extra-params.ts:9` | OpenRouter/Perplexity |
@@ -540,10 +540,10 @@ When placing Cloudflare in front of the Gateway, configure these settings:
 | Setting | Config path | Required value | Why |
 |---|---|---|---|
 | Bind mode | `gateway.bind` | `"lan"` or `gateway.customBindHost` | Must not be `"loopback"` — Cloudflare needs to reach the Gateway's port |
-| Auth | `gateway.auth.token` or `gateway.auth.password` | Must be set | Gateway **refuses to start** on non-loopback without auth (`src/gateway/server-runtime-config.ts:97-101`) |
-| Trusted proxies | `gateway.trustedProxies` | Cloudflare IP ranges | Gateway trusts `X-Forwarded-For` / `X-Real-IP` from these IPs for client IP resolution (`src/gateway/net.ts:150-164`) |
+| Auth | `gateway.auth.token` or `gateway.auth.password` | Must be set | Gateway **refuses to start** on non-loopback without auth (`src/gateway/server-runtime-config.ts:99-103`), unless `auth.mode="trusted-proxy"` |
+| Trusted proxies | `gateway.trustedProxies` | Cloudflare IP ranges | Gateway trusts `X-Forwarded-For` / `X-Real-IP` from these IPs for client IP resolution (`src/gateway/net.ts:203-217`) |
 
-**Source:** `src/config/types.gateway.ts:243-247`
+**Source:** `src/config/types.gateway.ts:312`
 ```typescript
 /**
  * IPs of trusted reverse proxies (e.g. Traefik, nginx). When a connection
@@ -590,8 +590,8 @@ OpenClaw's HTTP API endpoints read several custom headers from inbound requests.
 | `x-openclaw-agent` | `src/gateway/http-utils.ts:28` | Agent routing (fallback alias for `x-openclaw-agent-id`) | Same as above |
 | `x-openclaw-session-key` | `src/gateway/http-utils.ts:71` | Session pinning — pins request to a specific named session | `/v1/chat/completions`, `/v1/responses` |
 | `x-openclaw-token` | `src/gateway/hooks.ts:168-169` | Webhook authentication — alternative to `Authorization: Bearer` | `/hooks/*` |
-| `x-openclaw-message-channel` | `src/gateway/tools-invoke-http.ts:173` | Tool policy routing — specifies channel context (e.g., `"discord"`, `"slack"`) | `/tools/invoke` |
-| `x-openclaw-account-id` | `src/gateway/tools-invoke-http.ts:175` | Account-level tool policy routing | `/tools/invoke` |
+| `x-openclaw-message-channel` | `src/gateway/tools-invoke-http.ts:200` | Tool policy routing — specifies channel context (e.g., `"discord"`, `"slack"`) | `/tools/invoke` |
+| `x-openclaw-account-id` | `src/gateway/tools-invoke-http.ts:202` | Account-level tool policy routing | `/tools/invoke` |
 | `x-openclaw-relay-token` | `src/browser/extension-relay.ts:80` | Browser extension CDP relay auth | Separate loopback-only server (NOT on main Gateway port) |
 
 > **Note:** `x-openclaw-relay-token` is on a separate server that binds exclusively to loopback — it is **never** accessible through Cloudflare and is listed here only for completeness.
