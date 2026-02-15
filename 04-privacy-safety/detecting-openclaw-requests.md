@@ -24,7 +24,7 @@ When OpenClaw downloads media files (images, audio, video) attached to incoming 
 User-Agent: OpenClaw-Gateway/1.0
 ```
 
-**Source:** `src/media/input-files.ts:179`
+**Source:** `src/media/input-files.ts:171`
 ```typescript
 init: { headers: { "User-Agent": "OpenClaw-Gateway/1.0" } },
 ```
@@ -58,7 +58,7 @@ When checking Anthropic usage via OAuth:
 User-Agent: openclaw
 ```
 
-**Source:** `src/infra/provider-usage.fetch.claude.ts:119`
+**Source:** `src/infra/provider-usage.fetch.claude.ts:125`
 ```typescript
 "User-Agent": "openclaw",
 ```
@@ -105,14 +105,14 @@ OpenClaw uses a custom header when calling MiniMax's vision-language model API:
 MM-API-Source: OpenClaw
 ```
 
-**Source:** `src/agents/minimax-vlm.ts:76`
+**Source:** `src/agents/minimax-vlm.ts:73`
 ```typescript
 "MM-API-Source": "OpenClaw",
 ```
 
 Also used for MiniMax usage checking:
 
-**Source:** `src/infra/provider-usage.fetch.minimax.ts:322`
+**Source:** `src/infra/provider-usage.fetch.minimax.ts:319`
 ```typescript
 "MM-API-Source": "OpenClaw",
 ```
@@ -127,7 +127,7 @@ When OpenClaw connects to an ACP (Agent Communication Protocol) server, it ident
 { "name": "openclaw-acp-client", "version": "1.0.0" }
 ```
 
-**Source:** `src/acp/client.ts:129`
+**Source:** `src/acp/client.ts:366`
 ```typescript
 clientInfo: { name: "openclaw-acp-client", version: "1.0.0" },
 ```
@@ -169,7 +169,7 @@ headers: {
 - **SSRF guard behavior:** The internal SSRF guard may produce distinctive redirect-following or timing patterns.
 - **Static version:** The hardcoded Chrome 122 version string will become increasingly stale over time, making it detectable via version-age analysis.
 
-**Configurable:** Yes — `tools.web.fetch.userAgent` in the config (`src/config/types.tools.ts:381-382`).
+**Configurable:** Yes — `tools.web.fetch.userAgent` in the config (`src/config/types.tools.ts:401-402`).
 
 ---
 
@@ -341,13 +341,13 @@ export type GatewayClientInfo = {
 
 | Header | Where it's set | Notes |
 |---|---|---|
-| `User-Agent: OpenClaw-Gateway/1.0` | `src/media/input-files.ts:179` | Media file downloads |
+| `User-Agent: OpenClaw-Gateway/1.0` | `src/media/input-files.ts:171` | Media file downloads |
 | `User-Agent: openclaw` | `src/commands/signal-install.ts:221` | Signal CLI installation |
-| `User-Agent: openclaw` | `src/infra/provider-usage.fetch.claude.ts:119` | Anthropic usage check |
+| `User-Agent: openclaw` | `src/infra/provider-usage.fetch.claude.ts:125` | Anthropic usage check |
 | `HTTP-Referer: https://openclaw.ai` | `src/agents/pi-embedded-runner/extra-params.ts:8` | OpenRouter/Perplexity |
 | `X-Title: OpenClaw` | `src/agents/pi-embedded-runner/extra-params.ts:9` | OpenRouter/Perplexity |
 | `X-Title: OpenClaw Web Search` | `src/agents/tools/web-search.ts:482` | Perplexity search |
-| `MM-API-Source: OpenClaw` | `src/agents/minimax-vlm.ts:76` | MiniMax VLM |
+| `MM-API-Source: OpenClaw` | `src/agents/minimax-vlm.ts:73` | MiniMax VLM |
 
 ### Recommendation
 

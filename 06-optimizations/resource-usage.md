@@ -29,14 +29,14 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 | 3 | **Local embedding inference** — on-device GGUF model via node-llama-cpp, `Promise.all` over all texts | `src/memory/embeddings.ts:89-135` | Very High (when local) | Like running a mini-ChatGPT on your own machine to understand your notes — powerful but demands serious CPU |
 | 4 | **Plugin loading via jiti** — synchronous TypeScript transpilation per plugin at startup | `src/plugins/loader.ts:235-336` | High (startup) | Like compiling a recipe book from scratch every time you open the kitchen, instead of using a pre-printed copy |
 | 5 | **Cosine similarity fallback** — O(n) full-scan vector comparison when sqlite-vec unavailable | `src/memory/manager-search.ts:71-93` | High (per query) | Like comparing a new photo to every single photo in your album one-by-one, instead of using a smart index |
-| 6 | **PDF-to-image rendering** — per-page canvas creation + PNG encoding via `@napi-rs/canvas` | `src/media/input-files.ts:260-321` | High (per PDF) | Like photocopying each page of a PDF into a separate image file — each page takes a rendering pass |
+| 6 | **PDF-to-image rendering** — per-page canvas creation + PNG encoding via `@napi-rs/canvas` | `src/media/input-files.ts:214-271` | High (per PDF) | Like photocopying each page of a PDF into a separate image file — each page takes a rendering pass |
 | 7 | **Full AX tree traversal** — `Accessibility.getFullAXTree` on complex browser pages | `src/browser/cdp.ts:251-264` | Medium-High | Like reading every element on a web page aloud for accessibility — hundreds of elements on complex pages |
 | 8 | **Image resize via sips** — macOS-specific process spawning for each HEIC conversion/resize | `src/media/image-ops.ts:136-274` | Medium | Like opening a separate program for each photo conversion — the per-process overhead adds up |
-| 9 | **Media understanding** — sending media to AI providers (Whisper/Gemini/OpenAI) for transcription | `src/media-understanding/runner.ts:802-984` | Medium | CPU cost is mostly on the provider side, but local buffering and encoding still takes cycles |
+| 9 | **Media understanding** — sending media to AI providers (Whisper/Gemini/OpenAI) for transcription | `src/media-understanding/runner.ts:605-751` | Medium | CPU cost is mostly on the provider side, but local buffering and encoding still takes cycles |
 | 10 | **Ed25519 keypair generation** — asymmetric crypto on first run / device identity creation | `src/infra/device-identity.ts:57` | Low (one-time) | Like generating a strong password — intensive but happens only once |
-| 11 | **Memory sync** — file hashing + markdown chunking + embedding + SQLite FTS5/vec indexing | `src/memory/manager.ts:391+` | Medium (periodic) | Like re-indexing a library catalog — scanning, categorizing, and filing every document |
-| 12 | **TTS generation** — ElevenLabs/OpenAI/Edge TTS API calls + audio buffer handling | `src/tts/tts.ts:1043-1229` | Medium | API calls are remote but audio buffer conversion is local CPU work |
-| 13 | **Agent execution loop** — continuous model response processing | `src/auto-reply/reply/agent-runner-execution.ts:101` | Medium (continuous) | The main "brain" loop — always running while the bot is responding |
+| 11 | **Memory sync** — file hashing + markdown chunking + embedding + SQLite FTS5/vec indexing | `src/memory/manager.ts:327+` | Medium (periodic) | Like re-indexing a library catalog — scanning, categorizing, and filing every document |
+| 12 | **TTS generation** — ElevenLabs/OpenAI/Edge TTS API calls + audio buffer handling | `src/tts/tts.ts:522-691` | Medium | API calls are remote but audio buffer conversion is local CPU work |
+| 13 | **Agent execution loop** — continuous model response processing | `src/auto-reply/reply/agent-runner-execution.ts:103` | Medium (continuous) | The main "brain" loop — always running while the bot is responding |
 | 14 | **Cron timer loop** — infinite loop for scheduled job processing | `src/cron/service/timer.ts:422` | Low (idle) | Like a clock ticking in the background — minimal CPU unless jobs are firing |
 
 ### Other CPU consumers
@@ -55,10 +55,10 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 
 **Child process stdout/stderr accumulation:**
 - `src/process/exec.ts:133-162` — unbounded string concatenation of process output
-- `src/memory/qmd-manager.ts:645-663` — same pattern for QMD processing
+- `src/memory/qmd-manager.ts:656-661` — QMD output now **capped** at 200,000 characters via `appendOutputWithCap()` (`:1146`), configured by `MAX_QMD_OUTPUT_CHARS` (`:34`). Process is killed with descriptive error when cap is exceeded. Note: `src/process/exec.ts:133-162` remains unbounded.
 
 **Media fetch buffering:**
-- `src/media/fetch.ts:131-133` — full response body buffered into memory before processing
+- `src/media/fetch.ts:131-140` — media fetch is now **bounded** when `maxBytes` is specified: `readResponseWithLimit()` (`src/media/read-response-with-limit.ts`) streams chunk-by-chunk and aborts early on overflow, preventing unbounded memory consumption. Falls back to unbounded `arrayBuffer()` only when no limit is specified (e.g., document fetches without size constraints).
 
 ---
 
@@ -77,12 +77,12 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 | Inbound dedupe | `src/auto-reply/reply/inbound-dedupe.ts:8` | 5000 max, 20min TTL | Well bounded |
 | Gateway dedupe | `src/gateway/server-constants.ts:33-34` | 1000 max, 5min TTL | Well bounded |
 | Browser roleRefs | `src/browser/pw-session.ts:96-97` | 50 max LRU | Well bounded |
-| Followup queues | `src/auto-reply/reply/queue/state.ts:20` | 20/queue, no queue count cap | **Unbounded queues** |
-| Agent event seqByRun | `src/infra/agent-events.ts:21` | **No cleanup** | **Leak risk** |
-| Agent run sequence | `src/gateway/server-runtime-state.ts:180` | **No pruning** (maintenance timer skips it) | **Leak risk** |
+| Followup queues | `src/auto-reply/reply/queue/state.ts:20` | 20/queue, no queue count cap; `clearFollowupQueue()` (`queue/cleanup.ts:24`) clears individual queues during session cleanup | **Partially mitigated** — individual queues can be cleared but total queue-map still uncapped |
+| Agent event seqByRun | `src/infra/agent-events.ts:21` | **No cleanup** (`seqByRun` never pruned; `runContextById` now cleaned via `clearAgentRunContext()` at `:49`) | **Partial leak** — `runContextById` fixed, `seqByRun` still leaks |
+| Agent run sequence | `src/gateway/server-runtime-state.ts:185` | **No pruning** (maintenance timer skips it) | **Leak risk** |
 | WhatsApp group histories | `src/web/auto-reply/monitor.ts:103` | Helper has 1000-key cap, but web direct writes bypass it | **Partial leak** |
 | WhatsApp group member names | `src/web/auto-reply/monitor.ts:113` | **No eviction at all** | **Leak risk** |
-| Cost usage cache | `src/gateway/server-methods/usage.ts:47` | 30s TTL per entry, **no max entry count** | Low-Medium |
+| Cost usage cache | `src/gateway/server-methods/usage.ts:51` | 30s TTL per entry, **no max entry count** | Low-Medium |
 | Warned contexts | `src/infra/session-maintenance-warning.ts:14` | **Never pruned** | Low |
 | Announce queues | `src/agents/subagent-announce-queue.ts:45` | Per-queue cap, **no queue count cap** | Low |
 | Telegram sent msgs outer map | `src/telegram/sent-message-cache.ts:13` | Per-chat TTL, **outer map never evicts dead chat keys** | Low-Medium |
@@ -108,7 +108,7 @@ OpenClaw has several defenses:
 - **Compaction system:** `src/agents/compaction.ts` — multi-stage summarization to prevent unbounded context growth
 - **History turn limiting:** `src/agents/pi-embedded-runner/history.ts:15-36`
 - **Context pruning extension:** `src/agents/pi-extensions/context-pruning/extension.ts`
-- **WebSocket payload limits:** 512KB/frame, 1.5MB/connection buffer, 6MB history — `src/gateway/server-constants.ts:1-4`
+- **WebSocket payload limits:** 8MB/frame, 16MB/connection buffer, 6MB history — `src/gateway/server-constants.ts:1-4`
 
 ### Plugin memory
 
@@ -128,8 +128,8 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 | Command logger | `src/hooks/bundled/command-logger/handler.ts:42-58` | **No rotation** — `commands.log` grows unbounded |
 | Telegram sticker cache | `src/telegram/sticker-cache.ts:35-67` | **No eviction** — JSON grows with unique stickers |
 | Browser user-data profiles | `src/browser/chrome.ts:62-64` | Full Chromium profile — can reach GBs |
-| SQLite databases | `src/memory/manager.ts:704-713` | **No VACUUM** — WAL files can bloat |
-| Per-day log file size | `src/logging/logger.ts:101-108` | No cap on individual file size |
+| SQLite databases | `src/memory/manager.ts:161` | **No VACUUM** — WAL files can bloat |
+| Per-day log file size | `src/logging/logger.ts:103-111` | No cap on individual file size |
 | Voice-call `calls.jsonl` | `extensions/voice-call/src/manager/store.ts:7-10` | **Append-only, no rotation** + full-file reads on load |
 
 > *Transcript JSONL files:* Like a chat log that records every message forever but never archives or deletes old conversations — a busy bot can accumulate gigabytes over months.
@@ -142,23 +142,23 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 
 | Resource | Limit | Location |
 |----------|-------|----------|
-| Media files | 2min TTL auto-cleanup | `src/media/store.ts:15,67-83` |
-| Rolling logs | 24h age pruning | `src/logging/logger.ts:17,226-250` |
+| Media files | 2min TTL auto-cleanup | `src/media/store.ts:15,87-99` |
+| Rolling logs | 24h age pruning | `src/logging/logger.ts:17,228-252` |
 | Session store | 500 entries, 30d prune, 10MB rotation, 3 backups | `src/config/sessions/store.ts:208-210` |
 | Cron run logs | 2MB/2000 lines self-pruning | `src/cron/run-log.ts:26-57` |
-| TTS temp files | 5min delayed cleanup | `src/tts/tts.ts:42,989-998` |
+| TTS temp files | 5min delayed cleanup | `src/tts/tts-core.ts:21,500-512` |
 | Pairing requests | 3/channel, 1h TTL | `src/pairing/pairing-store.ts:14-15` |
 
 ### Size limits on inbound data
 
 | Type | Limit | Location |
 |------|-------|----------|
-| Images | 6MB (10MB input files) | `src/media/constants.ts:1`, `src/media/input-files.ts:104` |
+| Images | 6MB (10MB input files) | `src/media/constants.ts:1`, `src/media/input-files.ts:106` |
 | Audio | 16MB | `src/media/constants.ts:2` |
 | Video | 16MB | `src/media/constants.ts:3` |
 | Documents | 100MB | `src/media/constants.ts:4` |
-| WS frame | 512KB | `src/gateway/server-constants.ts:1` |
-| WS buffer | 1.5MB/connection | `src/gateway/server-constants.ts:2` |
+| WS frame | 8MB | `src/gateway/server-constants.ts:1` |
+| WS buffer | 16MB/connection | `src/gateway/server-constants.ts:2` |
 | Browser screenshot | 5MB | `src/browser/screenshot.ts:4` |
 
 ### No disk-space checks
@@ -565,7 +565,7 @@ Setting up Prometheus/Grafana is beyond the scope of this guide — see the [Pro
 
 At the start of every session, OpenClaw loads `MEMORY.md` (or `memory.md`) from the workspace directory and injects its contents into the AI's first message as a context file. This happens unconditionally for all primary sessions — the only filtering is for subagent sessions, which receive only `AGENTS.md` and `TOOLS.md`.
 
-- Resolution: `src/agents/workspace.ts:239-270` — scans for `MEMORY.md` and `memory.md`, deduplicates
+- Resolution: `src/agents/workspace.ts:363-398` — scans for `MEMORY.md` and `memory.md`, deduplicates
 - Loading: `src/agents/workspace.ts:400-454` — reads file contents into `WorkspaceBootstrapFile[]`
 - Filtering: `src/agents/workspace.ts:458-466` — `filterBootstrapFilesForSession()` only filters subagent sessions via an allowlist; all other sessions (including group chats) receive the full set
 - Context building: `src/agents/pi-embedded-helpers/bootstrap.ts:187-239` — trims to `bootstrapMaxChars` (default 20,000 chars) using head/tail strategy with `totalMaxChars` cap (default 24,000)
@@ -719,15 +719,15 @@ Source: `src/memory/manager-sync-ops.ts:277-318` (watcher setup), `src/agents/me
 | `sync.sessions.deltaBytes` | 100,000 (100KB) | Re-index session after this many new bytes |
 | `sync.sessions.deltaMessages` | 50 | Re-index session after this many new messages |
 
-Source: `src/agents/memory-search.ts:79-80`, `src/memory/manager-sync-ops.ts:314-363`
+Source: `src/agents/memory-search.ts:79-80`, `src/memory/manager-sync-ops.ts:321-386`
 
 **Sync triggers** in order of priority:
 
-1. **Session start** — if `sync.onSessionStart` is true (`manager.ts:182-196`)
-2. **Before search** — if dirty flag is set and `sync.onSearch` is true (`manager.ts:207-211`)
-3. **File watch** — after debounce period (`manager-sync-ops.ts:485-498`)
-4. **Session delta** — when byte/message threshold is exceeded (`manager-sync-ops.ts:327-363`)
-5. **Interval timer** — if `intervalMinutes > 0` (`manager-sync-ops.ts:472-483`)
+1. **Session start** — if `sync.onSessionStart` is true (`manager.ts:186-200`)
+2. **Before search** — if dirty flag is set and `sync.onSearch` is true (`manager.ts:202-215`)
+3. **File watch** — after debounce period (`manager-sync-ops.ts:508-521`)
+4. **Session delta** — when byte/message threshold is exceeded (`manager-sync-ops.ts:321-386`)
+5. **Interval timer** — if `intervalMinutes > 0` (`manager-sync-ops.ts:495-506`)
 
 During sync, unchanged files are skipped (hash comparison against the `files` table), and stale files are removed from the index.
 

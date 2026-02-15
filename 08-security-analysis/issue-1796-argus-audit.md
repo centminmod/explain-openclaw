@@ -29,7 +29,7 @@ All four AI-generated summaries in this project covered the report. The followin
 | 3 | Hardcoded OAuth client secret | **True, standard practice** | [RFC 8252 Sections 8.4-8.5](https://datatracker.ietf.org/doc/html/rfc8252#section-8.4): CLI apps are "public clients." |
 | 4 | Token refresh race condition | **False** | `withFileLock()` from `src/infra/file-lock.ts` with PID-based stale detection, lock held throughout refresh+save (`src/agents/auth-profiles/oauth.ts:43-92`). |
 | 5 | Insufficient file permission checks | **True, by design** | `0o600` on every write + `openclaw security audit`/`fix` tooling. |
-| 6 | Path traversal in agent dirs | **False** | Paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,13`) which calls `path.resolve()` (`src/utils.ts:243,245`), normalizing traversal. IDs from env/config, not user input. |
+| 6 | Path traversal in agent dirs | **False** | Paths go through `resolveUserPath()` (`src/agents/agent-paths.ts:10,13`) which calls `path.resolve()` (`src/utils.ts:306,308`), normalizing traversal. IDs from env/config, not user input. |
 | 7 | Webhook signature bypass | **True, properly gated** | `skipVerification` in `extensions/voice-call/src/webhook-security.ts` requires explicit param; dev-only, off by default. |
 | 8 | Insufficient token expiry validation | **False** | `Date.now() < cred.expires` checked on every token use (`src/agents/auth-profiles/oauth.ts:180-199`). |
 

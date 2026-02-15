@@ -140,7 +140,7 @@ Yes, but the risk level varies dramatically depending on your deployment. Here's
 **Architecture detail:** OpenClaw never loads local model weights itself. It makes HTTP API calls to `http://127.0.0.1:PORT/v1` endpoints served by LM Studio, Ollama, or Docker Model Runner. The weights live in those external tools' caches (`~/.ollama/models/`, LM Studio's model directory, Docker volumes). But the security concern remains the same — the model serving those weights may be backdoored.
 
 - Code ref: `docs/gateway/local-models.md` — local model setup guide
-- Code ref: `src/agents/models-config.providers.ts:77-86` — Ollama configured as HTTP endpoint
+- Code ref: `src/agents/models-config.providers.ts:83-92` — Ollama configured as HTTP endpoint
 - Existing warning in docs (line 12): "aggressively quantized or 'small' checkpoints raise prompt-injection risk"
 - Existing warning in docs (line 150): "local models skip provider-side filters"
 - The paper found models as small as 270M parameters can carry backdoors
@@ -312,6 +312,6 @@ No. There are no checksums, signatures, or hash verification for model downloads
 | Embedding model default | `src/memory/embeddings.ts:65-66` | Auto-download from HuggingFace (QAT variant) |
 | Embedding providers | `src/memory/embeddings.ts:32` | openai/local/gemini/voyage options |
 | API model providers | `src/agents/models-config.providers.ts` | All API provider configs |
-| Ollama HTTP endpoint | `src/agents/models-config.providers.ts:77-86` | `http://127.0.0.1:11434/v1` |
+| Ollama HTTP endpoint | `src/agents/models-config.providers.ts:83-92` | `http://127.0.0.1:11434/v1` |
 | Tool security settings | `src/agents/bash-tools.exec.ts` | allowlist/ask/full modes |
 | RBAC enforcement | `src/gateway/server-methods.ts:99-169` | Prevents agent self-approval |

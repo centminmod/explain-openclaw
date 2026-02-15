@@ -1044,6 +1044,14 @@ No line shifts. No new CVEs.
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
 
+### Post-Merge Hardening (Feb 15 sync 15) — 101 upstream commits
+
+**Security relevance: HIGH** — 9 security-relevant commits addressing input sanitization, path traversal prevention, config injection mitigation, and terminal escape hardening. 3 audit claims directly addressed. **Chat input sanitization** (`a2fe3b661`): null byte rejection and control character filtering via `sanitizeChatSendMessageInput()` (`src/gateway/server-methods/chat.ts:63`). **Transcript tool-call hardening** (`aa56045b4`): rejects blocks with missing/blank `id`/`name` fields via `hasToolCallId()`/`hasToolCallName()` (`src/agents/session-transcript-repair.ts:65,69`). **Text param normalization** (`c8733822c`): `extractStructuredText()` (`src/agents/pi-tools.read.ts:109`) prevents tool-call loops — addresses Audit 2 Claim 7. **Path validation consolidation** (`b37346103` + `e93764350`): shared `isPathInside()` (`src/security/scan-paths.ts:3`) and `resolveSafeInstallDir()` (`src/infra/install-safe-path.ts:19`) — addresses Audit 1 Claim 6. **Config array merging** (`8ec0ef586`): ID-based merging via `applyMergePatch()` (`src/config/merge-patch.ts:42`) — addresses Audit 2 Claim 1. **Bearer auth consolidation** (`b5c81f732`): `authorizeGatewayBearerRequestOrReply()` (`src/gateway/http-auth-helpers.ts:7`). **Binary MIME hardening** (`86a156db2`): `isBinaryMediaMime()` (`src/media-understanding/apply.ts:320`) covers application/* types. **ANSI injection hardening** (`9255f3665`): `splitAnsiParts()` in TUI searchable select. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-15.md).
+
+**Line shifts:** `system-prompt.ts` 351-357→362-366, 377,381→387,391, 408-412→419-423, 430-432→441-442, 552-572→565-582, 553-555→566-569, 575-590→589-604, 164-612→164-625. `browser/server.ts` 133→59, 117-124→`server-middleware.ts:24-35`, 79-166→25-136.
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
 ---
 
 ## Recommended Hardening Measures

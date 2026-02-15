@@ -498,7 +498,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=%h/.openclaw/bin/openclaw gateway --foreground
+ExecStart=%h/.openclaw/bin/openclaw gateway run
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
@@ -1354,13 +1354,13 @@ echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
 ```bash
 #!/bin/bash
 # Rotation script for DigitalOcean 1-Click installs
-# Token location: /opt/clawdbot.env, service name: "moltbot"
+# Token location: /opt/clawdbot.env, service name: "clawdbot"
 
 NEW_TOKEN=$(openssl rand -hex 32)
 # Find the OPENCLAW_GATEWAY_TOKEN line in the env file and replace its value
 sed -i "s/^OPENCLAW_GATEWAY_TOKEN=.*/OPENCLAW_GATEWAY_TOKEN=${NEW_TOKEN}/" /opt/clawdbot.env
 # Restart the service so it reads the new token
-systemctl restart moltbot
+systemctl restart clawdbot
 echo "$(date): Token rotated" >> /var/log/openclaw-token-rotation.log
 ```
 

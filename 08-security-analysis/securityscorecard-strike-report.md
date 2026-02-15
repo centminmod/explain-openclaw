@@ -78,9 +78,9 @@ The STRIKE team's live dashboard at declawed.io lists 8 vulnerabilities in its F
 |-------------------|---------------------|-----|
 | **Token leakage via browser history** | NOT VULNERABLE | Tokens are passed via `--token` CLI flag or `OPENCLAW_GATEWAY_TOKEN` env var, not URL query params. The `openclaw dashboard` command prints a tokenized URL for local convenience; the token is in the fragment, not persisted in server logs. |
 | **API key in client JS** | NOT VULNERABLE | API keys are read from env vars server-side (`process.env.OPENAI_API_KEY`). The UI fetches config from the gateway API; no keys are bundled into client JavaScript. |
-| **SSRF via webhook bypass** | NOT EXPLOITABLE | `webhook-security.ts:344-345` has a `skipVerification` parameter, but it is explicitly a dev-only feature. The production path enforces Twilio signature verification with `crypto.timingSafeEqual()`. Previously audited in [Issue #1796](./issue-1796-argus-audit.md). |
-| **Symlink privilege escalation** | NOT VULNERABLE | `src/infra/fs-safe.ts:57-58` opens files with `O_NOFOLLOW` flag. Lines 74-76 check `isSymbolicLink()`. Lines 90-91 verify inode/device match. Added in post-merge hardening (commit `5eee991`). |
-| **Unauthenticated localhost admin** | DESIGN CHOICE | Loopback binding (`127.0.0.1`) intentionally skips auth because the threat model trusts the local machine. Any non-loopback binding requires auth (`run.ts:246-258`). The SSRF escalation scenario requires a separate SSRF vulnerability on the same host, which is not an OpenClaw bug. |
+| **SSRF via webhook bypass** | NOT EXPLOITABLE | `extensions/voice-call/src/webhook-security.ts:456,480` has a `skipVerification` parameter, but it is explicitly a dev-only feature. The production path enforces Twilio signature verification with `crypto.timingSafeEqual()`. Previously audited in [Issue #1796](./issue-1796-argus-audit.md). |
+| **Symlink privilege escalation** | NOT VULNERABLE | `src/infra/fs-safe.ts:57-58` opens files with `O_NOFOLLOW` flag. Lines 74-76 check `isSymbolicLink()`. Lines 89-90 verify inode/device match. Added in post-merge hardening (commit `5eee991`). |
+| **Unauthenticated localhost admin** | DESIGN CHOICE | Loopback binding (`127.0.0.1`) intentionally skips auth because the threat model trusts the local machine. Any non-loopback binding requires auth (`run.ts:250-261`). The SSRF escalation scenario requires a separate SSRF vulnerability on the same host, which is not an OpenClaw bug. |
 
 **Score: 0/5 exploitable on current codebase.**
 
@@ -108,10 +108,10 @@ The report describes real risks but omits critical security controls that exist 
 
 | Omitted control | What it does | Code reference |
 |-----------------|-------------|----------------|
-| **Loopback default** | Native CLI binds to `127.0.0.1` by default, not `0.0.0.0` | `run.ts:177` — `const bindRaw = toOptionString(opts.bind) ?? cfg.gateway?.bind ?? "loopback"` |
-| **Auth enforcement at startup** | Gateway refuses to start on non-loopback without a configured token or password | `run.ts:246-258` — `if (bind !== "loopback" && !hasSharedSecret) { ... exit(1) }` |
+| **Loopback default** | Native CLI binds to `127.0.0.1` by default, not `0.0.0.0` | `run.ts:181` — `const bindRaw = toOptionString(opts.bind) ?? cfg.gateway?.bind ?? "loopback"` |
+| **Auth enforcement at startup** | Gateway refuses to start on non-loopback without a configured token or password | `run.ts:250-261` — `if (bind !== "loopback" && !hasSharedSecret) { ... exit(1) }` |
 | **Exec approval system** | Tool execution requires human confirmation by default; an exposed Gateway does not mean automatic command execution | Default tool policies require approval |
-| **Env var blocklist** | 18 dangerous env vars blocked (`LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`, `NODE_OPTIONS`, `BASH_ENV`, etc.) plus prefix-based blocking | `bash-tools.exec.ts:61-78` |
+| **Env var blocklist** | 16 dangerous env vars blocked (`LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`, `NODE_OPTIONS`, `BASH_ENV`, etc.) plus prefix-based blocking | `bash-tools.exec-runtime.ts:34-52` |
 | **Docker sandbox isolation** | Containerized deployments have filesystem and process isolation limiting blast radius | Docker-compose default configuration |
 | **Two prior independent audits** | Both found 0 exploitable claims: [Issue #1796 (Argus)](./issue-1796-argus-audit.md) — 0/8, [Medium article](./medium-article-audit.md) — 0/8 | See linked analyses |
 

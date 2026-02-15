@@ -61,6 +61,7 @@ openclaw [--dev] [--profile <name>] <command>
   gateway install|uninstall          # service lifecycle
   gateway start|stop|restart         # service control
   gateway status|health|probe        # gateway diagnostics
+  gateway usage-cost                 # usage cost summary
   gateway call|discover              # RPC helpers
 
   channels list|status|logs          # inspect channels
@@ -108,6 +109,9 @@ openclaw [--dev] [--profile <name>] <command>
   reset                              # reset config/state
   uninstall                          # remove gateway + data
   update                             # update CLI
+
+  directory self|peers|groups         # directory lookups (contacts, groups)
+  daemon install|start|stop|...      # gateway service (legacy alias)
 
   dns setup                          # discovery DNS helper
   tui                                # terminal UI
@@ -398,6 +402,10 @@ openclaw gateway run --verbose
 | `--verbose` | Extra logging |
 | `--ws-log <auto\|full\|compact>` | WebSocket log verbosity |
 | `--raw-stream` | Dump raw stream to stdout |
+| `--raw-stream-path <path>` | Save raw stream output to file |
+| `--reset` | Reset dev config + credentials + sessions + workspace (dev mode only) |
+| `--claude-cli-logs` | Filter logs to agent/claude-cli only |
+| `--compact` | Alias for `--ws-log compact` |
 
 ---
 
@@ -435,6 +443,27 @@ openclaw gateway status     # check if it's running
 | `--json` | Machine-readable output |
 
 All service commands support `--json` for scripting.
+
+---
+
+### `openclaw gateway usage-cost`
+
+**What it does:** Fetches a usage cost summary from session logs. Shows how much you've spent on model API calls over a given period.
+
+**When would I use this?** To check your AI provider spending, audit costs, or track usage trends.
+
+```bash
+openclaw gateway usage-cost              # last 30 days (default)
+openclaw gateway usage-cost --days 7     # last 7 days
+openclaw gateway usage-cost --json       # machine-readable output
+```
+
+| Option | What it does |
+|--------|-------------|
+| `--days <days>` | Number of days to include (default 30) |
+| `--json` | Machine-readable output |
+
+All gateway RPC options also apply: `--url`, `--token`, `--timeout`, `--expect-final`.
 
 ---
 
@@ -552,9 +581,47 @@ These options apply across most `channels` subcommands:
 
 | Option | What it does |
 |--------|-------------|
-| `--channel <name>` | `whatsapp\|telegram\|discord\|googlechat\|slack\|mattermost\|signal\|imessage\|msteams` |
+| `--channel <name>` | Core: `whatsapp\|telegram\|discord\|irc\|googlechat\|slack\|signal\|imessage` — Plugins: `msteams\|mattermost` |
 | `--account <id>` | Channel account id (default `default`) |
 | `--name <label>` | Display name for the account |
+
+---
+
+### `openclaw directory`
+
+**What it does:** Directory lookups (self, peers, groups) for channels that support it. Not all channels implement directory features — if yours doesn't, the command will tell you.
+
+**When would I use this?** To look up contacts, list groups, or see group members on a specific channel.
+
+```bash
+openclaw directory self --channel telegram       # show your account info
+openclaw directory peers list --channel telegram  # list contacts
+openclaw directory groups list                    # list groups
+openclaw directory groups members --group-id 123  # list group members
+```
+
+| Subcommand | What it does |
+|------------|-------------|
+| `self` | Show the current account user |
+| `peers list` | List peers/contacts (`--query`, `--limit`) |
+| `groups list` | List groups (`--query`, `--limit`) |
+| `groups members` | List group members (`--group-id <id>`, `--limit`) |
+
+Common options: `--channel <name>`, `--account <id>`, `--json`.
+
+---
+
+### `openclaw daemon` (legacy alias)
+
+**What it does:** Same as `openclaw gateway service` commands (`install`, `uninstall`, `start`, `stop`, `restart`, `status`). This exists as a **legacy alias** from before these were moved under `gateway`.
+
+**When would I use this?** If you have existing scripts using `openclaw daemon`. For new work, prefer `openclaw gateway install/start/stop/...` instead.
+
+```bash
+openclaw daemon install    # same as: openclaw gateway install
+openclaw daemon start      # same as: openclaw gateway start
+openclaw daemon status     # same as: openclaw gateway status
+```
 
 ---
 

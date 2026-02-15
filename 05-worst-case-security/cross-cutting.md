@@ -435,7 +435,7 @@ For dangerous operations (like running shell commands), OpenClaw can ask for hum
 **RBAC Enforcement:**
 
 ```typescript
-// From src/gateway/server-methods.ts lines 95-165
+// From src/gateway/server-methods.ts lines 99-169
 // authorizeGatewayMethod() enforces role checks on every call
 // Agents are blocked from approval methods
 ```
@@ -495,9 +495,9 @@ If you suspect any compromise:
 | Security Control | Source File | Lines |
 |------------------|-------------|-------|
 | Tool security settings | `src/agents/bash-tools.exec.ts` | Tool handler |
-| RBAC enforcement | `src/gateway/server-methods.ts` | 95-165 |
-| Session key isolation | `src/routing/session-key.ts` | 119, 135 |
-| File permissions | `src/config/io.ts` | 919, 1027 |
+| RBAC enforcement | `src/gateway/server-methods.ts` | 99-169 |
+| Session key isolation | `src/routing/session-key.ts` | 112, 130 |
+| File permissions | `src/config/io.ts` | 890, 998 |
 | Message envelope format | Agent runtime | Wraps user messages |
 | External content wrapping | Web fetch tools | Marks untrusted content |
 | SSRF protection | `src/infra/net/ssrf.ts`, `src/infra/net/fetch-guard.ts` | DNS pinning for web/media fetches |

@@ -30,8 +30,8 @@ The Cisco blog post identifies four risk categories for OpenClaw deployments and
 **What the code actually does:**
 
 1. **Exec approval system** (`src/infra/exec-approvals.ts:1-50`) — every shell command goes through `requiresExecApproval()` / `evaluateShellAllowlist()` with configurable policies (`deny` / `allowlist` / `full`) and per-agent scoping
-2. **Environment variable blocklist** (`src/agents/bash-tools.exec.ts:59-78`) — 17 dangerous env vars (`LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`, `NODE_OPTIONS`, `BASH_ENV`, etc.) are blocked, plus prefix-based blocking for `DYLD_*` and `LD_*` (line 79)
-3. **Sanitization enforcement** (`src/agents/bash-tools.exec.ts:83-90`) — `validateHostEnv()` throws `Security Violation` errors if blocked vars or PATH modifications are detected
+2. **Environment variable blocklist** (`src/agents/bash-tools.exec-runtime.ts:34-51`) — 17 dangerous env vars (`LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`, `NODE_OPTIONS`, `BASH_ENV`, etc.) are blocked, plus prefix-based blocking for `DYLD_*` and `LD_*` (line 52)
+3. **Sanitization enforcement** (`src/agents/bash-tools.exec-runtime.ts:56-80`) — `validateHostEnv()` throws `Security Violation` errors if blocked vars or PATH modifications are detected
 4. **Sandbox support** — Docker exec args (`buildDockerExecArgs`) provide container-level isolation
 
 **Verdict:** TRUE that skills can invoke shell commands — this is by design for an AI agent framework. OVERSTATED because execution is gated by a multi-layer approval system, not arbitrary.
@@ -63,7 +63,7 @@ The Cisco blog post identifies four risk categories for OpenClaw deployments and
 1. **Pairing system** (`src/pairing/pairing-store.ts:12-25`) — 8-character codes with 60-minute TTL, max 3 pending, with lockfile-based concurrency control
 2. **AllowFrom lists** (`src/pairing/pairing-store.ts:42-45`) — per-channel allowlists restrict which users can interact with the agent
 3. **Gateway bind default** (`src/gateway/server.impl.ts:112-118`) — defaults to `loopback` (127.0.0.1), not LAN/public
-4. **Mandatory auth for non-loopback** (`src/gateway/server-runtime-config.ts:97-101`) — server refuses to start on non-loopback without a configured auth token/password
+4. **Mandatory auth for non-loopback** (`src/gateway/server-runtime-config.ts:99-103`) — server refuses to start on non-loopback without a configured auth token/password
 
 **Verdict:** TRUE that messaging integrations extend the attack surface — that is inherent to any messaging-capable application. OVERSTATED because pairing + allowlists + bind defaults significantly restrict who can reach the agent.
 
@@ -76,9 +76,9 @@ The Cisco blog post identifies four risk categories for OpenClaw deployments and
 **What the code actually does:**
 
 1. **Audit framework** (`src/security/audit.ts:1-80`, `src/security/audit-extra.ts`) — 65+ security checks across 12 categories (filesystem permissions, secrets in config, attack surface, exposure matrix, hooks hardening, model hygiene, plugin trust, etc.)
-2. **Install-time skill scanning** (`src/security/skill-scanner.ts:37-46`) — regex-based scanning of `.js`/`.ts` files at skill install time
+2. **Install-time skill scanning** (`src/security/skill-scanner.ts:38-47`) — regex-based scanning of `.js`/`.ts` files at skill install time
 3. **Loopback default** (`src/gateway/server.impl.ts:112-118`) — gateway binds to 127.0.0.1 by default
-4. **Mandatory auth enforcement** (`src/gateway/server-runtime-config.ts:97-101`) — throws error if binding to non-loopback without auth credentials
+4. **Mandatory auth enforcement** (`src/gateway/server-runtime-config.ts:99-103`) — throws error if binding to non-loopback without auth credentials
 5. **SSRF protection** (`src/infra/net/ssrf.ts:167-272`) — DNS pinning with private IP blocking (10.x, 127.x, 169.254.x, 172.16-31.x, 192.168.x, 100.64-127.x, IPv6 link-local/ULA including full-form IPv4-mapped IPv6, plus metadata hostnames)
 6. **SSRF policy enforcement** (`src/infra/net/ssrf.ts:337-389`) — `resolvePinnedHostnameWithPolicy()` blocks both hostname-based and resolved-IP-based private network access
 7. **RBAC on every call** (`src/gateway/server-methods.ts:99-169`) — `authorizeGatewayMethod()` enforces role + scope checks (operator/node roles, admin/approvals/pairing/read/write scopes) on every gateway method
@@ -142,7 +142,7 @@ Cross-reference: [ClawHub marketplace risks](../05-worst-case-security/clawhub-m
 The key finding from evaluating this tool is a gap in OpenClaw's built-in scanner:
 
 ```typescript
-// src/security/skill-scanner.ts:37-46
+// src/security/skill-scanner.ts:38-47
 const SCANNABLE_EXTENSIONS = new Set([
   ".js",  ".ts",  ".mjs", ".cjs",
   ".mts", ".cts", ".jsx", ".tsx",
@@ -190,9 +190,9 @@ Source: `src/agents/workspace.ts:30-31` (file list), `src/agents/pi-embedded-hel
 
 **Path 2 — Memory directory files (tool-call injection, lower trust):**
 
-Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. They go through a separate pipeline: `listMemoryFiles()` (`src/memory/internal.ts:78-107`) and `resolveDefaultCollections()` (`src/memory/backend-config.ts:233-252`), accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget — not as system prompt context. The QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:418-424`) but does **not** scan content.
+Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. They go through a separate pipeline: `listMemoryFiles()` (`src/memory/internal.ts:78-107`) and `resolveDefaultCollections()` (`src/memory/backend-config.ts:235-254`), accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget — not as system prompt context. The QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:418-424`) but does **not** scan content.
 
-**Neither path is scanned by the built-in skill scanner** (`src/security/skill-scanner.ts:37-46`), which only processes JS/TS files.
+**Neither path is scanned by the built-in skill scanner** (`src/security/skill-scanner.ts:38-47`), which only processes JS/TS files.
 
 **Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:458-466` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
 

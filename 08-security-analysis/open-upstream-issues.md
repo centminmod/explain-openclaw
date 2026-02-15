@@ -10,7 +10,7 @@
 |-------|----------|---------|--------------|
 | [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass gateway authentication | `src/gateway/server/plugins-http.ts:17-59` |
 | [#3277](https://github.com/openclaw/openclaw/issues/3277) | HIGH | Path validation bypass via `startsWith` prefix | `src/infra/archive.ts:119,153` - `validateArchiveEntryPath()` + `resolveCheckedOutPath()` (hardened Feb 15 sync 2) |
-| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:133` - auth middleware at `:117-124` mitigates but no Host header validation |
+| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:59` - auth middleware extracted to `src/browser/server-middleware.ts:24-35`; no Host header validation |
 | [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH | Arbitrary JS execution via browser evaluate (default on) | `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true` |
 | [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage dmPolicy auto-responds with pairing codes | `src/imessage/monitor/monitor-provider.ts:184,342-381` |
 | [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:651,654` - security settings reset |
@@ -262,8 +262,8 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Browser control server binds to `127.0.0.1` but performs no Host header validation. DNS rebinding attacks can bypass localhost restriction to reach browser automation endpoints from a remote origin.
 
 **Affected code:**
-- `src/browser/server.ts:133` - binds to `"127.0.0.1"` with auth middleware at `:117-124`
-- `src/browser/server.ts:79-166` - auth now required via `isAuthorizedBrowserRequest()` (commit `9230a2ae1`), but still no Host header or origin validation
+- `src/browser/server.ts:59` - binds to `"127.0.0.1"` (middleware extracted to `src/browser/server-middleware.ts:24-35`)
+- `src/browser/server.ts:25-136` - auth now required via `isAuthorizedBrowserRequest()` (commit `9230a2ae1`, refactored in `28014de97`), but still no Host header or origin validation
 
 **Partial mitigation (Feb 13 sync 5):** Commit `9230a2ae1` adds bearer token / password auth middleware to all browser control HTTP routes. DNS rebinding still possible but requests now need valid authentication credentials, significantly raising the bar. New `browser.control_no_auth` audit check flags when no auth is configured.
 

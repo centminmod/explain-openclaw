@@ -134,6 +134,34 @@ Official docs starting point:
 - [Threat model (beginner-friendly)](./04-privacy-safety/threat-model.md)
 - [Hardening checklist (high privacy)](./04-privacy-safety/hardening-checklist.md)
 - [High privacy config example](./04-privacy-safety/high-privacy-config.example.json5.md)
+- [Detecting OpenClaw requests (for hosting services)](./04-privacy-safety/detecting-openclaw-requests.md)
+
+---
+
+## Detecting OpenClaw Requests (for hosting services)
+
+> **Purpose:** Documents how third-party services can identify HTTP requests originating from OpenClaw, and what OpenClaw users should know about their request fingerprint.
+>
+> **Read this if:** You run a hosting service/API and want to identify OpenClaw traffic, or you're an OpenClaw user who wants to understand what your instance reveals about itself.
+
+### Quick Reference: Identifiable Headers
+
+| Request type | Header | Value | Detectable? |
+|---|---|---|---|
+| Media file fetches | `User-Agent` | `OpenClaw-Gateway/1.0` | Yes — explicitly names OpenClaw |
+| GitHub API (signal-cli install) | `User-Agent` | `openclaw` | Yes — explicitly names OpenClaw |
+| Anthropic OAuth API | `User-Agent` | `openclaw` | Yes — explicitly names OpenClaw |
+| Perplexity/OpenRouter API | `HTTP-Referer` | `https://openclaw.ai` | Yes — domain identifies OpenClaw |
+| Perplexity/OpenRouter API | `X-Title` | `OpenClaw` / `OpenClaw Web Search` | Yes — explicitly names OpenClaw |
+| MiniMax VLM API | `MM-API-Source` | `OpenClaw` | Yes — custom header |
+| ACP protocol | `clientInfo.name` | `openclaw-acp-client` | Yes — protocol-level identification |
+| WebFetch (browsing websites) | `User-Agent` | Chrome browser string | No — indistinguishable from real browser |
+| Brave Search API | *(no custom UA)* | Default fetch UA | Weak — Node.js fetch fingerprint only |
+| xAI Grok API | *(no custom UA)* | Default fetch UA | Weak — Node.js fetch fingerprint only |
+
+The full analysis includes source code references, Cloudflare WAF rules (with regex examples for Business/Enterprise), and a guide for placing Cloudflare as a reverse proxy in front of your Gateway with inbound header protection: [Detecting OpenClaw Requests](./04-privacy-safety/detecting-openclaw-requests.md)
+
+---
 
 ### 3) Technical overview (how it works)
 - [Architecture (Gateway → channels → agent → tools)](./02-technical/architecture.md)
@@ -500,31 +528,6 @@ Based on source code review of:
 ## Social Media OpenClaw Coverage
 
 > **See:** [Social Media Coverage overview](./09-social-media-coverage/README.md)
-
----
-
-## Detecting OpenClaw Requests (for hosting services)
-
-> **Purpose:** Documents how third-party services can identify HTTP requests originating from OpenClaw, and what OpenClaw users should know about their request fingerprint.
->
-> **Read this if:** You run a hosting service/API and want to identify OpenClaw traffic, or you're an OpenClaw user who wants to understand what your instance reveals about itself.
-
-### Quick Reference: Identifiable Headers
-
-| Request type | Header | Value | Detectable? |
-|---|---|---|---|
-| Media file fetches | `User-Agent` | `OpenClaw-Gateway/1.0` | Yes — explicitly names OpenClaw |
-| GitHub API (signal-cli install) | `User-Agent` | `openclaw` | Yes — explicitly names OpenClaw |
-| Anthropic OAuth API | `User-Agent` | `openclaw` | Yes — explicitly names OpenClaw |
-| Perplexity/OpenRouter API | `HTTP-Referer` | `https://openclaw.ai` | Yes — domain identifies OpenClaw |
-| Perplexity/OpenRouter API | `X-Title` | `OpenClaw` / `OpenClaw Web Search` | Yes — explicitly names OpenClaw |
-| MiniMax VLM API | `MM-API-Source` | `OpenClaw` | Yes — custom header |
-| ACP protocol | `clientInfo.name` | `openclaw-acp-client` | Yes — protocol-level identification |
-| WebFetch (browsing websites) | `User-Agent` | Chrome browser string | No — indistinguishable from real browser |
-| Brave Search API | *(no custom UA)* | Default fetch UA | Weak — Node.js fetch fingerprint only |
-| xAI Grok API | *(no custom UA)* | Default fetch UA | Weak — Node.js fetch fingerprint only |
-
-The full analysis includes source code references, Cloudflare WAF rules (with regex examples for Business/Enterprise), and a guide for placing Cloudflare as a reverse proxy in front of your Gateway with inbound header protection: [Detecting OpenClaw Requests](./04-privacy-safety/detecting-openclaw-requests.md)
 
 ---
 

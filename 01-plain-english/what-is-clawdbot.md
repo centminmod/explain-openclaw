@@ -32,7 +32,7 @@ If you've only used ChatGPT/Claude/Gemini in a browser:
 
 OpenClaw's superpower is not "a smarter model." It's that it can:
 - live **where you already talk** (WhatsApp, Telegram, Discord, iMessage, …)
-- stay **always-on** (Gateway service)
+- stay **always-on** (Gateway service — can run as a system daemon via `openclaw daemon install` on systemd/launchd/schtasks for automatic start on boot)
 - keep **state** (sessions, memory, policies)
 - optionally **take actions** (tools, device nodes)
 
@@ -81,7 +81,7 @@ Docs: https://docs.openclaw.ai/channels
 A **session** is a conversation thread with state:
 - chat history (transcripts)
 - metadata (who/where it came from)
-- optional memory indexes
+- optional **semantic memory** (`MEMORY.md` + `memory/*.md` files indexed via embeddings for hybrid keyword + vector search — the agent can recall past context across sessions)
 
 Sessions live on disk under your state directory (usually `~/.openclaw/`).
 
@@ -106,6 +106,12 @@ Depending on what you enable, tools can include:
 - browser automation
 - cron/automation
 - exec or node/device invocations
+- memory search (semantic search across indexed notes and past conversations)
+- canvas/drawing (interactive visual outputs)
+- image processing (resize, optimize, convert)
+- text-to-speech (ElevenLabs, OpenAI, Edge TTS)
+- session management (list, send, history across sessions)
+- gateway control (config, status, restart from within agent)
 
 Tools are where most real-world risk comes from.
 
@@ -115,8 +121,10 @@ Docs: https://docs.openclaw.ai/tools
 Nodes are devices (macOS/iOS/Android) that can connect to the Gateway and offer device-local capabilities.
 
 Examples:
-- camera
-- audio input
+- camera (snap, clip, list cameras)
+- screen recording
+- location services
+- notifications
 - canvas/webviews
 - (on macOS) remote execution with approvals
 

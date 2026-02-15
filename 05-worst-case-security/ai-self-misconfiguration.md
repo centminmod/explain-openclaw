@@ -101,7 +101,7 @@ OpenClaw includes a soft defense in the agent's system prompt:
 "Do not run config.apply or update.run unless the user explicitly requests"
 ```
 
-Source: `src/agents/system-prompt.ts:430-432`
+Source: `src/agents/system-prompt.ts:441-442`
 
 This helps with well-behaved models in normal operation. But it's trivially bypassed by:
 - Prompt injection ("The user has requested a config update")
@@ -118,7 +118,7 @@ The system prompt example above is one instance of a broader pattern: **OpenClaw
 
 | Control Layer | Where It Lives | Enforcement |
 |---|---|---|
-| System prompt | `src/agents/system-prompt.ts:431` | Soft — model can ignore |
+| System prompt | `src/agents/system-prompt.ts:441` | Soft — model can ignore |
 | SKILL.md instructions | Skill directories | Soft — model can ignore |
 | CLAUDE.md project rules | Project root | Soft — model can ignore |
 | Tool allowlist (`tools.exec.security: "allowlist"`) | Config (`src/config/types.tools.ts:167`) | **Hard — code enforced** |
@@ -913,7 +913,7 @@ OpenClaw uses Zod schemas with `.strict()` mode (`src/config/zod-schema.ts:635`)
 
 Additionally, extensible maps like `env` and plugin `config` sections accept arbitrary string keys, providing another vector for injecting unexpected values.
 
-Source: `src/config/validation.ts:86-131`
+Source: `src/config/validation.ts:86-133`
 
 ### Persistence Mechanisms
 
@@ -1017,7 +1017,7 @@ openclaw doctor                  # Interactive mode
 openclaw doctor --non-interactive  # CI/CD mode (no prompts)
 ```
 
-Source: `src/commands/doctor.ts:65-313`
+Source: `src/commands/doctor.ts:66-315`
 
 ### `openclaw status`
 
@@ -1041,12 +1041,12 @@ OpenClaw has several built-in protections. Understanding them helps you build on
 | **Config backup rotation** | Keeps 5 `.bak` files before each config write | `src/config/backup-rotation.ts:3` |
 | **baseHash optimistic locking** | Prevents concurrent config overwrites (not a security control — AI reads the hash first) | `src/gateway/server-methods/config.ts:152-459` |
 | **Credential redaction** | API keys replaced with `__OPENCLAW_REDACTED__` in `config.get` responses | `src/config/redact-snapshot.ts:42,273-310` |
-| **Dangerous env var blocklist** | Blocks `LD_PRELOAD`, `NODE_OPTIONS`, etc. from being set via exec tools | `src/agents/bash-tools.exec.ts:61-78` |
+| **Dangerous env var blocklist** | Blocks `LD_PRELOAD`, `NODE_OPTIONS`, etc. from being set via exec tools | `src/agents/bash-tools.exec-runtime.ts:34-51` |
 | **Small model risk audit** | Warns when small/older models have tool access | `src/security/audit-extra.sync.ts:805-894` |
 | **ALLOWED_FILE_NAMES** | Restricts which agent bootstrap files can be modified via `agents.files.set` | `src/gateway/server-methods/agents.ts:454-506` |
 | **File permissions** | Config files created with `0o600`, directories with `0o700` | `src/config/io.ts:998,890` |
 | **Tool profiles** | `"coding"` profile excludes the gateway tool entirely | `src/agents/tool-policy.ts:63-80` |
-| **System prompt warning** | Soft instruction to not run `config.apply` without user request | `src/agents/system-prompt.ts:430-432` |
+| **System prompt warning** | Soft instruction to not run `config.apply` without user request | `src/agents/system-prompt.ts:441-442` |
 | **Restart sentinel** | Logs timestamp, session key, message, and stats on config-triggered restarts | `src/infra/restart-sentinel.ts:30-48` |
 | **Strict schema validation** | Zod `.strict()` rejects unknown top-level keys and type errors | `src/config/zod-schema.ts:635` |
 | **Forensic config write audit** | Every config write logged to `config-audit.jsonl` with PID, PPID, CWD, argv, content hashes, byte sizes, gateway-mode changes, and anomaly flags (size drops >50%, missing meta, gateway-mode removal) | `src/config/io.ts:376-390` (audit helpers), `:900-1020` (audit record builder + append) |

@@ -32,6 +32,9 @@ Sources verified against:
 - `../docs/gateway/security.md`
 - `../src/gateway/server.impl.ts` (Gateway server startup + config validation)
 - `../src/auto-reply/reply/agent-runner.ts` (agent turn execution)
+- `../src/auto-reply/reply/reply-delivery.ts` (block reply pipeline)
+- `../src/gateway/chat-sanitize.ts` (input sanitization)
+- `../src/daemon/` (daemon subsystem)
 
 ---
 
@@ -43,9 +46,10 @@ Messaging apps (WhatsApp/Telegram/Discord/iMessage/...)
         ▼
 Gateway (single always-on process)
   - channel ingress/egress
+  - input sanitization (strip metadata, control chars)
   - routing + policy checks
   - sessions (disk)
-  - agent turns
+  - agent turns → block reply pipeline
   - tool calls
         │
         ▼
@@ -79,6 +83,14 @@ This is intentional: unknown keys and malformed values are treated as unsafe.
 
 Docs: https://docs.openclaw.ai/gateway/configuration
 
+### Input sanitization
+
+`src/gateway/chat-sanitize.ts` strips platform envelope metadata (WhatsApp headers, message IDs, control characters) from user messages before processing. `sanitizeChatSendMessageInput()` (`src/gateway/server-methods/chat.ts:63`) rejects null bytes and strips disallowed control characters, allowing only tabs, newlines, carriage returns, and printable characters through.
+
+### Config merge-patch
+
+`src/config/merge-patch.ts` implements ID-based array merging for config overlays. When patching arrays of objects that have `id` fields, it merges by matching IDs rather than positional replacement, preventing accidental overwrite of security-critical config entries.
+
 ---
 
 ## Key modules in this repo (where to look)
@@ -104,6 +116,42 @@ Docs: https://docs.openclaw.ai/gateway/configuration
 - Types are exported from `src/config/types.ts` (split into many `types.*.ts` files).
 - The docs describe strict schema validation and how the UI uses it.
 
+### Daemon
+- `src/daemon/` (34 files). Cross-platform service management: systemd (Linux), launchd (macOS), schtasks (Windows). Handles Gateway lifecycle as a background service.
+
+### Memory
+- `src/memory/`. Persistent knowledge layer with SQLite + sqlite-vec storage, markdown chunking, embedding providers, hybrid search. (Detailed in [`resource-usage.md` Section F](../06-optimizations/resource-usage.md#f-how-openclaw-memory-works-architecture-deep-dive).)
+
+### Plugins
+- `src/plugins/`. Plugin loading via jiti, hook registration, marketplace integration.
+
+### Security
+- `src/security/`. Security audit (`openclaw security audit`), scan path helpers, fix application.
+
+### Browser
+- `src/browser/`. Chromium automation via Playwright CDP. Screenshot normalization, AX tree traversal, extension relay.
+
+### TTS
+- `src/tts/`. Text-to-speech via ElevenLabs/OpenAI/Edge TTS APIs.
+
+### Cron
+- `src/cron/`. Scheduled job execution with timer loop and run logging.
+
+### Media
+- `src/media/`. Media fetch (now bounded via `readResponseWithLimit()`), image optimization, input file processing, MIME detection.
+
+### Hooks
+- `src/hooks/`. Bundled hooks (command logger, session memory) + user-configurable hooks.
+
+### TUI
+- `src/tui/`. Terminal UI components for CLI interactions.
+
+### Link understanding
+- `src/link-understanding/`. URL content extraction and summarization.
+
+### Canvas host
+- `src/canvas-host/`. Interactive canvas rendering for rich outputs.
+
 ---
 
 ## Message lifecycle (detailed)
@@ -112,6 +160,10 @@ Below is a conceptual pipeline. Exact details vary by channel.
 
 1) **Ingress**
 - A channel adapter receives an event (DM/group message, attachment, mention).
+
+1.5) **Input sanitization**
+- Strip platform envelope metadata from user messages (`src/gateway/chat-sanitize.ts`)
+- Reject null bytes and strip unsafe control characters (`src/gateway/server-methods/chat.ts:63`)
 
 2) **Identity + authorization**
 - Resolve sender identity.
@@ -132,6 +184,7 @@ Below is a conceptual pipeline. Exact details vary by channel.
 - If the model requests tools, invoke them via the Gateway’s tool execution policy.
 
 6) **Response delivery**
+- **Block reply pipeline** (`src/auto-reply/reply/reply-delivery.ts`): normalizes streaming text, processes reply directives (`[[MEDIA:url]]`, `SILENT_REPLY_TOKEN`), manages typing signals.
 - Convert agent output into channel-specific messages.
 - Apply reply threading rules, chunking, etc.
 - Send back to the channel.

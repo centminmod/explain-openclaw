@@ -655,6 +655,12 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
 
+### Post-Merge Hardening (Feb 15 sync 15) — 101 upstream commits
+
+**Security relevance: HIGH** — 9 security-relevant commits. **Chat input sanitization** (`a2fe3b661`): null byte/control character filtering. **Transcript tool-call hardening** (`aa56045b4`): rejects blocks with missing/blank fields. **Text param normalization** (`c8733822c`): prevents tool-call loops — Audit 2 Claim 7. **Path validation consolidation** (`b37346103` + `e93764350`): shared `isPathInside()` and `resolveSafeInstallDir()` — Audit 1 Claim 6. **Config array merging** (`8ec0ef586`): ID-based merging prevents config injection — Audit 2 Claim 1. **Bearer auth consolidation** (`b5c81f732`). **Binary MIME hardening** (`86a156db2`). **ANSI injection hardening** (`9255f3665`). See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-15.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---

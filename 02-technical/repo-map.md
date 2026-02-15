@@ -34,7 +34,7 @@ This is a "practical navigation guide" for new contributors/readers.
 
 | Directory | Purpose |
 |-----------|---------|
-| `src/` | TypeScript source (~49 subdirectories) |
+| `src/` | TypeScript source (~50 subdirectories) |
 | `docs/` | Canonical documentation (source of truth) |
 | `extensions/` | Plugins (workspace packages) |
 | `apps/` | macOS/iOS/Android apps |
@@ -56,9 +56,9 @@ This is a "practical navigation guide" for new contributors/readers.
 
 ### CLI
 
-- `src/entry.ts` — CLI entry (spawns/sets env, then loads `src/cli/run-main.js`)
+- `src/entry.ts` — CLI entry (spawns/sets env, then loads `src/cli/run-main.ts`)
 - `src/cli/` — CLI command definitions
-- `src/commands/` — command implementations (186 files)
+- `src/commands/` — command implementations (257 files)
 
 ### Gateway
 
@@ -71,13 +71,13 @@ This is a "practical navigation guide" for new contributors/readers.
 - `src/channels/` — shared channel logic (identities, allowlists, gating, registry)
 - Per-channel folders with full adapters: `src/telegram/`, `src/discord/`, `src/slack/`, `src/signal/`, `src/imessage/`, `src/web/`, `src/line/`, `src/whatsapp/`
 - Config-only channels (no `src/` dir): `googlechat`, `msteams`, `feishu`
-- `docs/channels/` — channel documentation (28 files including pairing, routing, groups)
+- `docs/channels/` — channel documentation (29 files including pairing, routing, groups)
 
 ### Agent turns
 
 - `src/auto-reply/` — reply pipeline
 - `src/auto-reply/reply/agent-runner.ts` — core agent-turn orchestrator
-- `src/agents/` — agent framework (316 files): tools, sandbox, auth profiles, multi-agent
+- `src/agents/` — agent framework (518 files, 10 subdirectories): tools, sandbox, auth profiles, skills, multi-agent
 
 ### Routing
 
@@ -92,18 +92,18 @@ This is a "practical navigation guide" for new contributors/readers.
 
 ## Major `src/` subdirectories
 
-The `src/` directory contains ~49 subdirectories. Key ones beyond the entrypoints above:
+The `src/` directory contains ~50 subdirectories. Key ones beyond the entrypoints above:
 
 | Directory | Files (approx.) | Purpose |
 |-----------|-----------------|---------|
-| `src/agents/` | ~466 | Agent framework, tools, sandbox, auth profiles |
-| `src/browser/` | ~82 | Browser automation (CDP/Puppeteer) |
-| `src/commands/` | ~234 | CLI command implementations |
-| `src/config/` | ~139 | Configuration schema, types, validation, migrations |
+| `src/agents/` | ~518 | Agent framework, tools, sandbox, auth profiles, skills |
+| `src/browser/` | ~102 | Browser automation (CDP/Puppeteer) |
+| `src/commands/` | ~257 | CLI command implementations |
+| `src/config/` | ~164 | Configuration schema, types, validation, migrations |
 | `src/cron/` | — | Cron job scheduling |
 | `src/daemon/` | — | Background daemon process |
 | `src/hooks/` | — | Lifecycle hooks system |
-| `src/infra/` | ~195 | Infrastructure: networking, SSRF guards, exec safety, archiving |
+| `src/infra/` | ~220 | Infrastructure: networking, SSRF guards, exec safety, archiving |
 | `src/media/` | — | Media handling (upload, download, conversion) |
 | `src/media-understanding/` | — | Image/audio/video understanding via AI |
 | `src/memory/` | — | Memory/context management, QMD |
@@ -152,7 +152,7 @@ From repo root:
   - search: `pairing` in `src/pairing/` and `docs/channels/pairing.md`
 
 - **Find a specific channel's allowlist behavior:**
-  - search `allowFrom` or `dmPolicy` in channel config types (`src/config/types.*.ts` — 29 files) and channel runtime
+  - search `allowFrom` or `dmPolicy` in channel config types (`src/config/types.*.ts` — 30 files) and channel runtime
 
 - **Find ChatType / DM policy enum:**
   - search: `ChatType` — used across channel adapters for group vs DM routing

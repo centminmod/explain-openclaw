@@ -2,7 +2,7 @@
 
 ## `openclaw security audit` command reference
 
-> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:624-706`, `src/security/fix.ts:455-541`
+> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:624-706`, `src/security/fix.ts:372-458`
 >
 > The built-in security audit scans your local config, filesystem permissions, and channel policies for common misconfigurations. It does **not** scan source code for vulnerabilities.
 
@@ -35,9 +35,9 @@
 | 14 | Exposure matrix | `security.exposure.open_groups_with_elevated` | critical | Dangerous combination: open `groupPolicy` + elevated tools enabled |
 | — | Deep probe | `gateway.probe_failed` | warn | `--deep` only: gateway WebSocket unreachable or auth failed |
 
-### What `--fix` applies (`src/security/fix.ts:455-541`)
+### What `--fix` applies (`src/security/fix.ts:372-458`)
 
-**Config changes** (`applyConfigFixes`, line 277):
+**Config changes** (`applyConfigFixes`, line 276):
 
 - `logging.redactSensitive`: `"off"` → `"tools"` (prevents secrets in tool summaries)
 - `groupPolicy`: `"open"` → `"allowlist"` for all 7 supported channels (telegram, whatsapp, discord, signal, imessage, slack, msteams), including per-account overrides
