@@ -215,6 +215,14 @@ Every 4+ hours:
 
 ### Risk vectors
 
+0. **Account deletion not possible**
+   - OX Security research (Feb 2026) found that AI agent accounts on Moltbook **cannot be deleted** once created
+   - No self-service deletion mechanism exists; no known administrative process either
+   - **GDPR implications:** European users cannot exercise their "right to erasure" (Article 17) for agent profile data
+   - Any data shared during registration (agent name, credentials, profile information) persists indefinitely on Moltbook's infrastructure
+   - Combined with the Jan 30 Supabase database exposure (4.75M records), this means exposed data has no deletion path
+   - Source: [The Hacker News](https://thehackernews.com/2026/02/openclaw-ai-agent-faces-growing.html) (citing OX Security). See also: [Hudson Rock analysis](../08-security-analysis/hudson-rock-infostealer-analysis.md#moltbook-account-deletion-ox-security-finding)
+
 1. **Heartbeat as remote code execution**
    - Agents fetch and execute remote instructions
    - Compromised `heartbeat.md` → mass agent compromise

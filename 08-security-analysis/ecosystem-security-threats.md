@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Hudson Rock](./hudson-rock-infostealer-analysis.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Ecosystem Security Threats
 
@@ -16,6 +16,7 @@
 - [5. Fake SaaS / API Key Vacuums](#5-fake-saas--api-key-vacuums)
 - [6. ClawHub Malicious Skills (ClawHavoc Campaign)](#6-clawhub-malicious-skills-clawhavoc-campaign)
 - [7. Model Poisoning (Sleeper Agent Backdoors)](#7-model-poisoning-sleeper-agent-backdoors)
+- [8. AI Agent Config File Theft (Infostealers)](#8-ai-agent-config-file-theft-infostealers)
 - [Quick Protection Checklist](#quick-protection-checklist)
 - [Threat Summary](#threat-summary)
 
@@ -78,6 +79,7 @@ Before installing or following any link, verify you are using official sources:
 - Stolen sessions let attackers read messages and pair new devices without your credentials
 
 **Real-world examples:**
+- **Hudson Rock (Feb 2026):** First confirmed case of an infostealer (Vidar variant) exfiltrating OpenClaw config files (`openclaw.json`, `device.json`, `soul.md`) from an infected machine. The malware's broad file-grabbing routine — not a custom OpenClaw module — swept up these files alongside browser passwords and crypto wallets. See [Hudson Rock analysis](./hudson-rock-infostealer-analysis.md) for full claim verification. ([The Hacker News](https://thehackernews.com/2026/02/openclaw-ai-agent-faces-growing.html))
 - PupkinStealer and Raven Stealer target Telegram session files ([Kaspersky](https://www.kaspersky.com/blog/how-to-prevent-whatsapp-telegram-account-hijacking-and-quishing/53012/))
 - Malicious npm package stole WhatsApp messages via session hijacking ([The Register](https://www.theregister.com/2025/12/22/whatsapp_npm_package_message_steal/))
 
@@ -170,6 +172,10 @@ For the full analysis, see: [SecurityScorecard STRIKE Report Analysis](./securit
 - Be extremely suspicious of crypto-related skills
 - Run OpenClaw in a VM/container for skill testing
 
+**New evasion technique — lookalike website bypass (Feb 2026):**
+
+The OpenSourceMalware team discovered a new bypass technique: attackers publish clean-looking skills on ClawHub where the actual malware payload is hosted on **lookalike OpenClaw websites** (e.g., `openclaw-tools.ai`). The skill itself passes VirusTotal scanning because it contains no malicious code — only a URL pointing to the external payload. This technique renders both the VirusTotal pipeline and the local scanner ineffective, since neither inspects external URLs referenced by skill documentation. Be suspicious of any skill that requires downloading external resources, and verify all URLs against official domains (`openclaw.ai`, `docs.openclaw.ai`). See [Hudson Rock analysis](./hudson-rock-infostealer-analysis.md#new-evasion-clawhub-lookalike-website-bypass) for details.
+
 For detailed analysis, see: [ClawHub Marketplace Risks](../05-worst-case-security/clawhub-marketplace-risks.md)
 
 ### 7. Model Poisoning (Sleeper Agent Backdoors)
@@ -200,6 +206,30 @@ For detailed analysis, see: [ClawHub Marketplace Risks](../05-worst-case-securit
 - Consider running the Microsoft scanner against local model weights before deploying
 
 For the full analysis, see: [Model Poisoning and Sleeper Agent Backdoors](./model-poisoning-sleeper-agents.md)
+
+### 8. AI Agent Config File Theft (Infostealers)
+
+**What it is:** Commodity infostealer malware (Vidar, Atomic Stealer, etc.) now sweeps up OpenClaw configuration files as part of broad file-grabbing routines. In February 2026, Hudson Rock documented the first confirmed case of an infostealer exfiltrating `openclaw.json`, `device.json`, and `soul.md`.
+
+**How it works:**
+- Infostealers are distributed via phishing, malvertising, or malicious downloads
+- Broad file-grabbing routines match common config file patterns and directory names
+- OpenClaw files under `~/.openclaw/` are captured alongside browser passwords, crypto wallets, and SSH keys
+- Stolen gateway tokens enable remote access; stolen API keys enable billing fraud
+
+**Real-world examples:**
+- **Hudson Rock / Vidar (Feb 2026):** First documented case — Vidar variant's broad file-grabbing routine captured OpenClaw config files ([The Hacker News](https://thehackernews.com/2026/02/openclaw-ai-agent-faces-growing.html))
+- **ClawHavoc / Atomic Stealer (Feb 2026):** Targeted campaign via fake ClawHub skill prerequisites installed Atomic Stealer on macOS ([Koi Security](https://www.koi.ai/blog/clawhavoc-341-malicious-clawedbot-skills-found-by-the-bot-they-were-targeting))
+
+**Mitigations:**
+- Install endpoint protection software (AV/EDR)
+- Enable disk encryption (FileVault/LUKS)
+- Run OpenClaw as a dedicated user account
+- Keep gateway loopback-only — limits blast radius even if tokens are stolen
+- Rotate gateway tokens periodically (no built-in rotation mechanism exists)
+- Run `openclaw security audit --fix` to ensure file permissions are correct
+
+For the full analysis, see: [Hudson Rock Infostealer Analysis](./hudson-rock-infostealer-analysis.md)
 
 ### Quick Protection Checklist
 
@@ -235,6 +265,7 @@ For the full analysis, see: [Model Poisoning and Sleeper Agent Backdoors](./mode
 | **Hidden .mmd payloads** | UI-invisible skill files | Prompt injection, data exfiltration | `ls -laR` skill directory, check for non-.md/.ts files |
 | **Skills.sh auto-install** | Unvetted skill distribution | Full Gateway compromise | Disable `skills.autoDiscover`, use ClawHub only |
 | **Model poisoning (sleeper agents)** | Compromised model weights | Tool-amplified data exfiltration, insecure code | Verify model checksums, use API providers, allowlist tools |
+| **AI agent config theft (infostealers)** | Commodity malware (Vidar, Atomic Stealer) | Gateway RCE, API key theft, device impersonation | Endpoint protection, disk encryption, loopback-only binding; see [Hudson Rock analysis](./hudson-rock-infostealer-analysis.md) |
 
 For detailed hardening guidance, see:
 - [Hardening checklist](../04-privacy-safety/hardening-checklist.md)

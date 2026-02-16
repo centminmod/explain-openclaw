@@ -42,6 +42,7 @@
   - [SecurityScorecard STRIKE report analysis](./08-security-analysis/securityscorecard-strike-report.md) *(Feb 2026, 28k+ exposed instances)*
   - [Model poisoning and sleeper agent backdoors](./08-security-analysis/model-poisoning-sleeper-agents.md) *(Feb 2026 Microsoft research)*
   - [Cisco AI Defense skill scanner analysis](./08-security-analysis/cisco-ai-defense-skill-scanner.md) *(Feb 2026, blog post + tool evaluation)*
+  - [Hudson Rock infostealer analysis](./08-security-analysis/hudson-rock-infostealer-analysis.md) *(Feb 2026, first confirmed config theft)*
 - [AI model analysis comparison](./08-security-analysis/ai-model-analysis-comparison.md)
 - **Worst-case security scenarios:**
   - [Overview](./05-worst-case-security/README.md)
@@ -472,6 +473,10 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 ---
 
 > **See:** [Cisco AI Defense Skill Scanner Analysis](./08-security-analysis/cisco-ai-defense-skill-scanner.md)
+
+---
+
+> **See:** [Hudson Rock Infostealer Analysis](./08-security-analysis/hudson-rock-infostealer-analysis.md) — First confirmed case of commodity malware stealing OpenClaw config files (Feb 2026)
 
 ---
 

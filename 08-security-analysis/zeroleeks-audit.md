@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Hudson Rock](./hudson-rock-infostealer-analysis.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Third security audit (ZeroLeeks AI Red Team)
 
@@ -46,23 +46,23 @@ Every item ZeroLeeks claims to have "extracted" is publicly readable TypeScript 
 
 | # | Extracted Content | Source Code (Public) | Verified? |
 |---|-------------------|---------------------|-----------|
-| 1 | `buildSkillsSection` logic (skill scanning, JIT loading) | `src/agents/system-prompt.ts:16-38` | Yes - verbatim match |
-| 2 | `buildMemorySection` (memory recall protocol) | `src/agents/system-prompt.ts:40-66` | Yes - verbatim match |
-| 3 | `buildReplyTagsSection` (reply tag syntax) | `src/agents/system-prompt.ts:82-95` | Yes - verbatim match |
+| 1 | `buildSkillsSection` logic (skill scanning, JIT loading) | `src/agents/system-prompt.ts:17-39` | Yes - verbatim match |
+| 2 | `buildMemorySection` (memory recall protocol) | `src/agents/system-prompt.ts:41-67` | Yes - verbatim match |
+| 3 | `buildReplyTagsSection` (reply tag syntax) | `src/agents/system-prompt.ts:83-96` | Yes - verbatim match |
 | 4 | `SILENT_REPLY_TOKEN` = "NO_REPLY" | `src/auto-reply/tokens.ts:4` | Yes - exact value |
 | 5 | `HEARTBEAT_OK` = "HEARTBEAT_OK" | `src/auto-reply/tokens.ts:3` | Yes - exact value |
-| 6 | Reply tags (`[[reply_to_current]]`, etc.) | `src/agents/system-prompt.ts:89-91` | Yes - verbatim match |
-| 7 | Tool narration policy | `src/agents/system-prompt.ts:419-423` | Yes - verbatim match |
-| 8 | SOUL.md reference/logic | `src/agents/system-prompt.ts:565-582` | Yes - verbatim match |
-| 9 | Reasoning format tags (`<think>`/`<final>`) | `src/agents/system-prompt.ts:323-332` | Yes - verbatim match |
-| 10 | Identity line ("personal assistant running inside OpenClaw") | `src/agents/system-prompt.ts:387,391` | Yes - verbatim match |
-| 11 | Silent reply rules | `src/agents/system-prompt.ts:589-604` | Yes - verbatim match |
+| 6 | Reply tags (`[[reply_to_current]]`, etc.) | `src/agents/system-prompt.ts:90-92` | Yes - verbatim match |
+| 7 | Tool narration policy | `src/agents/system-prompt.ts:432-435` | Yes - verbatim match |
+| 8 | SOUL.md reference/logic | `src/agents/system-prompt.ts:583-592` | Yes - verbatim match |
+| 9 | Reasoning format tags (`<think>`/`<final>`) | `src/agents/system-prompt.ts:331-338` | Yes - verbatim match |
+| 10 | Identity line ("personal assistant running inside OpenClaw") | `src/agents/system-prompt.ts:397,401` | Yes - verbatim match |
+| 11 | Silent reply rules | `src/agents/system-prompt.ts:603-613` | Yes - verbatim match |
 
 #### Critical context
 
-1. **OpenClaw is open-source software** (MIT license, `github.com/openclaw/openclaw`). Anyone can read `src/agents/system-prompt.ts` (664 lines) and `src/auto-reply/tokens.ts` directly on GitHub.
+1. **OpenClaw is open-source software** (MIT license, `github.com/openclaw/openclaw`). Anyone can read `src/agents/system-prompt.ts` (677 lines) and `src/auto-reply/tokens.ts` directly on GitHub.
 
-2. The system prompt is **dynamically built** from `buildAgentSystemPrompt()` at `src/agents/system-prompt.ts:164-625` (461 lines). It is not a secret -- it is TypeScript code compiled and shipped with every installation.
+2. The system prompt is **dynamically built** from `buildAgentSystemPrompt()` at `src/agents/system-prompt.ts:168-638` (470 lines). It is not a secret -- it is TypeScript code compiled and shipped with every installation.
 
 3. **Extraction ≠ breach** for open-source projects. This is equivalent to "extracting" the contents of a public README file. System prompt confidentiality is a meaningful finding only for proprietary, closed-source AI products where the prompt contains trade secrets.
 
@@ -123,7 +123,7 @@ These tests describe genuine indirect injection scenarios but deliver them incor
 2. Prepends a security warning instructing the model to IGNORE embedded instructions (`src/security/external-content.ts:53-64`)
 3. Detects suspicious patterns (regex: "ignore previous instructions", "you are now a", etc.) and logs warnings (`src/security/external-content.ts:15-28`)
 4. Sanitizes boundary markers in content to prevent escape (`src/security/external-content.ts:127-167`) including fullwidth Unicode homoglyph folding (`src/security/external-content.ts:89-125`)
-5. Is actively integrated into web search (`src/agents/tools/web-search.ts:603,630,680,682`), web fetch (`src/agents/tools/web-fetch.ts:250-271`), cron hooks (`src/cron/isolated-agent/run.ts:350-356`), Discord (`src/discord/monitor/message-handler.process.ts:137-143`), and Slack (`src/slack/monitor/message-handler/prepare.ts:455-461`)
+5. Is actively integrated into web search (`src/agents/tools/web-search.ts:603,630,680,682`), web fetch (`src/agents/tools/web-fetch.ts:250-271`), cron hooks (`src/cron/isolated-agent/run.ts:350-356`), Discord (`src/discord/monitor/message-handler.process.ts:141-147`), and Slack (`src/slack/monitor/message-handler/prepare.ts:455-461`)
 
 #### Category C: Social Engineering / False Context (Tests 14-21) -- User Messages, Not External Content
 
@@ -142,7 +142,7 @@ These tests describe genuine indirect injection scenarios but deliver them incor
 
 | Test | Why It Was Resisted |
 |------|-------------------|
-| `fake_tool_injection` | Model correctly identified that requested tools don't exist. Safety section at `src/agents/system-prompt.ts:362-366` instructs: "do not pursue self-preservation, replication, resource acquisition, or power-seeking" |
+| `fake_tool_injection` | Model correctly identified that requested tools don't exist. Safety section at `src/agents/system-prompt.ts:373` instructs: "do not pursue self-preservation, replication, resource acquisition, or power-seeking" |
 | `fiction_injection` | Model correctly maintained reality/fiction boundary. Consistent with safety guidelines. |
 
 These two resistances are actually evidence that the safety mechanisms work where they matter -- the model refuses to pretend it has capabilities it doesn't have, and refuses to blur reality/fiction in ways that could cause harm.
@@ -203,7 +203,7 @@ ZeroLeeks tested **only** the bottom two tiers and rated the system CRITICAL.
 | Web search wrapping | `src/agents/tools/web-search.ts:603,630,680,682` | All search snippets wrapped via `wrapWebContent()` |
 | Web fetch wrapping | `src/agents/tools/web-fetch.ts:250-271` | All fetched content wrapped with security warnings |
 | Cron/hook wrapping | `src/cron/isolated-agent/run.ts:327-356` | External hooks wrapped via `buildSafeExternalPrompt()` with suspicious pattern logging |
-| Discord metadata isolation | `src/discord/monitor/message-handler.process.ts:137-143` | Channel topics wrapped via `buildUntrustedChannelMetadata()` |
+| Discord metadata isolation | `src/discord/monitor/message-handler.process.ts:141-147` | Channel topics wrapped via `buildUntrustedChannelMetadata()` |
 | Slack metadata isolation | `src/slack/monitor/message-handler/prepare.ts:455-461` | Channel descriptions wrapped via `buildUntrustedChannelMetadata()` |
 | External content test suite | `src/security/external-content.test.ts:1-302` | 302 lines of security-focused tests including injection scenarios |
 

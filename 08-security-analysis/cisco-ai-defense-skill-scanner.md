@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Hudson Rock](./hudson-rock-infostealer-analysis.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Cisco AI Defense: Blog Post Claims + Skill Scanner Evaluation (Feb 2026)
 
@@ -170,7 +170,7 @@ The SKILL.md gap extends to **all persistent `.md` files** in the workspace. Two
 
 **Path 1 — Bootstrap files (system prompt injection, high trust):**
 
-Nine named `.md` files are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:400-454`) and injected directly into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:187-239`). They appear as fully trusted context with **no content validation** — only truncation at 20,000 characters per file (`src/agents/pi-embedded-helpers/bootstrap.ts:85`).
+Nine named `.md` files are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:412-466`) and injected directly into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:187-239`). They appear as fully trusted context with **no content validation** — only truncation at 20,000 characters per file (`src/agents/pi-embedded-helpers/bootstrap.ts:85`).
 
 | Bootstrap file | Purpose | Max chars | Injection path |
 |----------------|---------|-----------|----------------|
@@ -194,7 +194,7 @@ Files in `memory/*.md` are **not** loaded by `loadWorkspaceBootstrapFiles()`. Th
 
 **Neither path is scanned by the built-in skill scanner** (`src/security/skill-scanner.ts:38-47`), which only processes JS/TS files.
 
-**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:458-466` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
+**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:470-478` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
 
 **Risk scenario:** An attacker with workspace write access (via compromised skill, plugin, shared git repo, or social engineering) plants persistent prompt injection in any of these files. The injection persists across sessions and appears as trusted system context, making it significantly harder for the model to reject than runtime injection from user messages or fetched content.
 

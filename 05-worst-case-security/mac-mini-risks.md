@@ -44,7 +44,9 @@ Before diving into risks, understand why Mac Mini is the recommended deployment 
 **Credential Locations:**
 ```
 ~/.openclaw/
-├── openclaw.json              ← May contain API keys
+├── openclaw.json              ← May contain API keys, gateway token
+├── identity/
+│   └── device.json            ← ED25519 private key (device impersonation)
 ├── credentials/
 │   ├── telegram-*.json        ← Bot tokens (full bot control)
 │   ├── discord-*.json         ← Bot tokens (full bot control)

@@ -183,7 +183,7 @@ All 8 claims were verified against the source code. None are exploitable as desc
 
 **Verdict: Partially true, heavily overstated.**
 
-The `setupCommand` field does execute a shell command (`src/agents/sandbox/docker.ts:356-357`):
+The `setupCommand` field does execute a shell command (`src/agents/sandbox/docker.ts:360-361`):
 ```
 await execDocker(["exec", "-i", name, "sh", "-lc", cfg.setupCommand]);
 ```
@@ -393,7 +393,7 @@ Forty upstream commits (merged via PR #2 from `moltbot/main`) introduced five se
 
 - **Discord username resolution gating** (`7958ead91`, `b01612c26`): Username lookups gated through directory config (`src/discord/targets.ts:77`).
 
-- **Telegram session fragmentation fix** (`915497114`): `resolveTelegramForumThreadId()` ignores thread IDs in non-forum groups (`src/telegram/bot/helpers.ts:22-35`).
+- **Telegram session fragmentation fix** (`915497114`): `resolveTelegramForumThreadId()` ignores thread IDs in non-forum groups (`src/telegram/bot/helpers.ts:74-86`).
 
 - **Formal security models** (`3bf768ab0`): TLA+ machine-checked proofs for pairing, routing, and isolation invariants (`docs/security/formal-verification.md`).
 
@@ -833,7 +833,7 @@ No line shifts. No new CVEs.
 **MEDIUM (3):**
 - **`1d2c5783f`** (PR [#13830](https://github.com/openclaw/openclaw/pull/13830)) — Tool call ID sanitization extended to Anthropic provider in `resolveTranscriptPolicy()`. Was only Google + Mistral.
 - **`bebba124e`** (PR [#13952](https://github.com/openclaw/openclaw/pull/13952)) — Raw HTML in chat messages now escaped via `htmlEscapeRenderer` in `ui/src/ui/markdown.ts:132-133`. DOMPurify already handled XSS; this prevents confusing UX.
-- **`4baa43384`** — Major LFI defense refactor for CVE-2026-25475. `isValidMedia()` (`src/media/parse.ts:36-64`) now accepts all local path types. Security validation moved to load layer: `assertLocalMediaAllowed()` (`src/web/media.ts:47-77`) enforces directory root guards.
+- **`4baa43384`** — Major LFI defense refactor for CVE-2026-25475. `isValidMedia()` (`src/media/parse.ts:36-64`) now accepts all local path types. Security validation moved to load layer: `assertLocalMediaAllowed()` (`src/web/media.ts:47-89`) enforces directory root guards.
 
 **LOW (3):**
 - **`729181bd0`** (PR [#13747](https://github.com/openclaw/openclaw/pull/13747)) — Rate limit errors excluded from context overflow classification.
@@ -1032,7 +1032,7 @@ No line shifts. No new CVEs.
 
 **Security relevance: HIGH** — 14 security-relevant commits. **Sandbox containment** (`424c718bc`, `914b9d1e7`, `4a44da7d9`): `workspaceOnly` extended to sandboxed file tools, apply_patch defaults to workspace containment, symlink escape blocked on delete. **Addresses Audit 1 Claim 6, Audit 2 Claim 2.** **Bind-mount awareness** (`726ff36fd`, `eafda6f52`): new `resolveSandboxFsPathWithMounts()` in `src/agents/sandbox/fs-paths.ts` parses `docker.binds` and enforces `ro`/`rw` per mount. **QMD scope deny bypass** (`f9bb748a6`): new `rawKeyPrefix` in `src/sessions/send-policy.ts:86-89` prevents session key normalization bypass. **Memory recall hardening** (`ed7d83bcf`, `61725fb37`): auto-capture requires opt-in, `looksLikePromptInjection()` at `extensions/memory-lancedb/index.ts:215` blocks injection payloads. Related to Audit 2 Claim 5. **Discord voice SSRF** (`725741486`): media routed through `loadWebMediaRaw()` with SSRF guards. **Addresses Audit 2 Claims 3, 4.** **Windows spawn hardening** (`a7eb0dd9a`): `shell: true` fully removed from `src/process/exec.ts`. **Addresses Audit 2 Claim 7.** **TUI injection** (`de02b0720`, `750a7146e`): codepoint sanitization and binary redaction. **localRoots bypass** (`683aa09b5`): requires `sandboxValidated` flag. **Media allowlist** (`b79e7fdb7`, `edb06170f`, `6863b9dbe`): image tool workspace roots. **HTTP body limiter** (`444a910d9`): prevents crash on payload limit. 5 memory bounding commits. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-13.md).
 
-**Line shifts:** `cli-credentials.ts` 383-437→352-397, 388-389→358-362, 408-409→377. `pi-tools.ts` 215-217→233-236. `sandbox-paths.ts` 55-82→66-98. `qmd-manager.ts` 355-371→415-421, 1006-1012→1080-1086. `ws-connection.ts` 39-54→40-54. `exec.ts` 103-108→119-120, 119→139. `media.ts` 42-69→47-77. `apply-patch.ts` 47-49→81-86. `send-policy.ts` 23-91→23-131. `manager-sync-ops.ts` 262-296→277-318.
+**Line shifts:** `cli-credentials.ts` 383-437→352-397, 388-389→358-362, 408-409→377. `pi-tools.ts` 215-217→233-236. `sandbox-paths.ts` 55-82→66-98. `qmd-manager.ts` 355-371→415-421, 1006-1012→1080-1086. `ws-connection.ts` 39-54→40-54. `exec.ts` 103-108→119-120, 119→139. `media.ts` 42-69→47-77→47-89. `apply-patch.ts` 47-49→81-86. `send-policy.ts` 23-91→23-131. `manager-sync-ops.ts` 262-296→277-318.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 further mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by scope deny bypass fix).
 
@@ -1059,6 +1059,40 @@ No line shifts. No new CVEs.
 **Line shifts:** `exec-approval-forwarder.ts` 70-77→53-60, `discord/monitor/exec-approvals.ts` 270-273→395.
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 3) — 60 upstream commits
+
+**Security relevance: HIGH** — 2 direct vulnerability fixes plus 8 hardening improvements across 60 commits (10,529 lines changed). **workspace-* path traversal prevention** (`75f33e92b`): `assertLocalMediaAllowed()` at `src/web/media.ts:56-72` now rejects per-agent `workspace-*` state dirs through default tmpdir allowlist — **Audit 1 Claim 6 directly hardened**. **Discord role-based allowlist bypass** (`c68263418`): Carbon Role objects stringify to mentions (`<@&ID>`) instead of raw IDs; fixed to use `rawMember.roles` at `src/discord/monitor/message-handler.preflight.ts:241` — **Audit 2 Claim 5 directly fixed**. **Bootstrap hiding** (`b4f14d6f7`): `isWorkspaceOnboardingCompleted()` at `src/agents/workspace.ts:192` + `BOOTSTRAP_FILE_NAMES_POST_ONBOARDING` at `agents.ts:56` hides BOOTSTRAP.md post-onboarding. **Plugin-SDK centralization** (`80eb91d9e`): 5 new shared helper modules. **iMessage monitor split** (`a6158873f`): inbound processing extracted with proper abort handling. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-3.md).
+
+**Line shifts:** `workspace.ts` 363-398→375-410, 400-454→412-466, 458-466→470-478. `agents.ts` 454-506→467-519, 60-89→64-93, 67-82→71-86. `media.ts` 47-77→47-89. `monitor-provider.ts` 184→142, 342-381→247-278 (decision logic to `inbound-processing.ts:81,201`).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 7) — 21 upstream commits
+
+**Security relevance: LOW** — 2 defensive improvements across 4 production files; remaining 19 commits are test consolidation and docs. Plugin manifest cache invalidation (`bed0e0762`): `clearPluginManifestRegistryCache()` at `src/plugins/manifest-registry.ts:64`, called at `src/cli/plugins-cli.ts:597,648` to ensure config validation sees freshly installed plugins. Process tool schema tightening (`bbcbabab7`): timeout changed from `Union[Number|String]` to strict `Type.Number({minimum: 0})` at `src/agents/bash-tools.process.ts:67-72`; sessions-spawn timeout normalization at `src/agents/tools/sessions-spawn-tool.ts:102-111`. **LARGE REFACTOR:** 12,419 lines changed (test suite merges). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-7.md).
+
+**Line shifts:** `plugins-cli.ts` 46-70→47-71 (resolveFileNpmSpecToLocalPath).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 8) — 21 upstream commits
+
+**Security relevance: LOW** — 2 gateway boot session management improvements (`fe73878df`, `b562aa662`) touching `src/gateway/boot.ts` (not documented in audits). 19 remaining commits are test refactors and chore (dependency update, CI caching). No audit claims or gaps affected. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-8.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 9) — 21 upstream commits
+
+**Security relevance: MODERATE** — 1 feature commit adds cron finished-run webhook notifications (PR #14535). The webhook implementation includes URL validation via `HttpUrlSchema` (`src/config/zod-schema.ts:96-102`), bearer token auth (`src/gateway/server-cron.ts:115`), 10-second timeout protection (`src/gateway/server-cron.ts:23,117-120`), and URL redaction in error logs (`src/gateway/server-cron.ts:25-32`). Webhook token marked `.register(sensitive)` for credential redaction (`src/config/zod-schema.ts:307`). Per-job opt-in via `notify` flag (`src/gateway/server-cron.ts:110`). 20 remaining commits are test consolidation. No audit claims or gaps affected. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-9.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 13) — 31 upstream commits
+
+**Security relevance: HIGH** — 5 security-relevant commits: **Telegram bot token redaction** (`cf6990701`): `formatErrorMessage()` and `formatUncaughtError()` (`src/infra/errors.ts:31,50`) now call `redactSensitiveText()`, two new Telegram token patterns in `DEFAULT_REDACT_PATTERNS` (`src/logging/redact.ts:36-37`) — **Gap 2 strengthened**. **Pre-commit hook option injection hardening** (`ba84b1253`): NUL-delimited file listing (`-z`), `--` separators on all tool invocations. **Sandbox bind validation tightening** (`a7cbce1b3`): `/run`, `/var/run`, `/private/var/run` added to `BLOCKED_HOST_PATHS` (lines 22-24), `getBlockedBindReason()` returns structured object (line 68), Zod `superRefine` expanded (`src/config/zod-schema.agent-runtime.ts:128-180`) — **Audit 1 Claim 6 and Gap 3 strengthened**. **Control UI XSS fix** (`3b4096e02`, `adc818db4`): inline `<script>` injection replaced with JSON endpoint (`/__openclaw/control-ui-config.json`), strict CSP with `script-src 'self'`, `base-uri 'none'`, `frame-ancestors 'none'` (`src/gateway/control-ui.ts:70-90`). 26 remaining commits are refactors and helper extraction. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-13.md).
+
+**Gap status: 1 closed, 3 remain open** — Gap 2 further strengthened (Telegram token redaction).
 
 ---
 

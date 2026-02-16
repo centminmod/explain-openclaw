@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Hudson Rock](./hudson-rock-infostealer-analysis.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ### Table of Contents
 
@@ -73,6 +73,22 @@
 - [Feb 15 sync 15 (101 commits)](./post-merge-hardening/2026-02-15-sync-15.md)
 - [Feb 16 sync 1 (172 commits)](./post-merge-hardening/2026-02-16-sync-1.md)
 - [Feb 16 sync 2 (60 commits)](./post-merge-hardening/2026-02-16-sync-2.md)
+- [Feb 16 sync 3 (60 commits)](./post-merge-hardening/2026-02-16-sync-3.md)
+- [Feb 16 sync 4 (9 commits)](./post-merge-hardening/2026-02-16-sync-4.md)
+- [Feb 16 sync 5 (21 commits)](./post-merge-hardening/2026-02-16-sync-5.md)
+- [Feb 16 sync 6 (21 commits)](./post-merge-hardening/2026-02-16-sync-6.md)
+- [Feb 16 sync 7 (21 commits)](./post-merge-hardening/2026-02-16-sync-7.md)
+- [Feb 16 sync 8 (21 commits)](./post-merge-hardening/2026-02-16-sync-8.md)
+- [Feb 16 sync 9 (21 commits)](./post-merge-hardening/2026-02-16-sync-9.md)
+- [Feb 16 sync 10 (21 commits)](./post-merge-hardening/2026-02-16-sync-10.md)
+- [Feb 16 sync 11 (21 commits)](./post-merge-hardening/2026-02-16-sync-11.md)
+- [Feb 16 sync 12 (21 commits)](./post-merge-hardening/2026-02-16-sync-12.md)
+- [Feb 16 sync 13 (31 commits)](./post-merge-hardening/2026-02-16-sync-13.md)
+- [Feb 16 sync 14 (80 commits)](./post-merge-hardening/2026-02-16-sync-14.md)
+- [Feb 16 sync 15 (97 commits)](./post-merge-hardening/2026-02-16-sync-15.md)
+- [Feb 16 sync 16 (102 commits)](./post-merge-hardening/2026-02-16-sync-16.md)
+- [Feb 16 sync 17 (44 commits)](./post-merge-hardening/2026-02-16-sync-17.md)
+- [Feb 17 sync 1 (69 commits)](./post-merge-hardening/2026-02-17-sync-1.md)
 
 ## Post-Merge Security Hardening
 
@@ -85,7 +101,7 @@ Four defense-in-depth items were identified across audits:
 1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist (`src/agents/bash-tools.exec-runtime.ts:32-50`) and `validateHostEnv()` (`src/agents/bash-tools.exec-runtime.ts:54`, enforced at `src/agents/bash-tools.exec.ts:300`).
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 3. **outPath validation in screen_record:** Accepts arbitrary paths without validation. Writes are confined to the paired node device, but path validation would add depth.
-4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:400-454`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:418-424`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:458-466`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
+4. **Bootstrap/memory `.md` content scanning:** The built-in scanner (`src/security/skill-scanner.ts:37-46`) only scans JS/TS. Nine workspace bootstrap files are injected into the system prompt (20,000 chars each) via `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:412-466`) with no content validation. `memory/*.md` files are accessed via tool calls (4,000-char budget) through a separate pipeline (`src/memory/internal.ts:78-107`) also without content scanning. QMD memory path hardening validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:418-424`) but does not scan content. Subagent exposure is limited — `filterBootstrapFilesForSession()` (`src/agents/workspace.ts:470-478`) restricts subagents to `AGENTS.md` + `TOOLS.md` only. See [Cisco AI Defense gap analysis](./cisco-ai-defense-skill-scanner.md#beyond-skillmd-all-persistent-md-files-are-unscanned).
 
 **Gap status: 1 closed, 3 remain open.**
 
@@ -109,7 +125,7 @@ Five security-relevant changes were introduced:
 
 - **Discord username resolution gating** (`7958ead`, `b01612c`): Username-to-user-ID lookups for outbound DMs are now gated through the directory config (`src/discord/targets.ts:77`), preventing unauthorized directory queries.
 
-- **Telegram session fragmentation fix** (`9154971`): `resolveTelegramForumThreadId()` (`src/telegram/bot/helpers.ts:18-31`) now ignores `message_thread_id` for non-forum groups. Reply threads in regular groups no longer create separate sessions.
+- **Telegram session fragmentation fix** (`9154971`): `resolveTelegramForumThreadId()` (`src/telegram/bot/helpers.ts:74-86`) now ignores `message_thread_id` for non-forum groups. Reply threads in regular groups no longer create separate sessions.
 
 - **Formal security models** (`3bf768a`): New TLA+ machine-checked models document security invariants for pairing, ingress gating, and routing/session-key isolation (`docs/security/formal-verification.md`).
 

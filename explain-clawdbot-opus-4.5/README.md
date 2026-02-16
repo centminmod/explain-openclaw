@@ -142,7 +142,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 | # | Claim | Verdict | Explanation |
 |---|-------|---------|-------------|
-| 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container (not host) (`src/agents/sandbox/docker.ts:356-357`). Config changes require gateway auth. Container has `no-new-privileges`. Real risk: Medium. |
+| 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container (not host) (`src/agents/sandbox/docker.ts:360-361`). Config changes require gateway auth. Container has `no-new-privileges`. Real risk: Medium. |
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks validation (`src/agents/tools/nodes-tool.ts:344-347`), but writes to paired node device, not gateway host. Requires node pairing approval. Real risk: Low-Medium. |
 | 3 | Log traversal via `logs.tail` | **False** | `LogsTailParamsSchema` has `additionalProperties: false` with only `cursor`, `limit`, `maxBytes`. File path from `getResolvedLoggerSettings().file` (config), not user input. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` (`src/infra/net/ssrf.ts:337-404`) pin DNS resolution. Redirect-to-private-IP explicitly tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
@@ -668,6 +668,42 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 **Line shifts:** `exec-approval-forwarder.ts` 70-77→53-60. `discord/monitor/exec-approvals.ts` 270-273→395.
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 3) — 60 upstream commits
+
+**Security relevance: HIGH** — 2 direct vulnerability fixes + 8 hardening improvements. **workspace-* path traversal prevention** (`75f33e92b`): rejects per-agent state dirs via tmpdir allowlist — **Audit 1 Claim 6**. **Discord role-based allowlist bypass** (`c68263418`): Carbon Role objects stringify to mentions instead of IDs; fixed to `rawMember.roles` — **Audit 2 Claim 5**. **Bootstrap hiding** (`b4f14d6f7`): BOOTSTRAP.md excluded from file listings post-onboarding. **Plugin-SDK centralization** (`80eb91d9e`): 5 new shared modules. **iMessage monitor split** (`a6158873f`): proper abort handling. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-3.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 4) — 9 upstream commits
+
+**Security relevance: NONE** — All 9 commits are test infrastructure refactors or minor UI fixes. No changes to security controls. **Line shifts:** `tui-formatters.ts` 529-590→93-117 (function extracted to top of file).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 7) — 21 upstream commits
+
+**Security relevance: LOW** — 2 defensive improvements (plugin manifest cache invalidation, process tool schema tightening). 19 commits are test suite consolidation/docs. No audit claims or gaps affected. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-7.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 8) — 21 upstream commits
+
+**Security relevance: LOW** — 2 gateway boot session management improvements, 19 test refactors and chore. No audit claims or gaps affected. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-8.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 9) — 21 upstream commits
+
+**Security relevance: MODERATE** — 1 feature commit adds cron finished-run webhook (PR #14535) with URL validation, bearer token auth, timeout protection, and log redaction. 20 commits are test consolidation. No audit claims or gaps affected. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-9.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 16 sync 13) — 31 upstream commits
+
+**Security relevance: HIGH** — 5 security-relevant commits: Telegram bot token redaction in errors (`cf6990701`), pre-commit hook option injection hardening (`ba84b1253`), sandbox bind validation tightening with 3 new blocked paths (`a7cbce1b3`), Control UI XSS fix replacing inline scripts with JSON endpoint (`3b4096e02`), and CSP lockdown with `script-src 'self'` (`adc818db4`). 26 remaining commits are refactors. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-13.md).
+
+**Gap status: 1 closed, 3 remain open** — Gap 2 further strengthened (Telegram token redaction).
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 

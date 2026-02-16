@@ -506,6 +506,25 @@ Integration: `src/agents/skills-install.ts:105-131` (install-time scan), `src/se
 
 **Key takeaway:** A clean scan does not mean a skill is safe. Both scanning layers are defense-in-depth measures, not guarantees. The ClawHavoc campaign specifically used social engineering (fake prerequisite commands) — an attack vector that no automated code scanner can detect. Human vigilance remains essential.
 
+### Lookalike Website Bypass (Feb 2026)
+
+The OpenSourceMalware team discovered a new evasion technique that bypasses both scanning layers entirely:
+
+1. Attacker publishes a skill on ClawHub with clean, legitimate-looking code
+2. The skill's documentation or functionality includes a URL pointing to a **lookalike OpenClaw website** (e.g., `openclaw-tools.ai`, `openclaw-plugins.com`)
+3. The actual malware payload is hosted on the external lookalike site, not in the skill package
+4. Both VirusTotal and the local scanner analyze only the skill package — the malicious payload is never scanned
+
+**Why this works:** The skill package itself is clean. The malware exists only at an external URL that neither scanning layer inspects. This is a social engineering + distribution hybrid: the skill acts as a clean decoy that directs users to a malicious download.
+
+**Mitigations:**
+- Be suspicious of skills that require downloading external resources
+- Verify all URLs in skill documentation against official domains (`openclaw.ai`, `docs.openclaw.ai`)
+- Check domain registration dates for referenced websites
+- Report suspicious skills to ClawHub
+
+See also: [Hudson Rock Infostealer Analysis](../08-security-analysis/hudson-rock-infostealer-analysis.md#new-evasion-clawhub-lookalike-website-bypass), [Ecosystem Threats § ClawHub](../08-security-analysis/ecosystem-security-threats.md#6-clawhub-malicious-skills-clawhavoc-campaign)
+
 ---
 
 ## G. Recovery If Compromised

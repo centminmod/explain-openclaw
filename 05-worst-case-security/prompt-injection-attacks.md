@@ -986,7 +986,7 @@ Attack #21 hides instructions in **skill files** (SKILL.md) that are loaded when
 
 **Two separate attack surfaces:**
 
-1. **Bootstrap files** (system prompt injection): Nine named `.md` files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md) are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:400-454`) and injected into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:187-239`) at up to 20,000 characters each. **Total unscanned attack surface: 180,000 characters of trusted system context.**
+1. **Bootstrap files** (system prompt injection): Nine named `.md` files (AGENTS.md, SOUL.md, TOOLS.md, IDENTITY.md, USER.md, HEARTBEAT.md, BOOTSTRAP.md, MEMORY.md, memory.md) are loaded by `loadWorkspaceBootstrapFiles()` (`src/agents/workspace.ts:412-466`) and injected into the system prompt via `buildBootstrapContextFiles()` (`src/agents/pi-embedded-helpers/bootstrap.ts:187-239`) at up to 20,000 characters each. **Total unscanned attack surface: 180,000 characters of trusted system context.**
 
 2. **Memory directory files** (`memory/*.md`): Accessed via `memory_search`/`memory_get` tool calls with a 4,000-character injection budget. Goes through a separate pipeline (`src/memory/internal.ts:78-107`, `src/memory/backend-config.ts:235-254`) — not injected into the system prompt. QMD backend validates `.md` extension and rejects symlinks (`src/memory/qmd-manager.ts:418-424`) but does not scan content.
 
@@ -1039,7 +1039,7 @@ When the agent calls `memory_search` and retrieves this file, the content appear
 - **Raw injection**: Content is injected with only truncation (at 20K chars), no sanitization or HTML comment stripping
 - **Large attack surface**: 180,000+ characters of unscanned system prompt context (bootstrap) plus 4,000 characters per memory tool call
 
-**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:458-466` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
+**Subagent mitigation:** `filterBootstrapFilesForSession()` at `src/agents/workspace.ts:470-478` limits subagents to only `AGENTS.md` + `TOOLS.md`, reducing the bootstrap attack surface from 9 files to 2 in multi-agent setups.
 
 **Attack vectors:**
 

@@ -147,8 +147,10 @@ Docs:
 ## 8) Protect secrets on disk
 
 - Treat `~/.openclaw` as sensitive.
-- Don’t sync it to iCloud/Dropbox/etc.
+- Don't sync it to iCloud/Dropbox/etc.
 - Ensure permissions are tight (audit can fix).
+- Use endpoint protection (AV/EDR software) — in Feb 2026, Hudson Rock documented the first confirmed infostealer theft of OpenClaw config files. See [Hudson Rock analysis](../08-security-analysis/hudson-rock-infostealer-analysis.md).
+- Enable disk encryption (FileVault on macOS, LUKS on Linux).
 
 Docs: https://docs.openclaw.ai/gateway/security
 
