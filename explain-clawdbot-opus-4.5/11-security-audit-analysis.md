@@ -183,14 +183,14 @@ All 8 claims were verified against the source code. None are exploitable as desc
 
 **Verdict: Partially true, heavily overstated.**
 
-The `setupCommand` field does execute a shell command (`src/agents/sandbox/docker.ts:360-361`):
+The `setupCommand` field does execute a shell command (`src/agents/sandbox/docker.ts:377-378`):
 ```
 await execDocker(["exec", "-i", name, "sh", "-lc", cfg.setupCommand]);
 ```
 
 However, the article omits critical context:
 - **Execution is inside a Docker container**, not on the host. The container runs with `no-new-privileges` and restricted capabilities.
-- **Modifying config requires gateway authentication.** The `config.patch` server method is gated behind `authorizeGatewayMethod()` which requires the `operator` role (`src/gateway/server-methods.ts:99-169`).
+- **Modifying config requires gateway authentication.** The `config.patch` server method is gated behind `authorizeGatewayMethod()` which requires the `operator` role (`src/gateway/server-methods.ts:105-175`).
 - **Agent runtime schemas validate config** via Zod (`src/agents/zod-schema.agent-runtime.ts`).
 
 **What the article missed:** Container isolation is the primary security boundary for agent execution. RCE inside a container is not equivalent to RCE on the host. Real risk is Medium (CVSS 6-7), not Critical (10.0).
@@ -261,7 +261,7 @@ The test suite explicitly covers DNS rebinding scenarios (`src/agents/tools/web-
 
 **Verdict: False.**
 
-The `authorizeGatewayMethod()` function (`src/gateway/server-methods.ts:99-169`) enforces role-based access control on every server method:
+The `authorizeGatewayMethod()` function (`src/gateway/server-methods.ts:105-175`) enforces role-based access control on every server method:
 - Agents connect with `role: "node"` and are restricted to `NODE_ROLE_METHODS` only
 - Any non-node method call from a node role returns `unauthorized role: node`
 - Approval methods require `operator.approvals` scope (line 108-109)
@@ -509,7 +509,7 @@ Four security-relevant commits:
 
 - **`fe81b1d71`** — Require shared auth before device bypass: Gateway now validates shared secret (token/password) authentication before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:454-499`). Prevents auth bypass when only Tailscale identity is available but no device pairing exists.
 
-- **`fff59da96`** — Slack fail closed on slash command channel type lookup: Slash command handler now fails closed when Slack API channel type lookup fails (`src/slack/monitor/slash.ts:181-182`). Infers channel type from ID prefix (D*/C*/G*) as fallback. Addresses potential authorization bypass in Slack slash commands.
+- **`fff59da96`** — Slack fail closed on slash command channel type lookup: Slash command handler now fails closed when Slack API channel type lookup fails (`src/slack/monitor/slash.ts:338-342`). Infers channel type from ID prefix (D*/C*/G*) as fallback. Addresses potential authorization bypass in Slack slash commands.
 
 - **`578bde1e0`** — Security: healthcheck skill (#7641): Adds bootstrap audit guidance tooling for deployment validation against security claims (`skills/healthcheck/SKILL.md`). New skill for systematic security healthchecks (thanks @Takhoffman).
 
@@ -549,7 +549,7 @@ Two security-relevant commits:
 
 - **`66d8117d4`** — Control UI origin hardening: New `checkBrowserOrigin()` (`src/gateway/origin-check.ts:24-52`) validates WebSocket Origin headers for Control UI and Webchat connections. Accepts only: configured `allowedOrigins`, same-host requests, or loopback addresses. Prevents clickjacking and cross-origin WebSocket hijacking. New config: `gateway.controlUi.allowedOrigins`.
 
-- **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:99`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
+- **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:105`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
@@ -575,7 +575,7 @@ Four security-relevant commits:
 
 - **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
 
-- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:203-328`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:218-343`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
@@ -699,7 +699,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 **HIGH (3):**
 
-- **`980f78873`** (PR [#11045](https://github.com/openclaw/openclaw/pull/11045)) — **Agent CRUD RBAC gating:** New `agents.create`, `agents.update`, `agents.delete` gateway methods gated behind `operator.admin` scope in `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:146-148`). Prevents non-admin clients from creating/modifying/deleting agents. Strengthens Audit 2 Claim 5 (agent self-approval) controls.
+- **`980f78873`** (PR [#11045](https://github.com/openclaw/openclaw/pull/11045)) — **Agent CRUD RBAC gating:** New `agents.create`, `agents.update`, `agents.delete` gateway methods gated behind `operator.admin` scope in `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:158-160`). Prevents non-admin clients from creating/modifying/deleting agents. Strengthens Audit 2 Claim 5 (agent self-approval) controls.
 
 - **`b8c8130ef`** (PR [#11448](https://github.com/openclaw/openclaw/pull/11448)) — **Gateway LAN IP bind fix:** New `pickPrimaryLanIPv4()` in `src/gateway/net.ts:9-25` resolves the primary non-internal IPv4 address for `bind=lan` mode. WebSocket and probe URLs now use actual LAN IP instead of `0.0.0.0`.
 
@@ -750,7 +750,7 @@ One security-adjacent commit (reliability/hardening focus, continues cron race c
 
 - **`4537ebc43`** — **fix: enforce Discord agent component DM auth:** New `src/discord/monitor/agent-components.ts` with `ensureDmComponentAuthorized()`. Uses `rawData.channel_id` as source of truth to prevent channel spoofing via Discord buttons/select menus.
 
-- **`47f6bb414`** — **Commands: add commands.allowFrom config:** Per-provider command authorization. Expands `resolveCommandAuthorization()` in `src/auto-reply/command-auth.ts:203-328`. **Strengthens Audit 2 Claim 5** (agent self-approval).
+- **`47f6bb414`** — **Commands: add commands.allowFrom config:** Per-provider command authorization. Expands `resolveCommandAuthorization()` in `src/auto-reply/command-auth.ts:218-343`. **Strengthens Audit 2 Claim 5** (agent self-approval).
 
 - **`1d46ca3a9`** — **fix(signal): enforce mention gating for group messages:** Signal group messages bypassed `requireMention`. New enforcement at `src/signal/monitor/event-handler.ts:87` with 206-line test suite.
 
@@ -968,7 +968,7 @@ No line shifts. No new CVEs.
 
 ### Post-Merge Hardening (Feb 15 sync 7) — 30 upstream commits
 
-**Security relevance: HIGH** — 8 security-relevant commits. **SafeBins shell expansion blocking** (`77b89719d`): new `buildSafeShellCommand()` in `src/infra/exec-approvals-analysis.ts:734` prevents shell metacharacter expansion in safeBins arguments, imported at `src/agents/bash-tools.exec.ts:18`, called at `:818`. **Addresses Audit 2 Claims 7 and 8.** **Node.invoke exec approvals blocking** (`01b3226ec`): blocks `system.execApprovals.get/set` from node.invoke pathway at `src/gateway/server-methods/nodes.ts:371-381`. **Addresses Audit 2 Claim 5.** **Session path traversal prevention** (`cab0abf52`): new `resolvePathFromAgentSessionsDir()` (lines 75-85), `resolveSiblingAgentSessionsDir()` (lines 87-102), `extractAgentIdFromAbsoluteSessionPath()` (lines 104-113) in `src/config/sessions/paths.ts`. **Addresses Audit 1 Claim 6.** **BlueBubbles webhook auth hardening** (`743f4b284`): defense-in-depth for GHSA-pchc-86f6-8758. **Slack DM auth gating** (`f19eabee5`): `normalizeSlackChannelType()` + authorization checks at `src/slack/monitor/slash.ts:183-199`. **Discord exec approval targeting** (`5ba72bd9b`): channel targeting for approval forwarding. **Telnyx webhook centralization** (`f47584fec`): centralized `verifyTelnyxWebhook()` function strengthens Audit 1 Claim 7. **Urbit SSRF centralization** (`d0f64c955`): continues Audit 2 Claim 4 hardening from sync 6. 2 new advisories: GHSA-fhvm-j76f-qmjv (HIGH — Telegram webhook auth bypass), GHSA-rmxw-jxxx-4cpc (MEDIUM — Matrix allowlist bypass). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-7.md).
+**Security relevance: HIGH** — 8 security-relevant commits. **SafeBins shell expansion blocking** (`77b89719d`): new `buildSafeShellCommand()` in `src/infra/exec-approvals-analysis.ts:734` prevents shell metacharacter expansion in safeBins arguments, imported at `src/agents/bash-tools.exec.ts:18`, called at `:818`. **Addresses Audit 2 Claims 7 and 8.** **Node.invoke exec approvals blocking** (`01b3226ec`): blocks `system.execApprovals.get/set` from node.invoke pathway at `src/gateway/server-methods/nodes.ts:371-381`. **Addresses Audit 2 Claim 5.** **Session path traversal prevention** (`cab0abf52`): new `resolvePathFromAgentSessionsDir()` (lines 75-85), `resolveSiblingAgentSessionsDir()` (lines 87-102), `extractAgentIdFromAbsoluteSessionPath()` (lines 104-113) in `src/config/sessions/paths.ts`. **Addresses Audit 1 Claim 6.** **BlueBubbles webhook auth hardening** (`743f4b284`): defense-in-depth for GHSA-pchc-86f6-8758. **Slack DM auth gating** (`f19eabee5`): `normalizeSlackChannelType()` + authorization checks at `src/slack/monitor/slash.ts:341-354`. **Discord exec approval targeting** (`5ba72bd9b`): channel targeting for approval forwarding. **Telnyx webhook centralization** (`f47584fec`): centralized `verifyTelnyxWebhook()` function strengthens Audit 1 Claim 7. **Urbit SSRF centralization** (`d0f64c955`): continues Audit 2 Claim 4 hardening from sync 6. 2 new advisories: GHSA-fhvm-j76f-qmjv (HIGH — Telegram webhook auth bypass), GHSA-rmxw-jxxx-4cpc (MEDIUM — Matrix allowlist bypass). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-7.md).
 
 **Line shifts:** `bash-tools.exec.ts` 294-295→296-297 (validateHostEnv enforcement), 298→300 (env merge). `server-methods.ts` 93-163→99-169 (authorizeGatewayMethod — pre-existing shift now corrected in docs).
 
@@ -1046,7 +1046,7 @@ No line shifts. No new CVEs.
 
 ### Post-Merge Hardening (Feb 15 sync 15) — 101 upstream commits
 
-**Security relevance: HIGH** — 9 security-relevant commits addressing input sanitization, path traversal prevention, config injection mitigation, and terminal escape hardening. 3 audit claims directly addressed. **Chat input sanitization** (`a2fe3b661`): null byte rejection and control character filtering via `sanitizeChatSendMessageInput()` (`src/gateway/server-methods/chat.ts:63`). **Transcript tool-call hardening** (`aa56045b4`): rejects blocks with missing/blank `id`/`name` fields via `hasToolCallId()`/`hasToolCallName()` (`src/agents/session-transcript-repair.ts:65,69`). **Text param normalization** (`c8733822c`): `extractStructuredText()` (`src/agents/pi-tools.read.ts:109`) prevents tool-call loops — addresses Audit 2 Claim 7. **Path validation consolidation** (`b37346103` + `e93764350`): shared `isPathInside()` (`src/security/scan-paths.ts:3`) and `resolveSafeInstallDir()` (`src/infra/install-safe-path.ts:19`) — addresses Audit 1 Claim 6. **Config array merging** (`8ec0ef586`): ID-based merging via `applyMergePatch()` (`src/config/merge-patch.ts:42`) — addresses Audit 2 Claim 1. **Bearer auth consolidation** (`b5c81f732`): `authorizeGatewayBearerRequestOrReply()` (`src/gateway/http-auth-helpers.ts:7`). **Binary MIME hardening** (`86a156db2`): `isBinaryMediaMime()` (`src/media-understanding/apply.ts:320`) covers application/* types. **ANSI injection hardening** (`9255f3665`): `splitAnsiParts()` in TUI searchable select. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-15.md).
+**Security relevance: HIGH** — 9 security-relevant commits addressing input sanitization, path traversal prevention, config injection mitigation, and terminal escape hardening. 3 audit claims directly addressed. **Chat input sanitization** (`a2fe3b661`): null byte rejection and control character filtering via `sanitizeChatSendMessageInput()` (`src/gateway/server-methods/chat.ts:78`). **Transcript tool-call hardening** (`aa56045b4`): rejects blocks with missing/blank `id`/`name` fields via `hasToolCallId()`/`hasToolCallName()` (`src/agents/session-transcript-repair.ts:65,69`). **Text param normalization** (`c8733822c`): `extractStructuredText()` (`src/agents/pi-tools.read.ts:109`) prevents tool-call loops — addresses Audit 2 Claim 7. **Path validation consolidation** (`b37346103` + `e93764350`): shared `isPathInside()` (`src/security/scan-paths.ts:3`) and `resolveSafeInstallDir()` (`src/infra/install-safe-path.ts:19`) — addresses Audit 1 Claim 6. **Config array merging** (`8ec0ef586`): ID-based merging via `applyMergePatch()` (`src/config/merge-patch.ts:42`) — addresses Audit 2 Claim 1. **Bearer auth consolidation** (`b5c81f732`): `authorizeGatewayBearerRequestOrReply()` (`src/gateway/http-auth-helpers.ts:7`). **Binary MIME hardening** (`86a156db2`): `isBinaryMediaMime()` (`src/media-understanding/apply.ts:320`) covers application/* types. **ANSI injection hardening** (`9255f3665`): `splitAnsiParts()` in TUI searchable select. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-15.md).
 
 **Line shifts:** `system-prompt.ts` 351-357→362-366, 377,381→387,391, 408-412→419-423, 430-432→441-442, 552-572→565-582, 553-555→566-569, 575-590→589-604, 164-612→164-625. `browser/server.ts` 133→59, 117-124→`server-middleware.ts:24-35`, 79-166→25-136.
 
@@ -1070,7 +1070,7 @@ No line shifts. No new CVEs.
 
 ### Post-Merge Hardening (Feb 16 sync 7) — 21 upstream commits
 
-**Security relevance: LOW** — 2 defensive improvements across 4 production files; remaining 19 commits are test consolidation and docs. Plugin manifest cache invalidation (`bed0e0762`): `clearPluginManifestRegistryCache()` at `src/plugins/manifest-registry.ts:64`, called at `src/cli/plugins-cli.ts:597,648` to ensure config validation sees freshly installed plugins. Process tool schema tightening (`bbcbabab7`): timeout changed from `Union[Number|String]` to strict `Type.Number({minimum: 0})` at `src/agents/bash-tools.process.ts:67-72`; sessions-spawn timeout normalization at `src/agents/tools/sessions-spawn-tool.ts:102-111`. **LARGE REFACTOR:** 12,419 lines changed (test suite merges). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-7.md).
+**Security relevance: LOW** — 2 defensive improvements across 4 production files; remaining 19 commits are test consolidation and docs. Plugin manifest cache invalidation (`bed0e0762`): `clearPluginManifestRegistryCache()` at `src/plugins/manifest-registry.ts:64`, called at `src/cli/plugins-cli.ts:597,648` to ensure config validation sees freshly installed plugins. Process tool schema tightening (`bbcbabab7`): timeout changed from `Union[Number|String]` to strict `Type.Number({minimum: 0})` at `src/agents/bash-tools.process.ts:67-72`; sessions-spawn timeout normalization at `src/agents/tools/sessions-spawn-tool.ts:48-58`. **LARGE REFACTOR:** 12,419 lines changed (test suite merges). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-7.md).
 
 **Line shifts:** `plugins-cli.ts` 46-70→47-71 (resolveFileNpmSpecToLocalPath).
 
@@ -1084,7 +1084,7 @@ No line shifts. No new CVEs.
 
 ### Post-Merge Hardening (Feb 16 sync 9) — 21 upstream commits
 
-**Security relevance: MODERATE** — 1 feature commit adds cron finished-run webhook notifications (PR #14535). The webhook implementation includes URL validation via `HttpUrlSchema` (`src/config/zod-schema.ts:96-102`), bearer token auth (`src/gateway/server-cron.ts:115`), 10-second timeout protection (`src/gateway/server-cron.ts:23,117-120`), and URL redaction in error logs (`src/gateway/server-cron.ts:25-32`). Webhook token marked `.register(sensitive)` for credential redaction (`src/config/zod-schema.ts:307`). Per-job opt-in via `notify` flag (`src/gateway/server-cron.ts:110`). 20 remaining commits are test consolidation. No audit claims or gaps affected. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-9.md).
+**Security relevance: MODERATE** — 1 feature commit adds cron finished-run webhook notifications (PR #14535). The webhook implementation includes URL validation via `HttpUrlSchema` (`src/config/zod-schema.ts:96-102`), bearer token auth (`src/gateway/server-cron.ts:240`), 10-second timeout protection (`src/gateway/server-cron.ts:28,242-245`), and URL redaction in error logs (`src/gateway/server-cron.ts:30-37`). Webhook token marked `.register(sensitive)` for credential redaction (`src/config/zod-schema.ts:307`). Per-job opt-in via `notify` flag (`src/gateway/server-cron.ts:235`). 20 remaining commits are test consolidation. No audit claims or gaps affected. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-9.md).
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
 
@@ -1093,6 +1093,52 @@ No line shifts. No new CVEs.
 **Security relevance: HIGH** — 5 security-relevant commits: **Telegram bot token redaction** (`cf6990701`): `formatErrorMessage()` and `formatUncaughtError()` (`src/infra/errors.ts:31,50`) now call `redactSensitiveText()`, two new Telegram token patterns in `DEFAULT_REDACT_PATTERNS` (`src/logging/redact.ts:36-37`) — **Gap 2 strengthened**. **Pre-commit hook option injection hardening** (`ba84b1253`): NUL-delimited file listing (`-z`), `--` separators on all tool invocations. **Sandbox bind validation tightening** (`a7cbce1b3`): `/run`, `/var/run`, `/private/var/run` added to `BLOCKED_HOST_PATHS` (lines 22-24), `getBlockedBindReason()` returns structured object (line 68), Zod `superRefine` expanded (`src/config/zod-schema.agent-runtime.ts:128-180`) — **Audit 1 Claim 6 and Gap 3 strengthened**. **Control UI XSS fix** (`3b4096e02`, `adc818db4`): inline `<script>` injection replaced with JSON endpoint (`/__openclaw/control-ui-config.json`), strict CSP with `script-src 'self'`, `base-uri 'none'`, `frame-ancestors 'none'` (`src/gateway/control-ui.ts:70-90`). 26 remaining commits are refactors and helper extraction. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-13.md).
 
 **Gap status: 1 closed, 3 remain open** — Gap 2 further strengthened (Telegram token redaction).
+
+### Post-Merge Hardening (Feb 17 sync 1) — 69 upstream commits
+
+**Security relevance: HIGH** — 8 security-relevant commits. **Session transcript 0o600 permissions** (`095d52209`): `ensureSessionHeader()` and transcript file creation add `mode: 0o600` — **Claim 1 STRENGTHENED**. **Silent token constant** (`553d17f8a`): hardcoded strings replaced with `SILENT_REPLY_TOKEN`. **QR pairing hardening** (`68e39cf2c`): validates remote prerequisites. **Tool policy refactor** (`df6d0ee92`): `pickSandboxToolPolicy()` consolidation. **Config merge hardening** (`f4b2fd00b`, `cb391f4bd`). **Fetch wrapper idempotency** (`b4fa10ae6`, `e3e8046a9`). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-1.md).
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 2) — 120 upstream commits
+
+**Security relevance: HIGH** — 15 security-relevant commits. **Shell variable injection preflight** (`b0a01fe48`): `validateScriptFileForShellBleed()` at `bash-tools.exec.ts:148` detects unescaped `$VAR_NAME` patterns in Python/Node scripts — **Claim 7 DIRECTLY ADDRESSED**. **Auth profile cooldown auto-expiry** (`03cadc4b7`): resets `errorCount`/`cooldownUntil` after expiry, preventing indefinite lockout — **Claim 4 ADDRESSED**. **Credential sync** (`feed57098`): all credential types bridged to agent auth.json. **Sandbox SHA-1 restoration** (`f27561186`): workspace directory stability. **Webchat auth** (`e95134ba3`): keeps internal provider routing. **Process termination** (`20957efa4`): SIGTERM→SIGKILL graceful shutdown. **MEDIA token parsing** (`0587e4cc7`): line-start restriction. **Gateway qmd onBoot** (`02c268eec`). **Service token drift** (`d799a3994`). **Session isolation** (`5f821ed06`, `93fbe6482`). **Media cleanup** (`441401221`). **Heartbeat** (`72e228e14`). **Telegram error handling** (`01b37f1d3`). **Discord exec approval** (`3646625dc`). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-2.md).
+
+**Line number shifts:** `ssrf.ts` -7 across all functions, `command-auth.ts` +15, `sessions/store.ts` +17, `process/exec.ts` -21, `web-fetch.ts` +141. All references updated.
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 4) — 120 upstream commits
+
+**Security relevance: HIGH** — 23 security-relevant commits. **Session file permissions** (`ae0b110e4` — `0o600` on session files via `json-file.ts:77` — **Claim 5 DIRECTLY ADDRESSED**), stale device-auth token clearing (`b2d622cfa`), account factory RBAC centralization (`d24340d75`, `59384001a`, `5544ab820` — **Claim 5 SUBSTANTIALLY STRENGTHENED**), per-account action gating (`556b531a1`, `a03fec2a3`, `4640999e7`), Gemini OAuth hardening (`153794080`, `3379b9d34`), base64 validation (`38c96bc53`), subagent spawn control (`5a3a448bc`), loop guards (`de900bace`, `a6c741eb4`), llms.txt discovery exposure (`e368c3650`), media dedup (`838259331`), FTS query expansion (`bcab2469d`, `65aedac20`), crash loop prevention (`0b8b95f2c`), webhook URL (`60bd154e5`), OPENCLAW_HOME override (`34b18ea9d`), sender_id spoofing (`d4c057f8c`), loopback auth skip (`9aa8db5c8`). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-4.md).
+
+**Line shifts:** `system-prompt.ts` +24 across multiple sections, `slash.ts` +~160 net, `sessions-spawn-tool.ts` refactored 320→86 lines, `cron/run.ts` +13.
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 5) — 60 upstream commits
+
+**Security relevance: HIGH** — 6 security-relevant commits. **OC-09 env var injection fix** (`235794d9f`): `sanitizeEnvVars()` at `src/agents/sandbox/sanitize-env-vars.ts:111` blocks 39+ credential patterns in Docker containers — **Claim 8 DIRECTLY ADDRESSED**, Gap 1 sandbox path closed. **IPv6 host header** (`4e5a9d83b`): `resolveHostName()` at `net.ts:32` with IPv6 detection at `:44`. **Trusted proxy trim** (`d3698f4eb`): `.trim()` at `net.ts:217` prevents whitespace bypass. **Chat history hardcap** (`5d9a026a9`): 12K char/128KB limits at `chat.ts:63-64`. **Mesh RBAC** (`16e59b26a` + `83990ed54`): mesh.plan.auto/run/retry gated as WRITE_METHODS at `server-methods.ts:100-102`, new `mesh.ts` (706 lines) with DAG validation. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-5.md).
+
+**Line shifts:** `server-methods.ts` 99→105, 99-169→105-175, 146-148→158-160. `docker.ts` 260→261, 278-280→295-296, 281→298, 282-287→299-303, 288-297→305-313, 298-317→315-333, 318-322→335-337, 344-354→361-370, 360-361→377-378. `chat.ts` 63→78, 52→67.
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 6) — 60 upstream commits
+
+**Security relevance: MODERATE** — 3 security-relevant commits. **Tool loop detection** (`076df941a`): `resolveToolLoopDetectionConfig()` at `pi-tools.ts:128-153` + `ToolLoopDetectionSchema` at `zod-schema.agent-runtime.ts:370-401` — configurable DoS defense with per-detector toggles. **Windows bind mounts** (`dacffd7ac`): `splitBindSpec()` at `fs-paths.ts:63-92` — prevents incorrect sandbox path mapping on Windows. **Skills bloat guard** (`5b3873add`): `resolveSkillsLimits()` at `skills/workspace.ts:118-128` enforces 5 limits (maxSkillsInPrompt=150, maxSkillsPromptChars=30KB, maxSkillFileBytes=256KB). No audit claims directly addressed. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-6.md).
+
+**Line shifts:** `skills/workspace.ts` 230→447 (disableModelInvocation), 302-346→566-612 (resolveSyncedSkillDestinationPath).
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 7) — 60 upstream commits
+
+**Security relevance: HIGH** — 4 security-relevant commits. **URL allowlist consolidation** (`a6466f257`): `resolveWebUrlAllowlist()` at `src/agents/tools/web-shared.ts:11` centralizes SSRF URL allowlist validation for both web-fetch and web-search tools, delegated via `resolveFetchUrlAllowlist()` at `src/agents/tools/web-fetch.ts:78` — **Audit 2 Claim 4 STRENGTHENED**. **Windows/UNC bind mount parsing** (`6244ef9ea`): new `getHostContainerSeparatorIndex()` at `src/agents/sandbox/fs-paths.ts:82` improves separator detection for bind mount specifications — **Audit 1 Claim 6 STRENGTHENED**. **Input file limit centralization** (`37c97964a`): `resolveInputFileLimits()` at `src/media/input-files.ts:171` unifies upload constraints — **Audit 2 Claim 2 defense-in-depth**. **Device auth scope normalization** (`b9aed3a07`): `normalizeDeviceAuthScopes()` at `src/shared/device-auth.ts:18` eliminates scope inconsistency across four device pairing code paths — **Audit 1 Claims 2 & 5 defense-in-depth**. 56 remaining commits are reverts, cron session namespace routing, test type fixes, and infrastructure refactors. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-7.md).
+
+**Line shifts:** `server-cron.ts` :115→:240 (bearer token), :110→:235 (opt-in gating), :23,117-120→:28,242-245 (timeout), :25-32,132→:30-37,257 (URL redaction). `hasBinary()`/PATHEXT logic extracted from `skills/config.ts`+`hooks/config.ts` to `src/shared/config-eval.ts:121`/`:110-115`.
+
+**Gap status: 1 closed, 3 remain open.**
 
 ---
 

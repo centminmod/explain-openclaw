@@ -81,7 +81,7 @@ The Cisco blog post identifies four risk categories for OpenClaw deployments and
 4. **Mandatory auth enforcement** (`src/gateway/server-runtime-config.ts:99-103`) — throws error if binding to non-loopback without auth credentials
 5. **SSRF protection** (`src/infra/net/ssrf.ts:167-272`) — DNS pinning with private IP blocking (10.x, 127.x, 169.254.x, 172.16-31.x, 192.168.x, 100.64-127.x, IPv6 link-local/ULA including full-form IPv4-mapped IPv6, plus metadata hostnames)
 6. **SSRF policy enforcement** (`src/infra/net/ssrf.ts:337-389`) — `resolvePinnedHostnameWithPolicy()` blocks both hostname-based and resolved-IP-based private network access
-7. **RBAC on every call** (`src/gateway/server-methods.ts:99-169`) — `authorizeGatewayMethod()` enforces role + scope checks (operator/node roles, admin/approvals/pairing/read/write scopes) on every gateway method
+7. **RBAC on every call** (`src/gateway/server-methods.ts:105-175`) — `authorizeGatewayMethod()` enforces role + scope checks (operator/node roles, admin/approvals/pairing/read/write scopes) on every gateway method
 
 **Verdict:** FALSE — OpenClaw has extensive built-in security. The blog post appears to have evaluated an older version or did not examine the codebase beyond surface-level claims.
 

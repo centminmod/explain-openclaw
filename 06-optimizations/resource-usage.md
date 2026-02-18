@@ -70,7 +70,7 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 
 | Cache | Location | Bound | Risk |
 |-------|----------|-------|------|
-| Session store cache | `src/config/sessions/store.ts:35` | 45s TTL, `structuredClone` per read | Medium — each entry holds all 500 sessions |
+| Session store cache | `src/config/sessions/store.ts:40` | 45s TTL, `structuredClone` per read | Medium — each entry holds all 500 sessions |
 | Discord presence cache | `src/discord/monitor/presence-cache.ts:9` | 5000/account LRU | Low |
 | Telegram sent message cache | `src/telegram/sent-message-cache.ts:13` | 24h TTL, 100/chat | Low-Medium |
 | History map | `src/auto-reply/reply/history.ts:7` | 1000 keys LRU | Well bounded |
@@ -144,7 +144,7 @@ Modules loaded via jiti persist for process lifetime. Each plugin's tools, comma
 |----------|-------|----------|
 | Media files | 2min TTL auto-cleanup | `src/media/store.ts:15,87-99` |
 | Rolling logs | 24h age pruning | `src/logging/logger.ts:17,228-252` |
-| Session store | 500 entries, 30d prune, 10MB rotation, 3 backups | `src/config/sessions/store.ts:208-210` |
+| Session store | 500 entries, 30d prune, 10MB rotation, 3 backups | `src/config/sessions/store.ts:768` |
 | Cron run logs | 2MB/2000 lines self-pruning | `src/cron/run-log.ts:26-57` |
 | TTS temp files | 5min delayed cleanup | `src/tts/tts-core.ts:21,500-512` |
 | Pairing requests | 3/channel, 1h TTL | `src/pairing/pairing-store.ts:14-15` |
@@ -756,7 +756,7 @@ totalTokens >= contextWindow - reserveTokens - softThreshold
 
 *Plain English: When you type `/new` to start a fresh conversation, the old conversation gets saved as a dated memory file — like tearing out your notepad page and filing it before starting a blank one.*
 
-The session memory hook (`src/hooks/bundled/session-memory/handler.ts:73-204`) triggers on the `/new` command:
+The session memory hook (`src/hooks/bundled/session-memory/handler.ts:74-327`) triggers on the `/new` command:
 
 1. Reads the last N messages from the current session's JSONL transcript file (default: 15 messages, `handler.ts:28`)
 2. Generates a descriptive slug via LLM (e.g., `"debugging-auth-flow"`) or falls back to HHMM timestamp (`handler.ts:146-150`)

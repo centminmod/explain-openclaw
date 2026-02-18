@@ -89,6 +89,19 @@
 - [Feb 16 sync 16 (102 commits)](./post-merge-hardening/2026-02-16-sync-16.md)
 - [Feb 16 sync 17 (44 commits)](./post-merge-hardening/2026-02-16-sync-17.md)
 - [Feb 17 sync 1 (69 commits)](./post-merge-hardening/2026-02-17-sync-1.md)
+- [Feb 17 sync 2 (120 commits)](./post-merge-hardening/2026-02-17-sync-2.md)
+- [Feb 17 sync 4 (120 commits)](./post-merge-hardening/2026-02-17-sync-4.md)
+- [Feb 17 sync 5 (60 commits)](./post-merge-hardening/2026-02-17-sync-5.md)
+- [Feb 17 sync 6 (60 commits)](./post-merge-hardening/2026-02-17-sync-6.md)
+- [Feb 17 sync 7 (60 commits)](./post-merge-hardening/2026-02-17-sync-7.md)
+- [Feb 18 sync 1 (21 commits)](./post-merge-hardening/2026-02-18-sync-1.md)
+- [Feb 18 sync 2 (21 commits)](./post-merge-hardening/2026-02-18-sync-2.md)
+- [Feb 18 sync 3 (21 commits)](./post-merge-hardening/2026-02-18-sync-3.md)
+- [Feb 18 sync 4 (32 commits)](./post-merge-hardening/2026-02-18-sync-4.md)
+- [Feb 18 sync 5 (50 commits)](./post-merge-hardening/2026-02-18-sync-5.md)
+- [Feb 18 sync 7 (87 commits)](./post-merge-hardening/2026-02-18-sync-7.md)
+- [Feb 18 sync 8 (26 commits, 3 security)](./post-merge-hardening/2026-02-18-sync-8.md)
+- [Feb 18 sync 9 (10 commits, 2 security)](./post-merge-hardening/2026-02-18-sync-9.md)
 
 ## Post-Merge Security Hardening
 

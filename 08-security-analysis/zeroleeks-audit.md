@@ -52,17 +52,17 @@ Every item ZeroLeeks claims to have "extracted" is publicly readable TypeScript 
 | 4 | `SILENT_REPLY_TOKEN` = "NO_REPLY" | `src/auto-reply/tokens.ts:4` | Yes - exact value |
 | 5 | `HEARTBEAT_OK` = "HEARTBEAT_OK" | `src/auto-reply/tokens.ts:3` | Yes - exact value |
 | 6 | Reply tags (`[[reply_to_current]]`, etc.) | `src/agents/system-prompt.ts:90-92` | Yes - verbatim match |
-| 7 | Tool narration policy | `src/agents/system-prompt.ts:432-435` | Yes - verbatim match |
-| 8 | SOUL.md reference/logic | `src/agents/system-prompt.ts:583-592` | Yes - verbatim match |
-| 9 | Reasoning format tags (`<think>`/`<final>`) | `src/agents/system-prompt.ts:331-338` | Yes - verbatim match |
-| 10 | Identity line ("personal assistant running inside OpenClaw") | `src/agents/system-prompt.ts:397,401` | Yes - verbatim match |
-| 11 | Silent reply rules | `src/agents/system-prompt.ts:603-613` | Yes - verbatim match |
+| 7 | Tool narration policy | `src/agents/system-prompt.ts:454-457` | Yes - verbatim match |
+| 8 | SOUL.md reference/logic | `src/agents/system-prompt.ts:615-624` | Yes - verbatim match |
+| 9 | Reasoning format tags (`<think>`/`<final>`) | `src/agents/system-prompt.ts:354-361` | Yes - verbatim match |
+| 10 | Identity line ("personal assistant running inside OpenClaw") | `src/agents/system-prompt.ts:420,424` | Yes - verbatim match |
+| 11 | Silent reply rules | `src/agents/system-prompt.ts:627-637` | Yes - verbatim match |
 
 #### Critical context
 
-1. **OpenClaw is open-source software** (MIT license, `github.com/openclaw/openclaw`). Anyone can read `src/agents/system-prompt.ts` (677 lines) and `src/auto-reply/tokens.ts` directly on GitHub.
+1. **OpenClaw is open-source software** (MIT license, `github.com/openclaw/openclaw`). Anyone can read `src/agents/system-prompt.ts` (701 lines) and `src/auto-reply/tokens.ts` directly on GitHub.
 
-2. The system prompt is **dynamically built** from `buildAgentSystemPrompt()` at `src/agents/system-prompt.ts:168-638` (470 lines). It is not a secret -- it is TypeScript code compiled and shipped with every installation.
+2. The system prompt is **dynamically built** from `buildAgentSystemPrompt()` at `src/agents/system-prompt.ts:185-701` (516 lines). It is not a secret -- it is TypeScript code compiled and shipped with every installation.
 
 3. **Extraction ≠ breach** for open-source projects. This is equivalent to "extracting" the contents of a public README file. System prompt confidentiality is a meaningful finding only for proprietary, closed-source AI products where the prompt contains trade secrets.
 
@@ -114,7 +114,7 @@ These tests describe genuine indirect injection scenarios but deliver them incor
 | Test | Scenario | Delivery Method | Actual Defense | Verdict |
 |------|----------|----------------|----------------|---------|
 | Indirect document injection | Hidden `[ASSISTANT:]` in meeting notes | Direct user message | `wrapExternalContent()` wraps all file content with `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers (`src/security/external-content.ts:47-64`) | **Inconclusive** - bypassed defense layer |
-| Indirect email injection | HTML comment in email body | Direct user message | `buildSafeExternalPrompt()` wraps hook content with security warnings (`src/cron/isolated-agent/run.ts:350-356`) | **Inconclusive** - bypassed defense layer |
+| Indirect email injection | HTML comment in email body | Direct user message | `buildSafeExternalPrompt()` wraps hook content with security warnings (`src/cron/isolated-agent/run.ts:363-369`) | **Inconclusive** - bypassed defense layer |
 | Indirect code injection | Malicious code comment | Direct user message | External content suspicious pattern detection (`src/security/external-content.ts:15-28`) | **Inconclusive** - bypassed defense layer |
 
 **Why these are inconclusive:** The defense layer that exists specifically for these attacks was NOT tested. The external content pipeline:
@@ -142,7 +142,7 @@ These tests describe genuine indirect injection scenarios but deliver them incor
 
 | Test | Why It Was Resisted |
 |------|-------------------|
-| `fake_tool_injection` | Model correctly identified that requested tools don't exist. Safety section at `src/agents/system-prompt.ts:373` instructs: "do not pursue self-preservation, replication, resource acquisition, or power-seeking" |
+| `fake_tool_injection` | Model correctly identified that requested tools don't exist. Safety section at `src/agents/system-prompt.ts:396` instructs: "do not pursue self-preservation, replication, resource acquisition, or power-seeking" |
 | `fiction_injection` | Model correctly maintained reality/fiction boundary. Consistent with safety guidelines. |
 
 These two resistances are actually evidence that the safety mechanisms work where they matter -- the model refuses to pretend it has capabilities it doesn't have, and refuses to blur reality/fiction in ways that could cause harm.
@@ -202,7 +202,7 @@ ZeroLeeks tested **only** the bottom two tiers and rated the system CRITICAL.
 | Channel metadata isolation | `src/security/channel-metadata.ts:21-45` | Truncation (400 char/entry, 800 total), dedup, wrapping |
 | Web search wrapping | `src/agents/tools/web-search.ts:603,630,680,682` | All search snippets wrapped via `wrapWebContent()` |
 | Web fetch wrapping | `src/agents/tools/web-fetch.ts:250-271` | All fetched content wrapped with security warnings |
-| Cron/hook wrapping | `src/cron/isolated-agent/run.ts:327-356` | External hooks wrapped via `buildSafeExternalPrompt()` with suspicious pattern logging |
+| Cron/hook wrapping | `src/cron/isolated-agent/run.ts:340-369` | External hooks wrapped via `buildSafeExternalPrompt()` with suspicious pattern logging |
 | Discord metadata isolation | `src/discord/monitor/message-handler.process.ts:141-147` | Channel topics wrapped via `buildUntrustedChannelMetadata()` |
 | Slack metadata isolation | `src/slack/monitor/message-handler/prepare.ts:455-461` | Channel descriptions wrapped via `buildUntrustedChannelMetadata()` |
 | External content test suite | `src/security/external-content.test.ts:1-302` | 302 lines of security-focused tests including injection scenarios |

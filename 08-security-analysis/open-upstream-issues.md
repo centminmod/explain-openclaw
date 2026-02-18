@@ -53,7 +53,7 @@
 | [#10324](https://github.com/openclaw/openclaw/issues/10324) | MEDIUM | Memory index multi-write lacks transactions | `src/memory/manager.ts:2198-2301` (DELETEs+INSERTs without BEGIN/COMMIT) |
 | [#10326](https://github.com/openclaw/openclaw/issues/10326) | ~~MEDIUM~~ FIXED | Child process stop() lacks SIGKILL escalation | Fixed upstream (COMPLETED 2026-02-14); `src/imessage/client.ts:110-131`, `src/signal/daemon.ts:96-100` |
 | [#10330](https://github.com/openclaw/openclaw/issues/10330) | MEDIUM | TOCTOU race in device auth token storage | `src/infra/device-auth-store.ts:92-119` (read+write with no lock) |
-| [#10331](https://github.com/openclaw/openclaw/issues/10331) | ~~MEDIUM~~ FIXED | Session store stale cache inside write lock | Fixed upstream (COMPLETED 2026-02-14); `src/config/sessions/store.ts:760,816` |
+| [#10331](https://github.com/openclaw/openclaw/issues/10331) | ~~MEDIUM~~ FIXED | Session store stale cache inside write lock | Fixed upstream (COMPLETED 2026-02-14); `src/config/sessions/store.ts:802,768` |
 | [#10333](https://github.com/openclaw/openclaw/issues/10333) | ~~MEDIUM~~ FIXED | BlueBubbles filename multipart header injection | Fixed in PR [#11093](https://github.com/openclaw/openclaw/pull/11093) — `sanitizeFilename()` at `extensions/bluebubbles/src/attachments.ts:27-29` |
 | [#10646](https://github.com/openclaw/openclaw/issues/10646) | HIGH | Weak UUID: Math.random() fallback + tool call IDs | `ui/src/ui/uuid.ts:23-33` (fallback), `src/auto-reply/reply/get-reply-inline-actions.ts:191` (toolCallId) |
 | [#7139](https://github.com/openclaw/openclaw/issues/7139) | MEDIUM | Default config: sandbox off, plaintext creds | `src/agents/sandbox/config.ts:166` (mode="off"), gateway loopback is safe; creds 0o600 |
@@ -80,7 +80,7 @@
 | [#13718](https://github.com/openclaw/openclaw/issues/13718) | ~~HIGH~~ FIXED | Unauthenticated Nostr profile API allows remote config tampering | Fixed in PR [#13719](https://github.com/openclaw/openclaw/pull/13719) — gateway-auth required for `/api/channels/` plugin routes (`server-http.ts:484-497`) |
 | [#13937](https://github.com/openclaw/openclaw/issues/13937) | ~~MEDIUM~~ FIXED | HTML not escaped in Control UI webchat (XSS) | Closed as COMPLETED 2026-02-11; `ui/` webchat HTML escaping fix applied upstream |
 | [#14137](https://github.com/openclaw/openclaw/issues/14137) | HIGH | Gateway auth has no rate limiting (CWE-307) | `src/gateway/auth.ts` — no brute-force protection; ~645 attempts/sec; fix PR [#13680](https://github.com/openclaw/openclaw/pull/13680) pending; relates to #8594 |
-| [#13274](https://github.com/openclaw/openclaw/issues/13274) | ~~HIGH~~ FIXED | SSRF guard bypassed by IPv4-compatible IPv6 addresses | Fixed by `c0c0e0f9a` — `isPrivateIpAddress()` (`src/infra/net/ssrf.ts:193-257`) now handles full-form IPv4-mapped IPv6 via `extractIpv4FromEmbeddedIpv6()` at `:152-165` |
+| [#13274](https://github.com/openclaw/openclaw/issues/13274) | ~~HIGH~~ FIXED | SSRF guard bypassed by IPv4-compatible IPv6 addresses | Fixed by `c0c0e0f9a` — `isPrivateIpAddress()` (`src/infra/net/ssrf.ts:186-250`) now handles full-form IPv4-mapped IPv6 via `extractIpv4FromEmbeddedIpv6()` at `:145-158` |
 | [#11738](https://github.com/openclaw/openclaw/issues/11738) | HIGH | Canvas authorization IP co-tenancy bypass | `src/gateway/server-http.ts:100-105` — `hasAuthorizedWsClientForIp()` trusts any request from same IP as authenticated WS client; bypasses auth in NAT/proxy environments |
 | [#11793](https://github.com/openclaw/openclaw/issues/11793) | HIGH | HTTP API session keys lack ownership validation | `src/gateway/http-utils.ts:71-73` — `x-openclaw-session-key` header accepted as-is with no ownership check; cross-user session access in multi-user deployments |
 | [#11024](https://github.com/openclaw/openclaw/issues/11024) | ~~HIGH~~ FIXED | Gmail push endpoint embeds auth token in URL query string | Fixed upstream (COMPLETED 2026-02-14); `src/hooks/gmail-setup-utils.ts:315` |
@@ -369,7 +369,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Affected code:**
 - `src/auto-reply/reply/session.ts:87` - `writeFileSync` with no explicit mode
-- `src/gateway/server-methods/chat.ts:73,81` - transcript file creation with no explicit mode
+- `src/gateway/server-methods/chat.ts:285` - transcript file creation with no explicit mode
 
 **Note:** `src/security/fix.ts:442,451` applies 0o600 to `auth-profiles.json` and `sessions.json` but NOT individual `.jsonl` transcript files.
 
@@ -669,9 +669,9 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** Two session store write methods call `loadSessionStore()` without `skipCache: true`, reading stale cached data even though they hold the write lock. Concurrent requests to the same session can silently lose metadata updates.
 
 **Affected code:**
-- `src/config/sessions/store.ts:760` — `updateSessionStoreEntry()` inside `withSessionStoreLock()` calls `loadSessionStore(storePath)` **without `skipCache: true`**
-- `src/config/sessions/store.ts:816` — `updateLastRoute()` same pattern
-- `src/config/sessions/store.ts:590` — `updateSessionStore()` NOW correctly uses `{ skipCache: true }` (bug partially fixed in session pruning refactor)
+- `src/config/sessions/store.ts:802` — `updateSessionStoreEntry()` inside `withSessionStoreLock()` calls `loadSessionStore(storePath)` **without `skipCache: true`**
+- `src/config/sessions/store.ts:768` — `withSessionStoreLock()` helper
+- `src/config/sessions/store.ts:665` — `updateSessionStore()` NOW correctly uses `{ skipCache: true }` (bug partially fixed in session pruning refactor)
 
 **Impact:** 8 callers in hot paths (agent runner, channels, Slack, LINE, web) can lose session metadata updates under concurrent load.
 
@@ -923,7 +923,7 @@ All changes take effect immediately via automatic restart.
 
 **Vulnerability:** ~~The `isPrivateIpAddress()` function does not recognize IPv4-compatible IPv6 addresses like `::127.0.0.1` or `::7f00:1` as private/loopback.~~ **FIXED by `c0c0e0f9a`** (Feb 15 sync 11).
 
-**Fix details:** `isPrivateIpAddress()` (`src/infra/net/ssrf.ts:193-257`) was completely rewritten to use proper hextet-level IPv6 parsing via `parseIpv6Hextets()` (`:91-150`). New `extractIpv4FromEmbeddedIpv6()` (`:152-165`) handles IPv4-mapped (`::ffff:a.b.c.d`), IPv4-compatible (`::a.b.c.d`), and full-form variants (`0000:0000:0000:0000:0000:ffff:7f00:0001`). New test file `ssrf.test.ts` covers all bypass variants. Pre-resolution and post-resolution checks at `resolvePinnedHostnameWithPolicy()` (`:337-389`) both use the fixed function.
+**Fix details:** `isPrivateIpAddress()` (`src/infra/net/ssrf.ts:186-250`) was completely rewritten to use proper hextet-level IPv6 parsing via `parseIpv6Hextets()` (`:84-143`). New `extractIpv4FromEmbeddedIpv6()` (`:145-158`) handles IPv4-mapped (`::ffff:a.b.c.d`), IPv4-compatible (`::a.b.c.d`), and full-form variants (`0000:0000:0000:0000:0000:ffff:7f00:0001`). New test file `ssrf.test.ts` covers all bypass variants. Pre-resolution and post-resolution checks at `resolvePinnedHostnameWithPolicy()` (`:330-382`) both use the fixed function.
 
 ### #11738: Canvas Authorization IP Co-Tenancy Bypass
 

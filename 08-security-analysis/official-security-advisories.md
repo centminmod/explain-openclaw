@@ -4,7 +4,7 @@
 
 > **Source:** [github.com/openclaw/openclaw/security](https://github.com/openclaw/openclaw/security)
 >
-> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (26 new advisories, 10 HIGH + 10 MEDIUM + 6 previously tracked) patched in v2026.2.1-2.2+.
+> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (26 new advisories, 10 HIGH + 10 MEDIUM + 6 previously tracked) patched in v2026.2.1-2.2+; Feb 16 batch (16 new advisories, 9 HIGH + 4 MEDIUM + 3 LOW) published 2026-02-15/16.
 
 ### Advisory Summary
 
@@ -41,7 +41,7 @@
 | [GHSA-33rq-m5x2-fvgf](https://github.com/openclaw/openclaw/security/advisories/GHSA-33rq-m5x2-fvgf) | HIGH | Twitch allowFrom Not Enforced in Optional Plugin | - | pending | - |
 | [GHSA-3hcm-ggvf-rch5](https://github.com/openclaw/openclaw/security/advisories/GHSA-3hcm-ggvf-rch5) | HIGH | Exec Allowlist Bypass via Command Substitution/Backticks | CWE-78 | >= v2026.2.2 | @simecek |
 | [GHSA-mr32-vwc2-5j6h](https://github.com/openclaw/openclaw/security/advisories/GHSA-mr32-vwc2-5j6h) | HIGH | Browser Relay /cdp WebSocket Missing Auth | - | >= v2026.2.1 | @johnatzeropath, @LeftenantZero, @yueyueL |
-| [GHSA-8jpq-5h99-ff5r](https://github.com/openclaw/openclaw/security/advisories/GHSA-8jpq-5h99-ff5r) | HIGH | Local File Disclosure via sendMediaFeishu in Feishu Extension | CWE-22 | pending | - |
+| [CVE-2026-26321](https://github.com/openclaw/openclaw/security/advisories/GHSA-8jpq-5h99-ff5r) | HIGH | Local File Disclosure via sendMediaFeishu in Feishu Extension | CWE-22 | pending | - |
 | [GHSA-xw4p-pw82-hqr7](https://github.com/openclaw/openclaw/security/advisories/GHSA-xw4p-pw82-hqr7) | HIGH | Sandbox Skill Mirroring Path Traversal | CWE-22 | pending | - |
 | [GHSA-7q2j-c4q5-rm27](https://github.com/openclaw/openclaw/security/advisories/GHSA-7q2j-c4q5-rm27) | HIGH | macOS Deep Link Confirmation Truncation | CWE-451 | pending | - |
 | [GHSA-j27p-hq53-9wgc](https://github.com/openclaw/openclaw/security/advisories/GHSA-j27p-hq53-9wgc) | HIGH | DoS via Unbounded URL-Backed Media Fetch | CWE-400 | pending | - |
@@ -61,6 +61,22 @@
 | [GHSA-8mh7-phf8-xgfm](https://github.com/openclaw/openclaw/security/advisories/GHSA-8mh7-phf8-xgfm) | MEDIUM | skills.status Leaks Secrets to operator.read Clients | CWE-200 | pending | - |
 | [GHSA-c37p-4qqg-3p76](https://github.com/openclaw/openclaw/security/advisories/GHSA-c37p-4qqg-3p76) | MEDIUM | Twilio Voice Webhook Auth Bypass via ngrok Loopback | CWE-306 | pending | - |
 | [GHSA-pg2v-8xwh-qhcc](https://github.com/openclaw/openclaw/security/advisories/GHSA-pg2v-8xwh-qhcc) | MEDIUM | SSRF in Optional Tlon (Urbit) Extension Auth | CWE-918 | pending | - |
+| [GHSA-7rcp-mxpq-72pj](https://github.com/openclaw/openclaw/security/advisories/GHSA-7rcp-mxpq-72pj) | MEDIUM | Chutes Manual OAuth State Validation Bypass | CWE-352 | pending | aether-ai-agent |
+| [GHSA-jfv4-h8mc-jcp8](https://github.com/openclaw/openclaw/security/advisories/GHSA-jfv4-h8mc-jcp8) | LOW | Unvalidated PID Kill via SIGKILL in Process Cleanup | CWE-283 | pending | aether-ai-agent |
+| [GHSA-rwj8-p9vq-25gv](https://github.com/openclaw/openclaw/security/advisories/GHSA-rwj8-p9vq-25gv) | HIGH | LFI in BlueBubbles Media Path Handling | CWE-22 | pending | @zpbrent |
+| [GHSA-4564-pvr2-qq4h](https://github.com/openclaw/openclaw/security/advisories/GHSA-4564-pvr2-qq4h) | HIGH | Shell Injection in macOS Keychain Credential Write | CWE-78 | pending | aether-ai-agent |
+| [GHSA-x22m-j5qq-j49m](https://github.com/openclaw/openclaw/security/advisories/GHSA-x22m-j5qq-j49m) | HIGH | Two SSRF via Feishu Extension (sendMediaFeishu + Markdown Image Fetch) | CWE-918 | pending | @zpbrent |
+| [GHSA-gq9c-wg68-gwj2](https://github.com/openclaw/openclaw/security/advisories/GHSA-gq9c-wg68-gwj2) | HIGH | Path Traversal in Browser Trace/Download Output Paths | CWE-22 | pending | @jackhax |
+| [GHSA-h9g4-589h-68xv](https://github.com/openclaw/openclaw/security/advisories/GHSA-h9g4-589h-68xv) | HIGH | Authentication Bypass in Sandbox Browser Bridge Server | CWE-306 | pending | @jackhax |
+| [GHSA-v6c6-vqqg-w888](https://github.com/openclaw/openclaw/security/advisories/GHSA-v6c6-vqqg-w888) | HIGH | Potential Code Execution via Unsafe Hook Module Path Handling | - | pending | @222n5 |
+| [GHSA-7xhj-55q9-pc3m](https://github.com/openclaw/openclaw/security/advisories/GHSA-7xhj-55q9-pc3m) | MEDIUM | Hook Transform Module Path Traversal and Arbitrary JS Loading | CWE-22 | pending | @akhmittra |
+| [GHSA-5xfq-5mr7-426q](https://github.com/openclaw/openclaw/security/advisories/GHSA-5xfq-5mr7-426q) | MEDIUM | Unsanitized Session ID Path Traversal in Transcript Operations | CWE-22 | pending | @akhmittra |
+| [GHSA-v892-hwpg-jwqp](https://github.com/openclaw/openclaw/security/advisories/GHSA-v892-hwpg-jwqp) | HIGH | Zip Slip in Archive Extraction During Explicit Installation | CWE-22 | pending | @markmusson |
+| [GHSA-qpjj-47vm-64pj](https://github.com/openclaw/openclaw/security/advisories/GHSA-qpjj-47vm-64pj) | HIGH | Missing Authentication for Local Browser-Control Endpoints | - | pending | @tcusolle |
+| [GHSA-w5c7-9qqw-6645](https://github.com/openclaw/openclaw/security/advisories/GHSA-w5c7-9qqw-6645) | MEDIUM | Inter-Session Prompts Treated as Direct User Instructions | - | pending | @anbecker |
+| [CVE-2026-26972](https://github.com/openclaw/openclaw/security/advisories/GHSA-xwjm-j929-xq7c) | MEDIUM | Path Traversal in Browser Download Functionality | CWE-22 | pending | @locus-x64 |
+| [GHSA-p25h-9q54-ffvw](https://github.com/openclaw/openclaw/security/advisories/GHSA-p25h-9q54-ffvw) | HIGH | Zip Slip Path Traversal in Tar Archive Extraction | CWE-22 | pending | @xuemian168 |
+| [GHSA-chm2-m3w2-wcxm](https://github.com/openclaw/openclaw/security/advisories/GHSA-chm2-m3w2-wcxm) | LOW | Google Chat Mutable Email Principal Spoofing | CWE-290, CWE-863 | pending | @vincentkoc |
 
 ### CVE-2026-24763: Docker PATH Command Injection
 
@@ -373,8 +389,9 @@
 
 **Fix:** Commit `a1e89afcc`. Now requires per-instance `x-openclaw-relay-token` header, rejects `/cdp` upgrades when Origin is present but not `chrome-extension://`, and refuses connections unless the extension is connected. Patched in >= v2026.2.1. See also [PR #11 hardening](./post-merge-hardening.md#post-merge-hardening-pr-11--21-commits).
 
-### GHSA-8jpq-5h99-ff5r: Local File Disclosure via Feishu Extension
+### CVE-2026-26321 (GHSA-8jpq-5h99-ff5r): Local File Disclosure via Feishu Extension
 
+**GHSA:** GHSA-8jpq-5h99-ff5r
 **Severity:** HIGH (CWE-22: Path Traversal)
 **Published:** 2026-02-15
 
@@ -552,6 +569,167 @@
 **Description:** The optional Tlon (Urbit) extension authentication flow was vulnerable to SSRF, allowing requests to internal network endpoints through the authentication redirect mechanism.
 
 **Impact:** Server-side request forgery to internal services via Tlon authentication redirect.
+
+### GHSA-7rcp-mxpq-72pj: Chutes Manual OAuth State Validation Bypass
+
+**Severity:** MEDIUM (CWE-352: Cross-Site Request Forgery)
+**Published:** 2026-02-16
+**Credits:** aether-ai-agent
+
+**Description:** The Chutes extension's manual OAuth flow did not properly validate state parameters, allowing CSRF-style attacks to complete OAuth authorization with attacker-controlled state values.
+
+**Impact:** OAuth state bypass enabling token theft or session fixation in Chutes integrations.
+
+### GHSA-jfv4-h8mc-jcp8: Unvalidated PID Kill via SIGKILL in Process Cleanup
+
+**Severity:** LOW (CWE-283: Uncontrolled Memory Allocation in Process)
+**Published:** 2026-02-16
+**Credits:** aether-ai-agent
+
+**Description:** Process cleanup did not validate PIDs before sending SIGKILL signals, allowing cleanup routines to potentially target unintended processes.
+
+**Impact:** Unintended process termination; low exploitability as process namespace isolation limits scope.
+
+### GHSA-rwj8-p9vq-25gv: LFI in BlueBubbles Media Path Handling
+
+**Severity:** HIGH (CWE-22: Path Traversal)
+**Published:** 2026-02-16
+**Credits:** @zpbrent
+
+**Description:** The BlueBubbles extension's media handling did not validate file paths, allowing path traversal sequences to read arbitrary local files accessible to the OpenClaw process.
+
+**Impact:** Disclosure of local files via crafted media path parameters in BlueBubbles message attachments.
+
+### GHSA-4564-pvr2-qq4h: Shell Injection in macOS Keychain Credential Write
+
+**Severity:** HIGH (CWE-78: OS Command Injection)
+**Published:** 2026-02-16
+**Credits:** aether-ai-agent
+
+**Description:** The macOS keychain credential write path passed unsanitized values to shell commands, allowing injection of arbitrary shell commands through crafted credential names or values.
+
+**Impact:** Arbitrary command execution on macOS hosts via injected shell metacharacters in credential write operations.
+
+### GHSA-x22m-j5qq-j49m: Two SSRF via Feishu Extension
+
+**Severity:** HIGH (CWE-918: Server-Side Request Forgery)
+**Published:** 2026-02-16
+**Credits:** @zpbrent
+
+**Description:** The Feishu extension contained two SSRF vectors: (1) `sendMediaFeishu` allowed fetching from attacker-controlled URLs without origin validation; (2) markdown image rendering fetched images from URLs in message content without SSRF protections.
+
+**Impact:** Server-side request forgery to internal network endpoints via Feishu message content or media operations.
+
+### GHSA-gq9c-wg68-gwj2: Path Traversal in Browser Trace/Download Paths
+
+**Severity:** HIGH (CWE-22: Path Traversal)
+**Published:** 2026-02-16
+**Credits:** @jackhax (Praetorian)
+
+**Description:** Browser trace and file download output paths were not validated against traversal sequences, allowing writes to arbitrary filesystem locations accessible to the OpenClaw process.
+
+**Impact:** Arbitrary file write to attacker-controlled paths via browser automation trace or download operations.
+
+### GHSA-h9g4-589h-68xv: Authentication Bypass in Sandbox Browser Bridge
+
+**Severity:** HIGH (CWE-306: Missing Authentication)
+**Published:** 2026-02-16
+**Credits:** @jackhax (Praetorian)
+
+**Description:** The browser bridge server running inside the Docker sandbox did not authenticate incoming connections, allowing any process inside the sandbox to invoke browser bridge commands without authentication.
+
+**Impact:** Unauthorized browser control from within sandbox — escalation path from sandbox compromise to browser access.
+
+### GHSA-v6c6-vqqg-w888: Unsafe Hook Module Path Handling
+
+**Severity:** HIGH
+**Published:** 2026-02-16
+**Credits:** @222n5
+
+**Description:** The gateway's hook module loading did not restrict module paths, allowing relative path components or traversal sequences to load arbitrary JavaScript modules from the filesystem.
+
+**Impact:** Potential code execution via hook configuration pointing to attacker-controlled module paths accessible to the gateway process.
+
+### GHSA-7xhj-55q9-pc3m: Hook Transform Module Path Traversal
+
+**Severity:** MEDIUM (CWE-22: Path Traversal)
+**Published:** 2026-02-16
+**Credits:** @akhmittra
+
+**Description:** The hook transform configuration accepted module paths containing traversal sequences, allowing loading of arbitrary JavaScript modules outside the intended plugin directory.
+
+**Impact:** Arbitrary JavaScript module execution via crafted hook transform module path configuration.
+
+### GHSA-5xfq-5mr7-426q: Session ID Path Traversal in Transcript Operations
+
+**Severity:** MEDIUM (CWE-22: Path Traversal)
+**Published:** 2026-02-16
+**Credits:** @akhmittra
+
+**Description:** Session IDs were used unsanitized to construct transcript file paths, enabling path traversal via crafted session identifiers to read or write files outside the session transcript directory.
+
+**Impact:** Disclosure or overwrite of arbitrary files via path traversal through unsanitized session IDs.
+
+### GHSA-v892-hwpg-jwqp: Zip Slip in Archive Extraction During Install
+
+**Severity:** HIGH (CWE-22: Path Traversal)
+**Published:** 2026-02-15
+**Credits:** @markmusson
+
+**Description:** Archive extraction during explicit plugin/extension installation did not validate member paths against Zip Slip attacks, allowing archives to write files outside the target extraction directory.
+
+**Impact:** Arbitrary file write during installation via crafted archive with traversal-containing member paths.
+
+### GHSA-qpjj-47vm-64pj: Missing Authentication for Browser-Control Endpoints
+
+**Severity:** HIGH
+**Published:** 2026-02-16
+**Credits:** @tcusolle
+
+**Description:** Local browser-control HTTP endpoints exposed by the gateway did not require authentication, allowing any process on the local machine to invoke browser control commands without credentials.
+
+**Impact:** Unauthorized browser automation and control via unauthenticated local HTTP endpoints.
+
+### GHSA-w5c7-9qqw-6645: Inter-Session Prompt Provenance Confusion
+
+**Severity:** MEDIUM
+**Published:** 2026-02-15
+**Credits:** @anbecker
+
+**Description:** Prompts from one session could be treated as direct user instructions in another session context, confusing prompt provenance and potentially allowing cross-session instruction injection.
+
+**Impact:** Cross-session prompt injection enabling one session's content to influence another session's agent behavior.
+
+### CVE-2026-26972 (GHSA-xwjm-j929-xq7c): Path Traversal in Browser Download
+
+**GHSA:** GHSA-xwjm-j929-xq7c
+**Severity:** MEDIUM (CWE-22: Path Traversal)
+**Published:** 2026-02-16
+**Credits:** @locus-x64
+
+**Description:** The browser download functionality did not validate the destination file path against path traversal sequences, allowing file writes to arbitrary locations accessible to the OpenClaw process.
+
+**Impact:** Arbitrary file write via crafted download destination path in browser automation workflows.
+
+### GHSA-p25h-9q54-ffvw: Zip Slip in Tar Archive Extraction
+
+**Severity:** HIGH (CWE-22: Path Traversal)
+**Published:** 2026-02-16
+**Credits:** @xuemian168
+
+**Description:** Tar archive extraction did not validate member paths against Zip Slip attacks, allowing archives to write files outside the intended extraction directory.
+
+**Impact:** Arbitrary file write via crafted tar archives with traversal-containing member paths.
+
+### GHSA-chm2-m3w2-wcxm: Google Chat Mutable Email Principal Spoofing
+
+**Severity:** LOW (CWE-290, CWE-863: Authentication Bypass by Spoofing, Incorrect Authorization)
+**Published:** 2026-02-16
+**Credits:** @vincentkoc
+
+**Description:** The Google Chat integration used mutable email addresses as allowlist principals. Since Google Workspace email addresses can be reassigned, an authorized user's email could be transferred to an unauthorized user who would then pass the allowlist check.
+
+**Impact:** Allowlist bypass via email address reassignment in Google Workspace environments.
 
 ### Relationship to Third-Party Audits
 

@@ -214,7 +214,7 @@
 | [#13737](https://github.com/openclaw/openclaw/pull/13737) | (Docker privilege hardening) | LOW | OPEN | UID/GID remap in Dockerfile; Greptile flags GID collision not detected (silently reuses existing group) |
 | [#13290](https://github.com/openclaw/openclaw/pull/13290) | (openclaw/trust#1) | LOW | OPEN | Security warnings in TOOLS.md templates and system-prompt docs that workspace files enter model context |
 | [#15390](https://github.com/openclaw/openclaw/pull/15390) | (OC-02 RCE via HTTP gateway) | CRITICAL | MERGED | `DEFAULT_GATEWAY_HTTP_TOOL_DENY` at `tools-invoke-http.ts:43-52` blocks sessions_spawn + 3 others; merged 2026-02-13; ALREADY SYNCED |
-| [#15384](https://github.com/openclaw/openclaw/pull/15384) | (OC-01 shell injection) | CRITICAL | CLOSED | Closed 2026-02-13; #8186 still OPEN with same fix; local `docker.ts:360-361` still vulnerable |
+| [#15384](https://github.com/openclaw/openclaw/pull/15384) | (OC-01 shell injection) | CRITICAL | CLOSED | Closed 2026-02-13; #8186 still OPEN with same fix; local `docker.ts:377-378` still vulnerable |
 | [#15314](https://github.com/openclaw/openclaw/pull/15314) | [#15313](https://github.com/openclaw/openclaw/issues/15313) (HIGH) | HIGH | CLOSED | Closed 2026-02-13; #3926 still OPEN with same fix; local `DEFAULT_BROWSER_EVALUATE_ENABLED` still true |
 | [#13073](https://github.com/openclaw/openclaw/pull/13073) | [#10090](https://github.com/openclaw/openclaw/issues/10090) (HIGH) | HIGH | MERGED | Credential redaction completion; `zod-schema.sensitive.ts` and schema hint updates; merged 2026-02-13; SYNC NEEDED |
 | [#4026](https://github.com/openclaw/openclaw/pull/4026) | (symlink race) | HIGH | MERGED | `SandboxFsBridge` routes file ops through `docker exec`; merged 2026-02-13; SYNC NEEDED |
@@ -222,7 +222,7 @@
 | [#10525](https://github.com/openclaw/openclaw/pull/10525) | (A2UI path traversal) | MEDIUM | MERGED | `openFileWithinRoot()` at `a2ui.ts:75`; merged 2026-02-13; ALREADY SYNCED |
 | [#10529](https://github.com/openclaw/openclaw/pull/10529) | (WhatsApp cred perms) | MEDIUM | MERGED | `0o600` chmod at `auth-store.ts:72`, `session.ts:77,91`; merged 2026-02-13; ALREADY SYNCED |
 | [#15379](https://github.com/openclaw/openclaw/pull/15379) | [#13826](https://github.com/openclaw/openclaw/issues/13826) | LOW | OPEN | No `transformContext` hook in local `pi-embedded-runner`; sanitization only at session load (`attempt.ts:778-779`), not during tool-call iterations |
-| [#15360](https://github.com/openclaw/openclaw/pull/15360) | [#6669](https://github.com/openclaw/openclaw/issues/6669) | LOW | OPEN | `statsLine` with token counts, session IDs, file paths, costs in user-visible `message` at `subagent-announce.ts:545-559` |
+| [#15360](https://github.com/openclaw/openclaw/pull/15360) | [#6669](https://github.com/openclaw/openclaw/issues/6669) | LOW | OPEN | `statsLine` with token counts, session IDs, file paths, costs in user-visible `message` at `subagent-announce.ts:822-833` |
 | [#15296](https://github.com/openclaw/openclaw/pull/15296) | (config secret hardening) | MEDIUM | OPEN | No `--show-secrets` opt-in for CLI `config get`; gateway `config.get` returns unredacted by default |
 | [#8757](https://github.com/openclaw/openclaw/pull/8757) | (MS Teams SSRF redirect) | MEDIUM | CLOSED | Closed without merge 2026-02-13; MS Teams redirect validation SSRF fix; no replacement PR identified |
 | [#13129](https://github.com/openclaw/openclaw/pull/13129) | (dmScope UX) | LOW | MERGED | Uses `formatCliCommand()` for dmScope remediation; local `audit.ts:603` already uses it; ALREADY SYNCED |
@@ -433,7 +433,7 @@
 **Note:** This PR was closed without merge. The same vulnerability is still addressed by [#8186](https://github.com/openclaw/openclaw/pull/8186) which remains OPEN.
 
 **Local Validation:**
-- `src/agents/sandbox/docker.ts:360-361` — `cfg.setupCommand` passed directly to `["exec", "-i", name, "sh", "-lc", cfg.setupCommand]` with only `?.trim()` check
+- `src/agents/sandbox/docker.ts:377-378` — `cfg.setupCommand` passed directly to `["exec", "-i", name, "sh", "-lc", cfg.setupCommand]` with only `?.trim()` check
 - No `validateSetupCommand` function exists locally
 
 **Local Impact:** NOT AFFECTED (PR closed) — vulnerability remains; monitor #8186 for fix.
@@ -486,7 +486,7 @@
 **Greptile Review:** Notes queue draining logic may drop `extraSystemPrompt` when messages are combined or summarized.
 
 **Local Validation:**
-- `src/agents/subagent-announce.ts:545-559` — `statsLine` (token counts, session IDs, file paths, costs) in user-visible `message`; `Findings:` heading and `Summarize this naturally` instructions also exposed
+- `src/agents/subagent-announce.ts:822-833` — `statsLine` (token counts, session IDs, file paths, costs) in user-visible `message`; `Findings:` heading and `Summarize this naturally` instructions also exposed
 - No `extraSystemPrompt` field in local `AnnounceQueueItem`
 
 **Local Impact:** OPEN/PENDING — PR not yet merged. Internal stats and instructions leak to users.
@@ -878,11 +878,11 @@
 **Local Validation:**
 - `src/config/sessions/transcript.ts:75` — `writeFile(params.sessionFile, ..., "utf-8")` — no `mode: 0o600`
 - `src/agents/pi-embedded-helpers/bootstrap.ts:159` — `writeFile(file, ..., "utf-8")` — no `mode: 0o600`
-- `src/gateway/server-methods/chat.ts:89` — `writeFileSync(params.transcriptPath, ..., "utf-8")` — no `mode: 0o600`
+- `src/gateway/server-methods/chat.ts:285` — `writeFileSync(params.transcriptPath, ..., "utf-8")` — no `mode: 0o600`
 - `src/auto-reply/reply/session.ts:92` — `writeFileSync(sessionFile, ..., "utf-8")` — no `mode: 0o600`
 - `src/agents/pi-embedded-runner/session-manager-init.ts:46` — `writeFile(params.sessionFile, "", "utf-8")` — no `mode: 0o600`
 - `src/gateway/server-methods/sessions.ts:490` — `writeFileSync(filePath, ..., "utf-8")` — no `mode: 0o600`
 - `src/agents/session-file-repair.ts:77,81` — `writeFile(..., "utf-8")` — no `mode: 0o600`
-- Note: `src/config/sessions/store.ts:544,559` already uses `{ mode: 0o600 }` for sessions.json
+- Note: `src/config/sessions/store.ts:619,634` already uses `{ mode: 0o600 }` for sessions.json
 
 **Local Impact:** OPEN/PENDING — PR not yet merged. 7+ local transcript write paths use default world-readable permissions.

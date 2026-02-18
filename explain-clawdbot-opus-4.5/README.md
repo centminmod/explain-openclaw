@@ -142,11 +142,11 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 | # | Claim | Verdict | Explanation |
 |---|-------|---------|-------------|
-| 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container (not host) (`src/agents/sandbox/docker.ts:360-361`). Config changes require gateway auth. Container has `no-new-privileges`. Real risk: Medium. |
+| 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container (not host) (`src/agents/sandbox/docker.ts:377-378`). Config changes require gateway auth. Container has `no-new-privileges`. Real risk: Medium. |
 | 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks validation (`src/agents/tools/nodes-tool.ts:344-347`), but writes to paired node device, not gateway host. Requires node pairing approval. Real risk: Low-Medium. |
 | 3 | Log traversal via `logs.tail` | **False** | `LogsTailParamsSchema` has `additionalProperties: false` with only `cursor`, `limit`, `maxBytes`. File path from `getResolvedLoggerSettings().file` (config), not user input. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` (`src/infra/net/ssrf.ts:337-404`) pin DNS resolution. Redirect-to-private-IP explicitly tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
-| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:99-169`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
+| 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:105-175`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format (`src/gateway/device-auth.ts:13-31`) lacks input sanitization (true), but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` (`src/infra/exec-safety.ts:16-44`) validates executable *names* (not commands). `BARE_NAME_PATTERN = /^[A-Za-z0-9._+-]+$/` is strict. Article conflates config validation with shell injection. |
 | 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec-runtime.ts:32-50`) and validation function (`src/agents/bash-tools.exec-runtime.ts:54`, enforced at `src/agents/bash-tools.exec.ts:300`). Node-host has blocklist (`src/node-host/invoke.ts:45-165`). Requires human approval + localhost + no sandbox. |
@@ -260,7 +260,7 @@ Four security-relevant commits:
 
 - **`fe81b1d71`** — Require shared auth before device bypass: Validates shared secret auth before allowing Tailscale device bypass (`src/gateway/server/ws-connection/message-handler.ts:454-499`).
 
-- **`fff59da96`** — Slack fail closed on channel type lookup: Fails closed when channel type lookup fails, infers type from ID prefix (`src/slack/monitor/slash.ts:181-182`).
+- **`fff59da96`** — Slack fail closed on channel type lookup: Fails closed when channel type lookup fails, infers type from ID prefix (`src/slack/monitor/slash.ts:338-342`).
 
 - **`578bde1e0`** — Security: healthcheck skill (#7641): Bootstrap audit guidance tooling (`skills/healthcheck/SKILL.md`) (thanks @Takhoffman).
 
@@ -298,7 +298,7 @@ Two security-relevant commits:
 
 - **`66d8117d4`** — Control UI origin hardening: New `checkBrowserOrigin()` (`src/gateway/origin-check.ts:24-52`) validates WebSocket Origin headers for Control UI and Webchat connections. Accepts only: configured `allowedOrigins`, same-host requests, or loopback addresses. Prevents clickjacking and cross-origin WebSocket hijacking. New config: `gateway.controlUi.allowedOrigins`.
 
-- **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:99`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
+- **`efe2a464a`** — Approval scope gating (#1) (thanks @mitsuhiko): `/approve` command now requires `operator.approvals` or `operator.admin` scope for gateway clients (`src/auto-reply/reply/commands-approve.ts:89-101`). Defense-in-depth layer atop existing `authorizeGatewayMethod()` RBAC (`src/gateway/server-methods.ts:105`). Strengthens protection against Audit 2 Claim 5 (agent self-approval).
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
@@ -324,7 +324,7 @@ Four security-relevant commits:
 
 - **`a13ff55bd`** — Gateway credential exfiltration prevention (#9179): New `resolveExplicitGatewayAuth()` and `ensureExplicitGatewayAuth()` (`src/gateway/call.ts:59-89`) require explicit credentials when `--url` is overridden to non-local addresses. Prevents credential leakage to attacker-controlled URLs (CWE-522). Local addresses (127.0.0.1, private IPs, tailnet 100.x.x.x) retain credential fallback (thanks @victormier).
 
-- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:203-328`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
+- **`385a7eba3`** — Enforce owner allowlist for commands: Hardens `commands.ownerAllowFrom` enforcement (`src/auto-reply/command-auth.ts:218-343`)—when explicit owners are configured, non-matching senders cannot execute commands even if `allowFrom` is wildcard.
 
 **Gap status: 1 closed, 2 remain open** (pipe-delimited token format, outPath validation).
 
@@ -440,7 +440,7 @@ One security-adjacent commit (reliability/hardening focus):
 
 **HIGH (3):**
 
-- **`980f78873`** (PR [#11045](https://github.com/openclaw/openclaw/pull/11045)) — **Agent CRUD RBAC gating:** New `agents.create/update/delete` gated behind `operator.admin` in `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:146-148`). Strengthens Audit 2 Claim 5.
+- **`980f78873`** (PR [#11045](https://github.com/openclaw/openclaw/pull/11045)) — **Agent CRUD RBAC gating:** New `agents.create/update/delete` gated behind `operator.admin` in `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:158-160`). Strengthens Audit 2 Claim 5.
 
 - **`b8c8130ef`** (PR [#11448](https://github.com/openclaw/openclaw/pull/11448)) — **Gateway LAN IP bind fix:** New `pickPrimaryLanIPv4()` in `src/gateway/net.ts:9-25` for `bind=lan` mode.
 
@@ -475,7 +475,7 @@ One security-adjacent commit (reliability/hardening focus):
 
 - **`4537ebc43`** — **fix: enforce Discord agent component DM auth:** New `ensureDmComponentAuthorized()` in `src/discord/monitor/agent-components.ts`. Prevents channel spoofing via Discord buttons/select menus.
 
-- **`47f6bb414`** — **Commands: add commands.allowFrom config:** Per-provider command authorization in `src/auto-reply/command-auth.ts:203-328`. **Strengthens Audit 2 Claim 5.**
+- **`47f6bb414`** — **Commands: add commands.allowFrom config:** Per-provider command authorization in `src/auto-reply/command-auth.ts:218-343`. **Strengthens Audit 2 Claim 5.**
 
 - **`1d46ca3a9`** — **fix(signal): enforce mention gating for group messages:** Aligns Signal with Slack/Discord/Telegram mention gating.
 
@@ -704,6 +704,42 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 **Security relevance: HIGH** — 5 security-relevant commits: Telegram bot token redaction in errors (`cf6990701`), pre-commit hook option injection hardening (`ba84b1253`), sandbox bind validation tightening with 3 new blocked paths (`a7cbce1b3`), Control UI XSS fix replacing inline scripts with JSON endpoint (`3b4096e02`), and CSP lockdown with `script-src 'self'` (`adc818db4`). 26 remaining commits are refactors. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-16-sync-13.md).
 
 **Gap status: 1 closed, 3 remain open** — Gap 2 further strengthened (Telegram token redaction).
+
+### Post-Merge Hardening (Feb 17 sync 1) — 69 upstream commits
+
+**Security relevance: HIGH** — 8 security-relevant commits: session transcript 0o600 permissions (`095d52209` — **Claim 1 STRENGTHENED**), silent token constant (`553d17f8a`), QR pairing hardening (`68e39cf2c`), tool policy refactor (`df6d0ee92`), config merge hardening (`f4b2fd00b`, `cb391f4bd`), fetch wrapper idempotency (`b4fa10ae6`, `e3e8046a9`). See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-1.md).
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 2) — 120 upstream commits
+
+**Security relevance: HIGH** — 15 security-relevant commits. **Most critical:** shell variable injection preflight (`b0a01fe48` — **Claim 7 DIRECTLY ADDRESSED**), auth profile cooldown auto-expiry (`03cadc4b7` — **Claim 4 ADDRESSED**), credential sync (`feed57098`), sandbox SHA-1 restoration (`f27561186`), webchat auth (`e95134ba3`), graceful process termination (`20957efa4`), MEDIA token parsing restriction (`0587e4cc7`), service token drift detection (`d799a3994`), session isolation (`5f821ed06`, `93fbe6482`). See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-2.md).
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 4) — 120 upstream commits
+
+**Security relevance: HIGH** — 23 security-relevant commits. **Most critical:** session file 0o600 permissions (`ae0b110e4` — **Claim 5 DIRECTLY ADDRESSED**), stale device-auth token clearing (`b2d622cfa` — **Claims 1-4**), account factory RBAC centralization (`d24340d75`, `59384001a`, `5544ab820` — **Claim 5 SUBSTANTIALLY STRENGTHENED**), per-account action gating for Discord/Telegram (`556b531a1`, `a03fec2a3`, `4640999e7`), Gemini OAuth (`153794080`, `3379b9d34`), base64 validation (`38c96bc53`), subagent spawn + loop guards (`5a3a448bc`, `de900bace`, `a6c741eb4`), llms.txt discovery (`e368c3650`), media dedup (`838259331`), FTS query expansion (`bcab2469d`, `65aedac20`). See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-4.md).
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 5) — 60 upstream commits
+
+**Security relevance: HIGH** — 6 security-relevant commits. **OC-09 env var injection** (`235794d9f`): `sanitizeEnvVars()` blocks 39+ credential patterns in Docker containers — **Claim 8 DIRECTLY ADDRESSED**. **IPv6 host header** (`4e5a9d83b`), **trusted proxy trim** (`d3698f4eb`), **chat history hardcap** (`5d9a026a9` — 12K/128KB limits), **mesh orchestration RBAC** (`16e59b26a` + `83990ed54` — scope enforcement + DAG validation). See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-5.md).
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 6) — 60 upstream commits
+
+**Security relevance: MODERATE** — 3 security-relevant commits. **Tool loop detection** (`076df941a`): configurable DoS defense with per-detector toggles. **Windows bind mounts** (`dacffd7ac`): sandbox path parsing fix. **Skills bloat guard** (`5b3873add`): 5 configurable limits prevent prompt injection via skill bloat. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-6.md).
+
+**Gap status: 1 closed, 3 remain open.**
+
+### Post-Merge Hardening (Feb 17 sync 7) — 60 upstream commits
+
+**Security relevance: HIGH** — 4 security-relevant commits. **URL allowlist consolidation** (`a6466f257`): `resolveWebUrlAllowlist()` centralizes SSRF URL allowlist validation for web-fetch and web-search tools — **Audit 2 Claim 4 STRENGTHENED**. **Windows/UNC bind mount parsing** (`6244ef9ea`): improved separator detection for bind mount specifications — **Audit 1 Claim 6 STRENGTHENED**. **Input file limit centralization** (`37c97964a`): upload constraint unification — Audit 2 Claim 2 defense-in-depth. **Device auth scope normalization** (`b9aed3a07`): consistent scope handling across all device pairing workflows — Audit 1 Claims 2 & 5 defense-in-depth. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-17-sync-7.md).
+
+**Gap status: 1 closed, 3 remain open.**
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
