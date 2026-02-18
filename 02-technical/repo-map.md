@@ -58,7 +58,7 @@ This is a "practical navigation guide" for new contributors/readers.
 
 - `src/entry.ts` — CLI entry (spawns/sets env, then loads `src/cli/run-main.ts`)
 - `src/cli/` — CLI command definitions
-- `src/commands/` — command implementations (257 files)
+- `src/commands/` — command implementations (277 files)
 
 ### Gateway
 
@@ -77,7 +77,7 @@ This is a "practical navigation guide" for new contributors/readers.
 
 - `src/auto-reply/` — reply pipeline
 - `src/auto-reply/reply/agent-runner.ts` — core agent-turn orchestrator
-- `src/agents/` — agent framework (518 files, 10 subdirectories): tools, sandbox, auth profiles, skills, multi-agent
+- `src/agents/` — agent framework (573 files, 10 subdirectories): tools, sandbox, auth profiles, skills, multi-agent
 
 ### Routing
 
@@ -96,24 +96,28 @@ The `src/` directory contains ~50 subdirectories. Key ones beyond the entrypoint
 
 | Directory | Files (approx.) | Purpose |
 |-----------|-----------------|---------|
-| `src/agents/` | ~518 | Agent framework, tools, sandbox, auth profiles, skills |
+| `src/agents/` | ~573 | Agent framework, tools, sandbox, auth profiles, skills |
+| `src/gateway/` | ~237 | Gateway server, WS runtime, RPC handlers, config validation |
+| `src/auto-reply/` | ~215 | Reply pipeline, agent turn orchestration |
+| `src/cli/` | ~214 | CLI command definitions and parsing |
+| `src/commands/` | ~277 | CLI command implementations |
+| `src/infra/` | ~237 | Infrastructure: networking, SSRF guards, exec safety, archiving |
+| `src/config/` | ~155 | Configuration schema, types, validation, migrations |
 | `src/browser/` | ~102 | Browser automation (CDP/Puppeteer) |
-| `src/commands/` | ~257 | CLI command implementations |
-| `src/config/` | ~164 | Configuration schema, types, validation, migrations |
-| `src/cron/` | — | Cron job scheduling |
+| `src/channels/` | ~96 | Shared channel logic, identities, allowlists, registry |
+| `src/memory/` | ~78 | Memory/context management, QMD |
+| `src/cron/` | ~64 | Cron job scheduling |
+| `src/plugins/` | ~52 | Plugin runtime and loading |
+| `src/media-understanding/` | ~43 | Image/audio/video understanding via AI |
+| `src/tui/` | ~38 | Terminal UI |
 | `src/daemon/` | — | Background daemon process |
 | `src/hooks/` | — | Lifecycle hooks system |
-| `src/infra/` | ~220 | Infrastructure: networking, SSRF guards, exec safety, archiving |
 | `src/media/` | — | Media handling (upload, download, conversion) |
-| `src/media-understanding/` | — | Image/audio/video understanding via AI |
-| `src/memory/` | — | Memory/context management, QMD |
-| `src/plugins/` | — | Plugin runtime and loading |
 | `src/plugin-sdk/` | — | Plugin SDK for extension authors |
 | `src/providers/` | — | LLM provider integrations (Anthropic, OpenAI, Ollama, etc.) |
 | `src/routing/` | — | Message routing, session key derivation |
 | `src/sessions/` | — | Session management and compaction |
 | `src/tts/` | — | Text-to-speech |
-| `src/tui/` | — | Terminal UI |
 | `src/wizard/` | — | Setup wizard |
 | `src/logging/` | — | Logging, redaction |
 | `src/link-understanding/` | — | URL preview / link understanding |

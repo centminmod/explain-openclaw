@@ -590,11 +590,11 @@ The `memory_search` tool description instructs the AI to use it as a "mandatory 
 |----------|-------------|--------|
 | Workspace directory | `~/.openclaw/workspace/` | `src/agents/workspace.ts:10-19` |
 | Primary memory file | `~/.openclaw/workspace/MEMORY.md` (or `memory.md`) | `src/agents/workspace.ts:30-31` |
-| Memory subdirectory | `~/.openclaw/workspace/memory/*.md` (recursive) | `src/memory/internal.ts:78-144` |
+| Memory subdirectory | `~/.openclaw/workspace/memory/*.md` (recursive) | `src/memory/internal.ts:79-146` |
 | SQLite index database | `~/.openclaw/memory/{agentId}.sqlite` | `src/agents/memory-search.ts:110-118` |
-| Additional paths | Configured via `memorySearch.extraPaths[]` | `src/memory/internal.ts:33-44` |
+| Additional paths | Configured via `memorySearch.extraPaths[]` | `src/memory/internal.ts:34-46` |
 
-The `listMemoryFiles()` function (`internal.ts:78-144`) scans these locations, skips symlinks, filters for `.md` extensions only, and deduplicates by resolved path.
+The `listMemoryFiles()` function (`internal.ts:79-146`) scans these locations, skips symlinks, filters for `.md` extensions only, and deduplicates by resolved path.
 
 **Memory sources** (configurable via `memorySearch.sources`):
 
@@ -605,7 +605,7 @@ The `listMemoryFiles()` function (`internal.ts:78-144`) scans these locations, s
 
 *Plain English: Like cutting a book into overlapping pages so you can search for any phrase, even one that falls on a page boundary. Each "page" shares a few lines with its neighbors to avoid losing context at the edges.*
 
-The `chunkMarkdown()` function (`src/memory/internal.ts:166-247`) splits memory file content into searchable chunks:
+The `chunkMarkdown()` function (`src/memory/internal.ts:167-260`) splits memory file content into searchable chunks:
 
 | Parameter | Default | Effect |
 |-----------|---------|--------|

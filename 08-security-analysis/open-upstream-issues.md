@@ -9,7 +9,7 @@
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
 | [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass gateway authentication | `src/gateway/server/plugins-http.ts:17-59` |
-| [#3277](https://github.com/openclaw/openclaw/issues/3277) | ~~HIGH~~ FIXED | Path validation bypass via `startsWith` prefix | Fixed upstream (COMPLETED 2026-02-15); `src/infra/archive.ts:119,153` - `validateArchiveEntryPath()` + `resolveCheckedOutPath()` (hardened Feb 15 sync 2) |
+| [#3277](https://github.com/openclaw/openclaw/issues/3277) | ~~HIGH~~ FIXED | Path validation bypass via `startsWith` prefix | Fixed upstream (COMPLETED 2026-02-15, consolidated Feb 19 sync 2); `src/infra/archive-path.ts:12,50` - `validateArchiveEntryPath()` + `resolveArchiveOutputPath()` (hardened Feb 15, consolidated to module Feb 19) |
 | [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:59` - auth middleware extracted to `src/browser/server-middleware.ts:24-35`; no Host header validation |
 | [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH | Arbitrary JS execution via browser evaluate (default on) | `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true` |
 | [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage dmPolicy auto-responds with pairing codes | `src/imessage/monitor/monitor-provider.ts:142,247-278` |
@@ -131,9 +131,9 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 **Vulnerability:** `startsWith(params.destDir)` is bypassable when paths share prefixes (e.g., `/tmp/foo` vs `/tmp/foobar`). Tar extraction has zero path validation.
 
 **Affected code:**
-- `src/infra/archive.ts:119` - `validateArchiveEntryPath()` now validates all entry paths (hardened Feb 15 sync 2)
-- `src/infra/archive.ts:153` - `resolveCheckedOutPath()` ensures output stays within dest dir
-- `src/infra/archive.ts:362-414` - tar extraction with `validateArchiveEntryPath()` filter + symlink rejection
+- `src/infra/archive-path.ts:12` - `validateArchiveEntryPath()` validates all entry paths (hardened Feb 15, consolidated to module Feb 19 sync 2)
+- `src/infra/archive-path.ts:50` - `resolveArchiveOutputPath()` ensures output stays within dest dir
+- `src/infra/archive.ts:232-244,330-340` - ZIP/TAR extraction with `validateArchiveEntryPath()` filter + symlink rejection
 
 ### #5052: Config Validation Silently Drops Security Settings
 

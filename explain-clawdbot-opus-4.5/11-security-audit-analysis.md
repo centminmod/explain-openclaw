@@ -53,7 +53,7 @@ The token refresh implementation uses `proper-lockfile` with:
 - 30-second stale lock timeout
 - Lock held throughout the entire refresh-and-save cycle
 
-See `src/agents/auth-profiles/oauth.ts:43-105` for lock acquisition and `src/agents/auth-profiles/constants.ts:12-21` for the retry/backoff configuration. Errors propagate to callers rather than silently failing. The locking mechanism prevents the race condition the scanner described.
+See `src/agents/auth-profiles/oauth.ts:94` for `refreshOAuthTokenWithLock()` and `src/agents/auth-profiles/constants.ts:12` for the retry/backoff configuration. Errors propagate to callers rather than silently failing. The locking mechanism prevents the race condition the scanner described.
 
 ### 5. Insufficient File Permission Checks
 
@@ -95,7 +95,7 @@ This is a standard dev-only escape hatch, not a production bypass.
 
 **Verdict: False.**
 
-Every token use path checks `Date.now() < cred.expires` before returning credentials. The flow in `src/agents/auth-profiles/oauth.ts:176-197`:
+Every token use path checks `Date.now() < cred.expires` before returning credentials via `isExpiredCredential()` (`src/agents/auth-profiles/oauth.ts:81`). The flow in `src/agents/auth-profiles/oauth.ts:153-194`:
 1. Reads the credential store
 2. Checks if the token is expired
 3. If expired, attempts refresh (with locking, per claim #4)
