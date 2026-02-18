@@ -98,8 +98,8 @@ If you run a reverse proxy (e.g. nginx, Caddy, Traefik) in front of the Gateway,
 2. **IP checks see the proxy IP:** The Gateway sees the proxy's IP instead of the real client IP, breaking rate limiting and access controls.
 
 The Gateway solves this with a trust chain:
-- `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:187-201`)
-- `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:203-217`)
+- `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:210-228`)
+- `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:230-244`)
 - `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:87-108`)
 
 **Configuration:**
@@ -233,7 +233,7 @@ When running multiple agents on the same Gateway, each agent should have only th
 ### Sandbox isolation per agent
 
 Each agent can have its own sandbox configuration controlling:
-- **mode:** `off` (no sandbox), `agent` (per-agent container), or `all` (all sessions sandboxed)
+- **mode:** `off` (no sandbox), `non-main` (sandbox non-main sessions), or `all` (all sessions sandboxed)
 - **scope:** `dedicated` (isolated) or `shared` (shares with other agents)
 - **workspaceAccess:** `none`, `ro` (read-only), or `rw` (read-write)
 - **Docker:** whether the sandbox runs in a Docker container

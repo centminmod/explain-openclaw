@@ -257,8 +257,8 @@ Enable Docker sandbox for code execution tools:
 
 ```bash
 # In openclaw.json
-# "agents.defaults.sandbox": "docker"
-# "agents.defaults.sandboxNetwork": "none"
+# "agents.defaults.sandbox.mode": "all"
+# "agents.defaults.sandbox.docker.network": "none"
 ```
 
 This isolates any successful prompt injection to the container environment.

@@ -872,11 +872,11 @@ Set up alerts in OpenRouter dashboard:
 Monitor usage in OpenClaw:
 
 ```bash
-# View recent usage
-openclaw usage --last 7d
+# View recent usage cost summary (7 days)
+openclaw gateway usage-cost --days 7
 
-# Export usage data
-openclaw usage --export csv --output usage.csv
+# Note: For detailed token logs, check the session database
+# or use the Control UI at http://localhost:18789
 ```
 
 ### Cost Estimation

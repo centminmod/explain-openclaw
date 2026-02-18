@@ -85,7 +85,7 @@ Docs: https://docs.openclaw.ai/gateway/configuration
 
 ### Input sanitization
 
-`src/gateway/chat-sanitize.ts` strips platform envelope metadata (WhatsApp headers, message IDs, control characters) from user messages before processing. `sanitizeChatSendMessageInput()` (`src/gateway/server-methods/chat.ts:78`) rejects null bytes and strips disallowed control characters, allowing only tabs, newlines, carriage returns, and printable characters through.
+`src/gateway/chat-sanitize.ts` strips platform envelope metadata (WhatsApp headers, message IDs, control characters) from user messages before processing. `sanitizeChatSendMessageInput()` (`src/gateway/server-methods/chat.ts:79`) rejects null bytes and strips disallowed control characters, allowing only tabs, newlines, carriage returns, and printable characters through.
 
 ### Config merge-patch
 

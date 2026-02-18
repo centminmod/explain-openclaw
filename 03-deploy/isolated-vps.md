@@ -265,9 +265,9 @@ Set a gateway auth token for production:
 
 ```bash
 # Generate a random 64-character hex token (cryptographically secure)
-export GATEWAY_AUTH_TOKEN="$(openssl rand -hex 32)"
+export OPENCLAW_GATEWAY_TOKEN="$(openssl rand -hex 32)"
 # Save it to your shell profile so it persists across logins
-echo "export GATEWAY_AUTH_TOKEN='$GATEWAY_AUTH_TOKEN'" >> ~/.profile
+echo "export OPENCLAW_GATEWAY_TOKEN='$OPENCLAW_GATEWAY_TOKEN'" >> ~/.profile
 ```
 
 If you're headless and need OAuth-style auth, do the auth step on a trusted machine first and copy the required credential files as documented.
@@ -281,13 +281,13 @@ For automated deployments or custom LLM providers (Ollama, LM Studio, LiteLLM pr
 ```bash
 # Using env var for API key (recommended — avoids process list exposure)
 export CUSTOM_API_KEY="your-api-key-here"
-openclaw onboard --non-interactive --install-daemon \
+openclaw onboard --non-interactive --accept-risk --install-daemon \
   --custom-base-url "https://llm.example.com/v1" \
   --custom-model-id "my-model" \
   --custom-compatibility openai
 
 # Or with explicit auth choice and all options
-openclaw onboard --non-interactive --install-daemon \
+openclaw onboard --non-interactive --accept-risk --install-daemon \
   --auth-choice custom-api-key \
   --custom-base-url "http://localhost:11434/v1" \
   --custom-model-id "llama3" \

@@ -696,7 +696,7 @@ Verify your token:
 
 ```bash
 # Set via secret
-wrangler secret put GATEWAY_AUTH_TOKEN
+wrangler secret put OPENCLAW_GATEWAY_TOKEN
 
 # Test
 curl -H "Authorization: Bearer YOUR_TOKEN" \

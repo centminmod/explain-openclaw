@@ -24,7 +24,7 @@ When OpenClaw downloads media files (images, audio, video) attached to incoming 
 User-Agent: OpenClaw-Gateway/1.0
 ```
 
-**Source:** `src/media/input-files.ts:171`
+**Source:** `src/media/input-files.ts:201`
 ```typescript
 init: { headers: { "User-Agent": "OpenClaw-Gateway/1.0" } },
 ```
@@ -341,7 +341,7 @@ export type GatewayClientInfo = {
 
 | Header | Where it's set | Notes |
 |---|---|---|
-| `User-Agent: OpenClaw-Gateway/1.0` | `src/media/input-files.ts:171` | Media file downloads |
+| `User-Agent: OpenClaw-Gateway/1.0` | `src/media/input-files.ts:201` | Media file downloads |
 | `User-Agent: openclaw` | `src/commands/signal-install.ts:221` | Signal CLI installation |
 | `User-Agent: openclaw` | `src/infra/provider-usage.fetch.claude.ts:125` | Anthropic usage check |
 | `HTTP-Referer: https://openclaw.ai` | `src/agents/pi-embedded-runner/extra-params.ts:8` | OpenRouter/Perplexity |
