@@ -190,3 +190,38 @@ From repo root:
 - https://docs.openclaw.ai/gateway/security
 - https://docs.openclaw.ai/gateway/configuration
 - https://docs.openclaw.ai/help/faq
+
+---
+
+## Documentation Coverage
+
+This section tracks how well the `explain-clawdbot/` documentation covers the codebase. Updated by `/update-repo-map` skill.
+
+### Coverage by Area
+
+| Area | Files | Last Verified | Coverage | Notes |
+|------|-------|---------------|----------|-------|
+| CLI Commands | 39 commands | 2026-02-19 | ✅ Complete | `01-plain-english/cli-commands.md` |
+| Gateway Config | 31 root + 14 gateway fields | 2026-02-19 | ✅ Complete | `99-reference/commands-and-troubleshooting.md` |
+| Security | 8 audits + 125 PRs + 91 issues | 2026-02-19 | ✅ Complete | `08-security-analysis/` |
+| Architecture | Core paths | 2026-02-19 | ✅ Complete | `02-technical/architecture.md` |
+| Deployment | 3 runbooks | 2026-02-19 | ✅ Complete | `03-deploy/` |
+| Privacy/Safety | 4 guides | 2026-02-19 | ✅ Complete | `04-privacy-safety/` |
+
+### Known Gaps
+
+| Gap | Impact | Priority |
+|-----|--------|----------|
+| Browser automation (CDP) | Medium | Low (security-irrelevant) |
+| Plugin SDK | Low | Low |
+| TUI internals | Low | Low |
+| Provider integrations | Medium | Medium (may have security implications) |
+
+### Verification Schedule
+
+| Skill | Frequency | Scope |
+|-------|-----------|-------|
+| `sync-explain-docs-with-upstream` | Per merge | Security commits |
+| `align-docs-upstream` | Weekly | All docs |
+| `update-repo-map` | Monthly | This file |
+| `doc-health-check` | Ad-hoc | Single file |

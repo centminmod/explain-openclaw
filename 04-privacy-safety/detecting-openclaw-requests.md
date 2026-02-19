@@ -169,7 +169,7 @@ headers: {
 - **SSRF guard behavior:** The internal SSRF guard may produce distinctive redirect-following or timing patterns.
 - **Static version:** The hardcoded Chrome 122 version string will become increasingly stale over time, making it detectable via version-age analysis.
 
-**Configurable:** Yes — `tools.web.fetch.userAgent` in the config (`src/config/types.tools.ts:401-402`).
+**Configurable:** Yes — `tools.web.fetch.userAgent` in the config (`src/config/types.tools.ts:435`).
 
 ---
 

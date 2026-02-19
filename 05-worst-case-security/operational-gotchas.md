@@ -589,7 +589,7 @@ set -euo pipefail
 
 # 3. Use tool security modes
 # tools.exec.security: "allowlist" restricts which commands models can run
-# Source: src/config/types.tools.ts:167
+# Source: src/config/types.tools.ts:184
 openclaw config set tools.exec.security allowlist
 
 # 4. Test model instruction-following before trusting with destructive ops

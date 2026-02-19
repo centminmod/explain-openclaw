@@ -29,7 +29,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | # | Claim | Verdict | Source code evidence |
 |---|-------|---------|---------------------|
 | 1 | Config injection RCE via `setupCommand` | **Partially true, overstated** | `setupCommand` executes inside Docker container, not host (`src/agents/sandbox/docker.ts:377-378`). Config changes require gateway auth. |
-| 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks path validation (`src/agents/tools/nodes-tool.ts:356-357`), but writes to paired node device, not gateway. |
+| 2 | Arbitrary write via `nodes:screen_record` outPath | **True but overstated** | `outPath` lacks path validation (`src/agents/tools/nodes-tool.ts:349-350`), but writes to paired node device, not gateway. |
 | 3 | Log traversal via `logs.tail` | **False** | Schema has `additionalProperties: false`, accepts only `cursor`/`limit`/`maxBytes` (`src/gateway/protocol/schema/logs-chat.ts:4-11`). File path from config, not request. |
 | 4 | DNS rebinding SSRF via web-fetch | **False** | `resolvePinnedHostname()` + `createPinnedDispatcher()` pins DNS (`src/infra/net/ssrf.ts:391-429`). Redirect-to-private-IP tested and blocked (`web-fetch.ssrf.test.ts:120-142`). |
 | 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` enforces role checks on every call (`src/gateway/server-methods.ts:105-175`). Agents blocked from approval methods. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
