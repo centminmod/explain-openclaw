@@ -36,6 +36,210 @@ Running a self-hosted AI assistant means paying for model API calls. This guide 
 
 ---
 
+## OpenClaw Token Consumption
+
+This section reflects current runtime behavior in the local OpenClaw codebase.
+
+### 1. Baseline per-run token load: persona/bootstrap files
+
+OpenClaw injects workspace bootstrap files into the system prompt each run (or a `[MISSING]` placeholder when a file is absent):
+
+| File | Loaded in main sessions | Loaded in subagent/cron sessions | Max injected chars per file (default) | Approx max tokens per file* |
+|------|--------------------------|-----------------------------------|----------------------------------------|-----------------------------|
+| `AGENTS.md` | Yes | Yes | 20,000 | ~5,000 |
+| `SOUL.md` | Yes | No | 20,000 | ~5,000 |
+| `TOOLS.md` | Yes | Yes | 20,000 | ~5,000 |
+| `IDENTITY.md` | Yes | No | 20,000 | ~5,000 |
+| `USER.md` | Yes | No | 20,000 | ~5,000 |
+| `HEARTBEAT.md` | Yes | No | 20,000 | ~5,000 |
+| `BOOTSTRAP.md` | Yes | No | 20,000 | ~5,000 |
+| `MEMORY.md` / `memory.md` (if present) | Optional | No | 20,000 | ~5,000 |
+
+Total injected bootstrap text is also capped by `agents.defaults.bootstrapTotalMaxChars` (default `150,000`, roughly ~37,500 tokens*).
+
+For `subagent:*` and `cron:*` session keys, OpenClaw filters bootstrap injection to only `AGENTS.md` and `TOOLS.md` to keep non-main runs smaller.
+
+`*` Approximation uses the same rough `~4 chars = 1 token` heuristic used in the codebase token guards.
+
+### 2. Daily files and raw logs: when they consume tokens
+
+`memory/YYYY-MM-DD.md` and session raw logs are **not always** in the prompt. They consume tokens when they are read/retrieved.
+
+| Source | Auto-injected every run? | When tokens are consumed | How OpenClaw limits token impact |
+|--------|---------------------------|--------------------------|-----------------------------------|
+| `MEMORY.md` / `memory.md` (workspace root) | Main sessions: yes | Counts every run when injected in Project Context | `bootstrapMaxChars` per-file cap + `bootstrapTotalMaxChars` total cap |
+| `memory/YYYY-MM-DD.md` daily files | No | When retrieved via `memory_search` / `memory_get` (often prompted by AGENTS template workflow) | `memory_search` snippet caps (~700 chars each), result limits, and optional `memory_get` line ranges |
+| Session JSONL raw logs (`~/.openclaw/agents/<id>/sessions/*.jsonl`) | No | When explicitly read through tools, or when session memory indexing is enabled and snippets are returned | Session-memory indexing keeps sanitized User/Assistant text only; retrieval is snippet-based (not full logs) |
+
+Notes:
+- `memory/*.md` daily files are not auto-injected into the base system prompt.
+- With built-in memory search, default chunking is ~400 tokens with ~80-token overlap.
+- Session transcript memory indexing is optional (not on by default in built-in memory search).
+- QMD memory backend adds an injected-snippet budget (`memory.qmd.limits.maxInjectedChars`, default `4000` chars).
+
+### 3. Other major token consumers in OpenClaw
+
+- **Conversation history**: prior user/assistant/tool turns are replayed each request.
+- **Tool results**: large tool outputs can dominate context; OpenClaw truncates oversized tool results (max ~30% of context window per result, hard cap 400,000 chars).
+- **System prompt assembly**: tool list, runtime metadata, skills list metadata, and workspace context are rebuilt each run.
+- **Tool schemas**: JSON tool schemas also count toward model context budget.
+- **Heartbeat runs**: periodic background runs consume model tokens even without new user messages.
+- **Compaction/summarization**: compaction can trigger extra model calls to summarize older history.
+- **Memory search embeddings**: when `memorySearch` uses remote providers (OpenAI/Gemini/Voyage), embedding/indexing calls consume provider tokens (separate from chat completion tokens).
+- **Web and media tools**: web search (Perplexity/OpenRouter), image understanding, and audio transcription can add separate API usage and token spend.
+- **Prompt caching (Anthropic)**: cache writes cost the same as normal input tokens; cache reads cost ~10% of normal input tokens. OpenClaw auto-enables `cacheRetention: short` for Anthropic API-key sessions, so repeated system-prompt content is served from cache. Long-running sessions with stable bootstrap files benefit most.
+
+### 4. How OpenClaw compacts, compresses, and manages token pressure
+
+| Mechanism | What it does | Current behavior/defaults |
+|----------|---------------|---------------------------|
+| Context window resolution | Determines usable context budget for guards/pruning | Uses model config/window, then caps with `agents.defaults.contextTokens` when lower |
+| Session pruning (`contextPruning`) | Trims/clears old tool results in-memory before model call | `cache-ttl` mode; runs only for Anthropic or OpenRouter Anthropic models when TTL expired |
+| Auto defaults (Anthropic auth) | Applies cost/cache-friendly defaults if unset | Auto-enables `contextPruning.mode=cache-ttl`, sets heartbeat (`1h` oauth, `30m` api_key), applies `cacheRetention: short` for Anthropic API-key mode |
+| Tool result truncation | Prevents single tool result from consuming most of context | Max 30% of context window per tool result, hard cap `400000` chars |
+| Persistence hard cap | Prevents oversized tool results from being written unbounded to session transcript | Hard cap uses same tool-result max-char ceiling before persistence |
+| Preemptive context guard | Compacts/truncates tool outputs before request if context is near limit | Replaces older heavy tool outputs with compact placeholders as needed |
+| Compaction mode | Summarizes older history into persisted compact summary | Default compaction mode is `safeguard` |
+| Compaction reserve floor | Preserves headroom so routine operations happen before forced compaction | Reserve floor default `20000` tokens (`agents.defaults.compaction.reserveTokensFloor`) |
+| Compaction timeout safety | Stops runaway compaction attempts | Safety timeout is `300000 ms` (5 minutes) |
+
+### 5. Operational Token Multipliers (Background + Retries)
+
+These are easy to miss because they add extra model turns beyond the obvious user-to-assistant turn.
+
+| Routine | Why it increases token spend | Trigger |
+|--------|-------------------------------|---------|
+| Pre-compaction memory flush | Runs an extra silent agentic turn before normal run | Session near compaction threshold and memory flush enabled |
+| Model fallback chain | Same prompt can be attempted across multiple provider/model candidates | Failover-eligible errors (rate limits, provider errors, etc.) |
+| Overflow recovery retries | Can retry after compaction and/or tool-result truncation attempts | Context overflow conditions |
+| Heartbeat wake events | Additional heartbeat runs beyond periodic interval | Exec completion notifications, hook wakes, cron/system wake events |
+| Cron main-session events | Adds work to heartbeat-driven model turns in main session | Cron jobs targeting main session (`wake now` or next-heartbeat) |
+| `sessions_send` A2A flow | Multi-step internal agent runs for ping-pong + announce workflow | Using `sessions_send` with A2A flow enabled |
+| `sessions_spawn` / subagents | Spawns separate isolated agent runs (new model calls) | Using `sessions_spawn` / subagent workflow |
+| Isolated cron agent turns | Dedicated `cron:<jobId>` runs invoke full model turns | Cron jobs with `session: isolated` / `agentTurn` |
+
+### 6. Heartbeat Token Controls
+
+- Heartbeats run full model turns (`getReplyFromConfig`), so shorter intervals scale cost quickly.
+- Heartbeats can be skipped before model call when `HEARTBEAT.md` exists but is effectively empty (ATX headings and blank checklist items only — lines like `#comment` without a space are not skipped).
+- Queue pressure can defer/skip runs (`requests-in-flight`), with wake retry behavior.
+- Practical spend controls:
+  - Increase `agents.defaults.heartbeat.every`.
+  - Use `activeHours` to limit windows.
+  - Keep `HEARTBEAT.md` concise and task-focused.
+  - Use `target: "none"` for internal-only checks when delivery is unnecessary.
+
+### 7. Configuration Levers That Change Token Consumption + Model Routing
+
+Use these knobs to directly control prompt size, model choice, retries, and auxiliary API spend.
+
+| Token/cost driver | Config levers | Practical effect |
+|-------------------|---------------|------------------|
+| Bootstrap/persona baseline | `agents.defaults.bootstrapMaxChars`, `agents.defaults.bootstrapTotalMaxChars` | Limits per-file and total injected bootstrap chars each run. |
+| Main model + fallback retry cost | `agents.defaults.model.primary`, `agents.defaults.model.fallbacks`, `agents.list[].model` | Controls primary model plus failover chain that may re-run the same prompt on errors. |
+| Subagent model spend | `agents.defaults.subagents.model`, `agents.list[].subagents.model` | Controls what model spawned subagents use for isolated turns. |
+| Heartbeat model spend | `agents.defaults.heartbeat.model`, `agents.list[].heartbeat.model` | Lets you run cheaper/faster models for recurring heartbeat turns. |
+| Vision model routing | `agents.defaults.imageModel.primary`, `agents.defaults.imageModel.fallbacks` | Chooses image-capable model path when primary text model lacks image input. |
+| Response-length ceiling | `agents.defaults.models."<provider/model>".params.maxTokens` | Caps completion length per model to reduce output-token spend. |
+| Usable context budget | `agents.defaults.contextTokens`, `models.providers.<provider>.models[].contextWindow` | Shrinks/expands effective context window used for guards, pruning, and compaction thresholds. |
+| Tool-result context bloat | `agents.defaults.contextPruning.*` (mode/ttl/keepLastAssistants/softTrim/hardClear/tools) | Reduces old tool-result payload kept in request context, especially post-TTL. `keepLastAssistants` sets how many recent assistant turns to always preserve from pruning. |
+| Compaction + pre-flush extra turns | `agents.defaults.compaction.mode`, `agents.defaults.compaction.reserveTokensFloor`, `agents.defaults.compaction.memoryFlush.enabled`, `agents.defaults.compaction.memoryFlush.softThresholdTokens` | Tunes when compaction/flush kicks in and how often near-limit sessions trigger extra model turns. |
+| Heartbeat frequency multiplier | `agents.defaults.heartbeat.every`, `agents.defaults.heartbeat.activeHours`, `agents.list[].heartbeat` | Directly sets background turn frequency and active windows. |
+| Memory retrieval injection | `agents.defaults.memorySearch.query.maxResults`, `agents.defaults.memorySearch.query.minScore`, `agents.defaults.memorySearch.chunking.tokens`, `agents.defaults.memorySearch.chunking.overlap` | Controls how much recalled memory snippet text is selected and indexed for retrieval. |
+| Session-log memory inclusion | `agents.defaults.memorySearch.experimental.sessionMemory`, `agents.defaults.memorySearch.sources` (include `"sessions"`), `agents.defaults.memorySearch.sync.sessions.*` | Enables/sizes session transcript indexing so raw session logs can be recalled as snippets. |
+| QMD recall payload budget | `memory.qmd.limits.maxResults`, `memory.qmd.limits.maxSnippetChars`, `memory.qmd.limits.maxInjectedChars`, `memory.qmd.sessions.enabled` | Hard caps QMD memory snippet volume injected back into tool results. |
+| Web tool payload + provider model | `tools.web.search.maxResults`, `tools.web.search.perplexity.model`, `tools.web.search.grok.model`, `tools.web.fetch.maxChars`, `tools.web.fetch.maxCharsCap` | Controls web result volume and which provider model answers search queries. |
+| Media/link tool payload size | `tools.media.<image/audio/video>.maxChars`, `tools.media.<image/audio/video>.maxBytes`, `tools.media.<image/audio/video>.models[]`, `tools.links.maxLinks` | Controls transcription/description volume and number of fetched assets/links. |
+| Image token density | `agents.defaults.imageMaxDimensionPx` | Lower dimensions reduce vision-token and payload pressure on screenshot-heavy runs. |
+| Wake-driven extra heartbeat turns | `tools.exec.notifyOnExit`, `tools.exec.notifyOnExitEmptySuccess` | Background exec completion can enqueue a system event and trigger immediate heartbeat work. |
+
+Notes:
+- Leaving `agents.defaults.memorySearch.provider` unset uses automatic provider selection based on available local/remote keys; remote embedding providers add non-chat token/API spend.
+- `memory/YYYY-MM-DD.md` and session JSONL files are not auto-injected; these consume tokens only when retrieved/read (memory tools, read tools, or enabled session-memory indexing).
+
+#### Drift-check manifest (AI-parseable)
+
+Use this as a canonical token-config map for automated doc-drift checks.
+
+```yaml
+token_config_manifest_version: 1
+key_path_convention:
+  list_item_wildcard: "[]"
+  quoted_model_key_example: 'agents.defaults.models."openai/gpt-5.2".params.maxTokens'
+entries:
+  - id: TOKCFG_BOOTSTRAP_MAX_CHARS
+    paths: [agents.defaults.bootstrapMaxChars]
+    default: 20000
+    runtime_refs: [src/agents/pi-embedded-helpers/bootstrap.ts]
+  - id: TOKCFG_BOOTSTRAP_TOTAL_MAX_CHARS
+    paths: [agents.defaults.bootstrapTotalMaxChars]
+    default: 150000
+    runtime_refs: [src/agents/pi-embedded-helpers/bootstrap.ts]
+  - id: TOKCFG_MODEL_PRIMARY_FALLBACKS
+    paths: [agents.defaults.model.primary, agents.defaults.model.fallbacks, agents.list[].model]
+    runtime_refs: [src/agents/model-fallback.ts]
+  - id: TOKCFG_SUBAGENT_MODEL
+    paths: [agents.defaults.subagents.model, agents.list[].subagents.model]
+    runtime_refs: [src/config/types.agent-defaults.ts, src/config/types.agents.ts]
+  - id: TOKCFG_HEARTBEAT_MODEL
+    paths: [agents.defaults.heartbeat.model, agents.list[].heartbeat.model]
+    runtime_refs: [src/infra/heartbeat-runner.ts]
+  - id: TOKCFG_IMAGE_MODEL_ROUTING
+    paths: [agents.defaults.imageModel.primary, agents.defaults.imageModel.fallbacks]
+    runtime_refs: [src/media-understanding/runner.ts, src/agents/model-fallback.ts]
+  - id: TOKCFG_PER_MODEL_MAX_TOKENS
+    paths: ['agents.defaults.models."<provider/model>".params.maxTokens']
+    runtime_refs: [src/config/types.agent-defaults.ts]
+  - id: TOKCFG_CONTEXT_WINDOW_CAP
+    paths: [agents.defaults.contextTokens, models.providers.<provider>.models[].contextWindow]
+    runtime_refs: [src/agents/context-window-guard.ts]
+  - id: TOKCFG_CONTEXT_PRUNING
+    paths: [agents.defaults.contextPruning.mode, agents.defaults.contextPruning.ttl, agents.defaults.contextPruning.softTrim, agents.defaults.contextPruning.hardClear, agents.defaults.contextPruning.tools]
+    runtime_refs: [src/agents/pi-extensions/context-pruning]
+  - id: TOKCFG_COMPACTION_MEMORY_FLUSH
+    paths: [agents.defaults.compaction.mode, agents.defaults.compaction.reserveTokensFloor, agents.defaults.compaction.memoryFlush.enabled, agents.defaults.compaction.memoryFlush.softThresholdTokens]
+    runtime_refs: [src/auto-reply/reply/memory-flush.ts, src/auto-reply/reply/agent-runner-memory.ts]
+  - id: TOKCFG_HEARTBEAT_INTERVAL_SCOPE
+    paths: [agents.defaults.heartbeat.every, agents.defaults.heartbeat.activeHours, agents.list[].heartbeat]
+    runtime_refs: [src/infra/heartbeat-runner.ts]
+  - id: TOKCFG_MEMORY_SEARCH_RETRIEVAL
+    paths: [agents.defaults.memorySearch.query.maxResults, agents.defaults.memorySearch.query.minScore, agents.defaults.memorySearch.chunking.tokens, agents.defaults.memorySearch.chunking.overlap]
+    runtime_refs: [src/agents/memory-search.ts]
+  - id: TOKCFG_SESSION_MEMORY_INDEXING
+    paths: [agents.defaults.memorySearch.experimental.sessionMemory, agents.defaults.memorySearch.sources, agents.defaults.memorySearch.sync.sessions.deltaBytes, agents.defaults.memorySearch.sync.sessions.deltaMessages]
+    runtime_refs: [src/agents/memory-search.ts, src/memory/manager-sync-ops.ts, src/memory/session-files.ts]
+  - id: TOKCFG_QMD_SNIPPET_BUDGET
+    paths: [memory.qmd.limits.maxResults, memory.qmd.limits.maxSnippetChars, memory.qmd.limits.maxInjectedChars, memory.qmd.sessions.enabled]
+    runtime_refs: [src/memory/backend-config.ts, src/memory/qmd-manager.ts]
+  - id: TOKCFG_WEB_SEARCH_FETCH_BOUNDS
+    paths: [tools.web.search.maxResults, tools.web.search.perplexity.model, tools.web.search.grok.model, tools.web.fetch.maxChars, tools.web.fetch.maxCharsCap]
+    runtime_refs: [src/agents/tools/web-search.ts, src/agents/tools/web-fetch.ts]
+  - id: TOKCFG_MEDIA_LINK_BOUNDS
+    paths: [tools.media.image.maxChars, tools.media.audio.maxChars, tools.media.video.maxChars, tools.media.image.maxBytes, tools.media.audio.maxBytes, tools.media.video.maxBytes, tools.media.image.models, tools.media.audio.models, tools.media.video.models, tools.links.maxLinks]
+    runtime_refs: [src/media-understanding/resolve.ts, src/link-understanding/defaults.ts]
+  - id: TOKCFG_IMAGE_DIMENSION_PX
+    paths: [agents.defaults.imageMaxDimensionPx]
+    default: 1200
+    runtime_refs: [src/config/types.agent-defaults.ts]
+  - id: TOKCFG_EXEC_WAKE_MULTIPLIER
+    paths: [tools.exec.notifyOnExit, tools.exec.notifyOnExitEmptySuccess]
+    runtime_refs: [src/agents/bash-tools.exec-runtime.ts, src/infra/heartbeat-wake.ts]
+```
+
+#### Drift-check query starter
+
+```bash
+rg -n "bootstrapMaxChars|bootstrapTotalMaxChars|contextTokens|contextPruning|compaction|memoryFlush|heartbeat|imageModel|imageMaxDimensionPx|memorySearch|memory\\.qmd|tools\\.web\\.search|maxResults|tools\\.web\\.fetch|maxCharsCap|tools\\.media|tools\\.links|maxLinks|notifyOnExit" src docs
+```
+
+### 8. Accuracy and mapping notes
+
+- Updated legacy config paths like `provider.model` to current model selection paths (`agents.defaults.model.primary`).
+- Updated free OpenRouter routing examples to current model-ref style (`openrouter/<provider>/<model>:free`) instead of `openrouter/free`.
+- Updated token control examples to current keys (`contextTokens`, `contextPruning.mode=cache-ttl`, `agents.defaults.models.<model>.params.maxTokens`, `tools.web.fetch.maxChars`).
+
+---
+
 ## OpenRouter Integration
 
 > **Official guide:** [OpenRouter OpenClaw Integration](https://openrouter.ai/docs/guides/guides/openclaw-integration#using-auto-model-for-cost-optimization)
@@ -54,22 +258,26 @@ OpenRouter is a unified API that provides access to 200+ models from multiple pr
 
 ### Basic Configuration
 
-Set OpenRouter as your provider in OpenClaw:
+Use OpenRouter auth plus a model reference in OpenClaw:
 
 ```bash
-openclaw config set provider.name openrouter
-openclaw config set provider.apiKey sk-or-v1-your-key-here
-openclaw config set provider.model openrouter/auto
+openclaw onboard --auth-choice apiKey --token-provider openrouter --token "$OPENROUTER_API_KEY"
+openclaw config set agents.defaults.model.primary openrouter/auto
 ```
 
-Or in config file (`~/.openclaw/config.yaml`):
+Or in config:
 
 ```yaml
-provider:
-  name: openrouter
-  apiKey: sk-or-v1-your-key-here
-  model: openrouter/auto
+env:
+  OPENROUTER_API_KEY: sk-or-v1-your-key-here
+
+agents:
+  defaults:
+    model:
+      primary: openrouter/auto
 ```
+
+For explicit model pinning, use `openrouter/<provider>/<model>` (example: `openrouter/anthropic/claude-sonnet-4-5`).
 
 ---
 
@@ -113,28 +321,28 @@ The Auto Router automatically selects the best model for each prompt, powered by
 
 ---
 
-## Free Router (`openrouter/free`)
+## Free Models (`:free` Suffix)
 
-The `openrouter/free` model provides access to free AI models through OpenRouter, ideal for testing, development, or budget-constrained applications.
+In current OpenClaw model references, free OpenRouter routing is typically selected with `:free` on a specific model.
 
 ### Configuration
 
 ```bash
-openclaw config set provider.model openrouter/free
+openclaw config set agents.defaults.model.primary openrouter/meta-llama/llama-3.3-70b-instruct:free
 ```
 
 Or via API:
 
 ```json
 {
-  "model": "openrouter/free",
+  "model": "meta-llama/llama-3.3-70b-instruct:free",
   "messages": [{"role": "user", "content": "..."}]
 }
 ```
 
 ### How It Works
 
-Similar to the Auto Router, `openrouter/free` analyzes your prompt and routes to an appropriate free model from available options. The response includes the `model` field showing which specific free model was used.
+OpenRouter routes to a free tier for the specified model variant where available. The response metadata includes the concrete model/provider used.
 
 ### Limitations
 
@@ -170,13 +378,13 @@ OpenRouter offers model variants that modify routing behavior:
 
 ```bash
 # Default - balanced quality/cost/speed
-openclaw config set provider.model anthropic/claude-sonnet-4
+openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-5
 
 # Cheapest provider for Claude Sonnet
-openclaw config set provider.model anthropic/claude-sonnet-4:floor
+openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-5:floor
 
 # Fastest provider for Claude Sonnet
-openclaw config set provider.model anthropic/claude-sonnet-4:nitro
+openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-5:nitro
 ```
 
 ### When to Use Each
@@ -190,6 +398,8 @@ openclaw config set provider.model anthropic/claude-sonnet-4:nitro
 ## Provider Routing Configuration
 
 Fine-grained control over how OpenRouter selects providers:
+
+> Note: this `provider` object is an OpenRouter request payload example. OpenClaw does not currently expose first-class config keys for all of these routing fields.
 
 ```json
 {
@@ -291,46 +501,49 @@ Beyond model routing, reduce costs by managing token consumption:
 Long conversations accumulate tokens. Strategies to manage this:
 
 ```yaml
-# In agent config
 agents:
   defaults:
-    maxContextTokens: 50000
-    contextPruning: sliding-window
+    contextTokens: 50000
+    contextPruning:
+      mode: cache-ttl
+      ttl: 5m
+      keepLastAssistants: 3
+      softTrim:
+        maxChars: 4000
+        headChars: 1500
+        tailChars: 1500
+      hardClear:
+        enabled: true
 ```
 
 | Strategy | Description | Best For |
 |----------|-------------|----------|
-| `sliding-window` | Keep most recent N tokens | General chat |
-| `summary` | Periodically summarize and compress | Long-running sessions |
-| `selective` | Keep only high-relevance messages | Task-focused agents |
+| `contextTokens` | Defines session context budget for status/guardrails | Predictable context headroom |
+| `contextPruning: cache-ttl` | Soft-trims/clears older tool results after cache TTL | Long-running sessions with large tool output |
+| `compaction` | Summarizes prior history when transcripts get large | Multi-day chats with long history |
 
 ### 2. Efficient System Prompts
 
-System prompts are sent with every request. Keep them concise:
-
-```yaml
-# Bad: 2000+ tokens
-agents:
-  default:
-    systemPrompt: |
-      You are an incredibly helpful assistant that always...
-      [long detailed instructions]
-
-# Good: 200 tokens
-agents:
-  default:
-    systemPrompt: |
-      Helpful assistant. Be concise. Ask clarifying questions when needed.
-```
-
-### 3. Response Length Control
-
-Prevent unnecessarily verbose responses:
+System prompts are sent with every request. Keep workspace bootstrap docs concise and bounded:
 
 ```yaml
 agents:
   defaults:
-    maxOutputTokens: 1000
+    bootstrapMaxChars: 12000
+    bootstrapTotalMaxChars: 80000
+```
+
+### 3. Response Length Control
+
+Prevent unnecessarily verbose responses with per-model params:
+
+```yaml
+agents:
+  defaults:
+    models:
+      "openrouter/anthropic/claude-sonnet-4-5":
+        params:
+          maxTokens: 1000
 ```
 
 ### 4. Tool Result Compression
@@ -339,9 +552,10 @@ Large tool outputs (web pages, file contents) consume tokens:
 
 ```yaml
 tools:
-  web-fetch:
-    maxResponseTokens: 2000
-    summarize: true
+  web:
+    fetch:
+      maxChars: 8000
+      readability: true
 ```
 
 ---
@@ -356,7 +570,7 @@ Choose models based on task complexity:
 | Code generation | Claude Sonnet or GPT-4o | $3-15/M |
 | Complex reasoning | Claude Opus or o1 | $15-60/M |
 | Bulk processing | Haiku, Gemini Flash | $0.10-0.50/M |
-| Testing/dev | `openrouter/free` | $0 |
+| Testing/dev | `openrouter/<provider>/<model>:free` | $0 |
 
 ### OpenRouter Model Pricing Reference
 
@@ -378,7 +592,7 @@ Prices are per million tokens via OpenRouter (Feb 2026). Append `:floor` to any 
 | `perplexity/sonar-pro` | $3.00 | $15.00 | Best search quality (+$5/K searches) |
 | `perplexity/sonar` | $1.00 | $1.00 | Budget native search (+$5/K searches) |
 | `openrouter/auto` | varies | varies | Routes to best model; you pay that model's rate |
-| `openrouter/free` | $0.00 | $0.00 | Free tier; rate-limited, lower quality |
+| `openrouter/meta-llama/llama-3.3-70b-instruct:free` | $0.00 | $0.00 | Free tier example; availability/rates vary |
 
 > **Prices change.** Check [openrouter.ai/models](https://openrouter.ai/models) for current rates.
 
@@ -388,13 +602,14 @@ Configure different models for different scenarios:
 
 ```yaml
 agents:
-  quick-lookup:
-    provider:
-      model: anthropic/claude-haiku
-
-  deep-analysis:
-    provider:
-      model: anthropic/claude-opus-4
+  defaults:
+    model:
+      primary: anthropic/claude-sonnet-4-5
+  list:
+    - id: quick-lookup
+      model: anthropic/claude-haiku-4-5
+    - id: deep-analysis
+      model: anthropic/claude-opus-4-5
 ```
 
 ---
@@ -409,7 +624,7 @@ Different OpenClaw functions have varying compute requirements. Using the right 
 
 | Function | Optimal Model | Cheapest Model | Config Path |
 |----------|--------------|----------------|-------------|
-| **Main Chat (Brain)** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | `agents.defaults.model` |
+| **Main Chat (Brain)** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | `agents.defaults.model.primary` |
 | **Heartbeat** | `anthropic/claude-haiku-4-5` | `anthropic/claude-haiku-4-5` | `agents.defaults.heartbeat.model` |
 | **Coding** | `codex-cli/gpt-5.2-codex` | `minimax/MiniMax-M2.1` | `agents.defaults.cliBackends` |
 | **Web Search/Browsing** | `perplexity/sonar-pro` | `perplexity/sonar` | `tools.web.search.perplexity.model` |
@@ -904,7 +1119,7 @@ Before enabling expensive features, estimate costs:
 | **Balanced** | Sonnet 4.5 main + Haiku heartbeat | ~$12-15 |
 | **Budget** | Sonnet:floor main + Sonar search + Gemini Flash vision | ~$3-5 |
 | **Ultra-budget** | Kimi K2.5 main + MiniMax coding + Sonar search | ~$1-2 |
-| **Free** | openrouter/free everywhere | $0 |
+| **Free** | `openrouter/<provider>/<model>:free` routing | $0 |
 
 Actual costs vary with message length, tool use frequency, and model routing. Check your [OpenRouter dashboard](https://openrouter.ai/activity) for real-time spend.
 
@@ -914,7 +1129,7 @@ Actual costs vary with message length, tool use frequency, and model routing. Ch
 
 1. **Start with auto routing** - Let OpenRouter optimize unless you have specific needs
 2. **Use `:floor` variants for development** - Save costs during testing
-3. **Set `max_price` limits** - Prevent surprise bills from expensive models
+3. **Use explicit model pins in OpenClaw** - Prefer `agents.defaults.model.primary` and controlled fallbacks
 4. **Monitor weekly** - Review dashboard and adjust as needed
 5. **Compress context** - Enable pruning for long-running sessions
 6. **Match model to task** - Don't use Opus for simple lookups
