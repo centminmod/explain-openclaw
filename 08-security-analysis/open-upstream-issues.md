@@ -344,7 +344,7 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 - `src/security/secret-equal.ts:3-16` - `safeEqualSecret` uses `timingSafeEqual` (correct)
 - `src/gateway/server-http.ts:254` - hook token now uses `safeEqualSecret()` (fixed in Feb 13 sync 4, commit `113ebfd6a`)
 - `src/infra/node-pairing.ts:277` - node token uses direct `===` (vulnerable)
-- `src/infra/device-pairing.ts:435` - device token now uses `safeEqualSecret()` (fixed in Feb 13 sync 4, commit `113ebfd6a`)
+- `src/infra/device-pairing.ts:400` - device token verification uses `verifyPairingToken()` (wraps `safeEqualSecret()`, fixed in Feb 13 sync 4, commit `113ebfd6a`)
 
 ### #6606: Telegram Webhook Binds to 0.0.0.0 with Optional Secret
 

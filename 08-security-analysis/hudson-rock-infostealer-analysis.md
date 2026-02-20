@@ -51,7 +51,7 @@
 | 2 | `openclaw.json` contains email address | **LIKELY** | `auth.profiles.*.email` optional string field exists (`src/config/types.auth.ts:10`); OAuth profiles commonly include email |
 | 3 | `openclaw.json` contains workspace path | **CONFIRMED** | `agents[].dir` field configures workspace directories |
 | 4 | `device.json` contains crypto keys | **CONFIRMED** | ED25519 private + public key pair, device ID (SHA256 fingerprint) (`src/infra/device-identity.ts:57-63`); stored at `~/.openclaw/identity/device.json` (`src/infra/device-identity.ts:20-21`) with `0o600` perms (`src/infra/device-identity.ts:84,116-118`) |
-| 5 | `soul.md` contains agent principles | **CONFIRMED** | User-defined workspace `.md` file loaded into system prompt (`src/agents/workspace.ts:412-466`). Note: located in workspace dir, NOT in `~/.openclaw/` |
+| 5 | `soul.md` contains agent principles | **CONFIRMED** | User-defined workspace `.md` file loaded into system prompt (`src/agents/workspace.ts:441-495`). Note: located in workspace dir, NOT in `~/.openclaw/` |
 | 6 | Stolen gateway token enables remote connection | **CONFIRMED** | If port is exposed: WebSocket full access, HTTP `/tools/invoke` including exec (`src/gateway/tools-invoke-http.ts:127-324`), `/v1/chat/completions` |
 | 7 | Token allows "masquerade as the client" | **CONFIRMED** | Gateway tokens are not device-bound; any bearer can authenticate (`src/gateway/auth.ts`) |
 | 8 | VirusTotal partnership for ClawHub | **CONFIRMED** | 6-step pipeline, 70+ AV engines, Gemini code review, daily rescans ([blog](https://openclaw.ai/blog/virustotal-partnership)) |

@@ -519,7 +519,7 @@ The user's phone was now able to connect — along with everyone else.
 
 > **The Core Issue:** Schema validation catches **structural** errors (wrong types, unknown keys) but not **semantic** security errors. The AI can set dangerous values for every known key, and validation will happily accept them.
 
-Source: `src/config/validation.ts:90-133`, `src/config/zod-schema.ts:635`
+Source: `src/config/validation.ts:90-133`, `src/config/zod-schema.ts:666`
 
 ### The Fix
 

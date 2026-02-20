@@ -4,7 +4,7 @@
 
 > **Source:** [github.com/openclaw/openclaw/security](https://github.com/openclaw/openclaw/security)
 >
-> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (26 new advisories, 10 HIGH + 10 MEDIUM + 6 previously tracked) patched in v2026.2.1-2.2+; Feb 16 batch (16 new advisories, 9 HIGH + 4 MEDIUM + 3 LOW) published 2026-02-15/16.
+> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (26 new advisories, 10 HIGH + 10 MEDIUM + 6 previously tracked) patched in v2026.2.1-2.2+; Feb 16 batch (16 new advisories, 9 HIGH + 4 MEDIUM + 3 LOW) published 2026-02-15/16; Feb 20 batch (4 new advisories, 2 MEDIUM + 2 LOW) published 2026-02-20, patched in v2026.2.18.
 
 ### Advisory Summary
 
@@ -88,6 +88,10 @@
 | [CVE-2026-27008 / GHSA-h7f7-89mm-pqh6](https://github.com/openclaw/openclaw/security/advisories/GHSA-h7f7-89mm-pqh6) | MEDIUM | Harden skill download target directory validation | - | pending | @Adam55A-code |
 | [GHSA-6c9j-x93c-rw6j](https://github.com/openclaw/openclaw/security/advisories/GHSA-6c9j-x93c-rw6j) | MEDIUM | OpenClaw safeBins file-existence oracle information disclosure | CWE-203 | pending | @nedlir |
 | [GHSA-4685-c5cp-vp95](https://github.com/openclaw/openclaw/security/advisories/GHSA-4685-c5cp-vp95) | LOW | safeBins stdin-only bypass via sort output and recursive grep flags | CWE-78, CWE-184 | pending | @nedlir |
+| [GHSA-r6h2-5gqq-v5v6](https://github.com/openclaw/openclaw/security/advisories/GHSA-r6h2-5gqq-v5v6) | LOW | OC-22: Reject symlinks in local skill packaging script | CWE-59 | v2026.2.18 | @aether-ai-agent |
+| [GHSA-wh94-p5m6-mr7j](https://github.com/openclaw/openclaw/security/advisories/GHSA-wh94-p5m6-mr7j) | MEDIUM | Discord moderation authorization used untrusted sender identity in tool-driven flows | CWE-862, CWE-290 | v2026.2.18 | @aether-ai-agent |
+| [GHSA-cxpw-2g23-2vgw](https://github.com/openclaw/openclaw/security/advisories/GHSA-cxpw-2g23-2vgw) | LOW | OC-53: ACP prompt-size checks missing in local stdio bridge | CWE-400 | v2026.2.18 | @aether-ai-agent |
+| [GHSA-w45g-5746-x9fp](https://github.com/openclaw/openclaw/security/advisories/GHSA-w45g-5746-x9fp) | MEDIUM | Harden cron webhook delivery against SSRF | CWE-918 | v2026.2.18 | @Adam55A-code |
 
 ### CVE-2026-24763: Docker PATH Command Injection
 
@@ -741,6 +745,54 @@
 **Description:** The Google Chat integration used mutable email addresses as allowlist principals. Since Google Workspace email addresses can be reassigned, an authorized user's email could be transferred to an unauthorized user who would then pass the allowlist check.
 
 **Impact:** Allowlist bypass via email address reassignment in Google Workspace environments.
+
+### GHSA-r6h2-5gqq-v5v6: OC-22: Symlink Following in Local Skill Packaging
+
+**Severity:** LOW (CWE-59: Improper Link Resolution)
+**Published:** 2026-02-20
+**Credits:** @aether-ai-agent
+
+**Description:** `skills/skill-creator/scripts/package_skill.py` followed symlinks while building `.skill` archives. If run on a crafted skill directory containing symlinks to files outside the skill root, the resulting archive could include unintended file contents. Execution context is local/manual workflow only — not reachable via the gateway/chat runtime.
+
+**Impact:** Potential unintentional disclosure of local files from the packaging machine into a generated `.skill` artifact. Requires local execution of the packaging script on attacker-controlled skill contents.
+
+**Fix commits:** `c275932aa`, `ee1d6427b` (PR #20796). Rejects symlinks during packaging; adds regression tests.
+
+### GHSA-wh94-p5m6-mr7j: Discord Moderation Untrusted Sender Identity
+
+**Severity:** MEDIUM (CWE-862: Missing Authorization, CWE-290: Authentication Bypass by Spoofing)
+**Published:** 2026-02-20
+**Credits:** @aether-ai-agent
+
+**Description:** Discord moderation actions (`timeout`, `kick`, `ban`) used sender identity from request parameters in tool-driven flows, instead of trusted runtime sender context. A non-admin user could request moderation actions by spoofing sender identity fields in setups where the bot has the necessary guild permissions.
+
+**Impact:** Unauthorized moderation actions against other guild members.
+
+**Fix commit:** `775816035` — moderation authorization now uses trusted sender context (`requesterSenderId`); added permission checks per action type.
+
+### GHSA-cxpw-2g23-2vgw: OC-53: ACP Prompt-Size Checks Missing
+
+**Severity:** LOW (CWE-400: Uncontrolled Resource Consumption)
+**Published:** 2026-02-20
+**Credits:** @aether-ai-agent
+
+**Description:** The ACP bridge accepted very large prompt text blocks and could assemble oversized prompt payloads before forwarding them to `chat.send`. Affects local ACP clients (e.g. IDE integrations) that send unusually large inputs. No privilege escalation and no direct remote attack path in the default ACP model.
+
+**Impact:** Local ACP sessions less responsive with very large prompts; larger-than-expected model usage/cost.
+
+**Fix commits:** `732e53151`, `ebcf19746`, `63e39d7f5` — enforces 2 MiB prompt-text limit before concatenation; adds active-run cleanup on rejection.
+
+### GHSA-w45g-5746-x9fp: Cron Webhook Delivery SSRF
+
+**Severity:** MEDIUM (CWE-918: Server-Side Request Forgery)
+**Published:** 2026-02-20
+**Credits:** @Adam55A-code
+
+**Description:** Cron webhook delivery in `src/gateway/server-cron.ts` used `fetch()` directly, bypassing SSRF policy checks. Webhook targets could reach private/metadata/internal endpoints.
+
+**Impact:** SSRF via cron webhook delivery to internal/metadata endpoints.
+
+**Fix commits:** `99db4d13e`, `35851cdaf` — routes cron webhook delivery through SSRF-checked fetch.
 
 ### Relationship to Third-Party Audits
 
