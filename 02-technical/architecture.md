@@ -29,11 +29,13 @@ This page explains how the OpenClaw codebase is organized and how a message beco
 Sources verified against:
 - `../docs/index.md` (high-level)
 - `../docs/gateway/index.md` (Gateway runbook)
-- `../docs/gateway/security.md`
-- `../src/gateway/server.impl.ts` (Gateway server startup + config validation)
+- `../docs/gateway/security/index.md`
+- `../src/gateway/server.impl.ts` (Gateway startup + config validation + auth bootstrap)
+- `../src/gateway/server-runtime-config.ts` (bind/auth runtime enforcement)
+- `../src/gateway/startup-auth.ts` (startup token generation / persistence behavior)
 - `../src/auto-reply/reply/agent-runner.ts` (agent turn execution)
 - `../src/auto-reply/reply/reply-delivery.ts` (block reply pipeline)
-- `../src/gateway/chat-sanitize.ts` (input sanitization)
+- `../src/gateway/chat-sanitize.ts` and `../src/gateway/server-methods/chat.ts` (input sanitization)
 - `../src/daemon/` (daemon subsystem)
 
 ---
@@ -72,6 +74,10 @@ The Gateway:
   - optional HTTP endpoints (`/v1/chat/completions`, `/v1/responses`, `/tools/invoke`)
 - owns channel connections (WhatsApp Web session, Telegram bot long-poll, etc.)
 - owns local state (config, credentials, transcripts)
+
+It also enforces startup auth safety:
+- if auth mode resolves to token but no token exists, startup generates one (`ensureGatewayStartupAuth`) and persists it when running without ephemeral overrides.
+- non-loopback binds are refused without shared-secret auth (except explicit `trusted-proxy` mode with trusted proxy IPs configured).
 
 ### Config validation as a safety feature
 In `src/gateway/server.impl.ts`, the Gateway:
@@ -117,7 +123,7 @@ Docs: https://docs.openclaw.ai/gateway/configuration
 - The docs describe strict schema validation and how the UI uses it.
 
 ### Daemon
-- `src/daemon/` (34 files). Cross-platform service management: systemd (Linux), launchd (macOS), schtasks (Windows). Handles Gateway lifecycle as a background service.
+- `src/daemon/` (~37 files as of Feb 2026). Cross-platform service management: systemd (Linux), launchd (macOS), schtasks (Windows). Handles Gateway lifecycle as a background service.
 
 ### Memory
 - `src/memory/`. Persistent knowledge layer with SQLite + sqlite-vec storage, markdown chunking, embedding providers, hybrid search. (Detailed in [`resource-usage.md` Section F](../06-optimizations/resource-usage.md#f-how-openclaw-memory-works-architecture-deep-dive).)
@@ -163,7 +169,7 @@ Below is a conceptual pipeline. Exact details vary by channel.
 
 1.5) **Input sanitization**
 - Strip platform envelope metadata from user messages (`src/gateway/chat-sanitize.ts`)
-- Reject null bytes and strip unsafe control characters (`src/gateway/server-methods/chat.ts:78`)
+- Reject null bytes and strip unsafe control characters (`src/gateway/server-methods/chat.ts:79`)
 
 2) **Identity + authorization**
 - Resolve sender identity.

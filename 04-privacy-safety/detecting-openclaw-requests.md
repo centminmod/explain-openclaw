@@ -89,7 +89,7 @@ HTTP-Referer: https://openclaw.ai
 X-Title: OpenClaw Web Search
 ```
 
-**Source:** `src/agents/tools/web-search.ts:481-482`
+**Source:** `src/agents/tools/web-search.ts:503-504`
 ```typescript
 "HTTP-Referer": "https://openclaw.ai",
 "X-Title": "OpenClaw Web Search",
@@ -112,7 +112,7 @@ MM-API-Source: OpenClaw
 
 Also used for MiniMax usage checking:
 
-**Source:** `src/infra/provider-usage.fetch.minimax.ts:319`
+**Source:** `src/infra/provider-usage.fetch.minimax.ts:311`
 ```typescript
 "MM-API-Source": "OpenClaw",
 ```
@@ -148,13 +148,13 @@ Accept: */*
 Accept-Language: en-US,en;q=0.9
 ```
 
-**Source:** `src/agents/tools/web-fetch.ts:40-41`
+**Source:** `src/agents/tools/web-fetch.ts:44-45`
 ```typescript
 const DEFAULT_FETCH_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 ```
 
-**Source:** `src/agents/tools/web-fetch.ts:561-565`
+**Source:** `src/agents/tools/web-fetch.ts:531-535`
 ```typescript
 headers: {
   Accept: "text/markdown, text/html;q=0.9, */*;q=0.1",
@@ -184,7 +184,7 @@ Accept: application/json
 X-Subscription-Token: <api_key>
 ```
 
-**Source:** `src/agents/tools/web-search.ts:660-663`
+**Source:** `src/agents/tools/web-search.ts:683-687`
 ```typescript
 headers: {
   Accept: "application/json",
@@ -203,7 +203,7 @@ Content-Type: application/json
 Authorization: Bearer <api_key>
 ```
 
-**Source:** `src/agents/tools/web-search.ts:527-535`
+**Source:** `src/agents/tools/web-search.ts:550-555`
 ```typescript
 headers: {
   "Content-Type": "application/json",
@@ -220,7 +220,7 @@ No custom User-Agent or referer is set. Same Node.js `fetch()` default applies.
 When no explicit User-Agent is set, Node.js `fetch()` exposes:
 - A non-browser User-Agent string (e.g., `node` or the `undici` library name)
 - Missing `Cookie`, `Sec-*`, and `Referer` headers that real browsers always send
-- Missing `Accept-Encoding` negotiation that browsers typically include
+- No explicit `Accept-Encoding` header in OpenClaw code (runtime defaults may still add one)
 
 These signals indicate "automated HTTP client" but not "OpenClaw" specifically.
 
@@ -261,7 +261,7 @@ User-Agent: antigravity
 X-Goog-Api-Client: google-cloud-sdk vscode_cloudshelleditor/0.1
 ```
 
-**Source:** `src/infra/provider-usage.fetch.antigravity.ts:205-206`
+**Source:** `src/infra/provider-usage.fetch.antigravity.ts:196-197`
 ```typescript
 "User-Agent": "antigravity",
 "X-Goog-Api-Client": "google-cloud-sdk vscode_cloudshelleditor/0.1",
@@ -346,7 +346,7 @@ export type GatewayClientInfo = {
 | `User-Agent: openclaw` | `src/infra/provider-usage.fetch.claude.ts:125` | Anthropic usage check |
 | `HTTP-Referer: https://openclaw.ai` | `src/agents/pi-embedded-runner/extra-params.ts:8` | OpenRouter/Perplexity |
 | `X-Title: OpenClaw` | `src/agents/pi-embedded-runner/extra-params.ts:9` | OpenRouter/Perplexity |
-| `X-Title: OpenClaw Web Search` | `src/agents/tools/web-search.ts:482` | Perplexity search |
+| `X-Title: OpenClaw Web Search` | `src/agents/tools/web-search.ts:504` | Perplexity search |
 | `MM-API-Source: OpenClaw` | `src/agents/minimax-vlm.ts:73` | MiniMax VLM |
 
 ### Recommendation
@@ -540,8 +540,8 @@ When placing Cloudflare in front of the Gateway, configure these settings:
 | Setting | Config path | Required value | Why |
 |---|---|---|---|
 | Bind mode | `gateway.bind` | `"lan"` or `gateway.customBindHost` | Must not be `"loopback"` — Cloudflare needs to reach the Gateway's port |
-| Auth | `gateway.auth.token` or `gateway.auth.password` | Must be set | Gateway **refuses to start** on non-loopback without auth (`src/gateway/server-runtime-config.ts:99-103`), unless `auth.mode="trusted-proxy"` |
-| Trusted proxies | `gateway.trustedProxies` | Cloudflare IP ranges | Gateway trusts `X-Forwarded-For` / `X-Real-IP` from these IPs for client IP resolution (`src/gateway/net.ts:203-217`) |
+| Auth | `gateway.auth.token` or `gateway.auth.password` | Must be set | Gateway **refuses to start** on non-loopback without auth (`src/gateway/server-runtime-config.ts:113-115`), unless `auth.mode="trusted-proxy"` |
+| Trusted proxies | `gateway.trustedProxies` | Cloudflare IP ranges | Gateway trusts `X-Forwarded-For` / `X-Real-IP` from these IPs for client IP resolution (`src/gateway/net.ts:210-246`) |
 
 **Source:** `src/config/types.gateway.ts:312`
 ```typescript
@@ -590,8 +590,8 @@ OpenClaw's HTTP API endpoints read several custom headers from inbound requests.
 | `x-openclaw-agent` | `src/gateway/http-utils.ts:28` | Agent routing (fallback alias for `x-openclaw-agent-id`) | Same as above |
 | `x-openclaw-session-key` | `src/gateway/http-utils.ts:71` | Session pinning — pins request to a specific named session | `/v1/chat/completions`, `/v1/responses` |
 | `x-openclaw-token` | `src/gateway/hooks.ts:168-169` | Webhook authentication — alternative to `Authorization: Bearer` | `/hooks/*` |
-| `x-openclaw-message-channel` | `src/gateway/tools-invoke-http.ts:200` | Tool policy routing — specifies channel context (e.g., `"discord"`, `"slack"`) | `/tools/invoke` |
-| `x-openclaw-account-id` | `src/gateway/tools-invoke-http.ts:202` | Account-level tool policy routing | `/tools/invoke` |
+| `x-openclaw-message-channel` | `src/gateway/tools-invoke-http.ts:204` | Tool policy routing — specifies channel context (e.g., `"discord"`, `"slack"`) | `/tools/invoke` |
+| `x-openclaw-account-id` | `src/gateway/tools-invoke-http.ts:206` | Account-level tool policy routing | `/tools/invoke` |
 | `x-openclaw-relay-token` | `src/browser/extension-relay.ts:80` | Browser extension CDP relay auth | Separate loopback-only server (NOT on main Gateway port) |
 
 > **Note:** `x-openclaw-relay-token` is on a separate server that binds exclusively to loopback — it is **never** accessible through Cloudflare and is listed here only for completeness.
