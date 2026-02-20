@@ -741,6 +741,12 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 
 **Gap status: 1 closed, 3 remain open.**
 
+### Post-Merge Hardening (Feb 20 sync 4) — 14 upstream commits
+
+**Security relevance: LOW** — 2 security-relevant commits. **Hono timing-safe auth** (`ce2a39a27`): bumps hono to 4.11.10 for timing-safe auth handling — Claim 15 defense-in-depth. **Docker SHA256 digest pinning** (`8ae2d5110`): 9 Dockerfiles pinned to immutable SHA256 digests + Dependabot Docker config for automated updates — **Claim 16 strengthened** (supply chain/package integrity). 12 non-security commits: iOS/Gateway wake stabilization, model fallback lifecycle visibility (2 new files), version bump. 4 line shifts documented. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-20-sync-4.md).
+
+**Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 
 ---

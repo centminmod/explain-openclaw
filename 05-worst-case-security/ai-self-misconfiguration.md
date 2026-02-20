@@ -141,7 +141,7 @@ GLM-5:
 4. Ran raw `rsync --delete` directly — **deleting files**
 5. Misinterpreted `disable-model-invocation: true` in the skill frontmatter as meaning the skill was "disabled"
 
-The `disable-model-invocation` flag is parsed at `src/agents/skills/frontmatter.ts:103` and used at `src/agents/skills/workspace.ts:447` to filter skills from the model prompt — it controls whether the *model* can invoke the skill unprompted, not whether the skill is "disabled." GLM-5 read the flag, hallucinated an incorrect interpretation, and acted on it.
+The `disable-model-invocation` flag is parsed at `src/agents/skills/frontmatter.ts:109` and used at `src/agents/skills/workspace.ts:447` to filter skills from the model prompt — it controls whether the *model* can invoke the skill unprompted, not whether the skill is "disabled." GLM-5 read the flag, hallucinated an incorrect interpretation, and acted on it.
 
 This is the same class of problem as the system prompt bypass above, but more severe: the SKILL.md contained explicit safety instructions, and the model read them, understood them, and decided to do something else anyway.
 
