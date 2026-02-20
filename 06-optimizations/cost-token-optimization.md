@@ -232,7 +232,30 @@ entries:
 rg -n "bootstrapMaxChars|bootstrapTotalMaxChars|contextTokens|contextPruning|compaction|memoryFlush|heartbeat|imageModel|imageMaxDimensionPx|memorySearch|memory\\.qmd|tools\\.web\\.search|maxResults|tools\\.web\\.fetch|maxCharsCap|tools\\.media|tools\\.links|maxLinks|notifyOnExit" src docs
 ```
 
-### 8. Accuracy and mapping notes
+### 8. How token counts are estimated
+
+OpenClaw does not use a tokenizer library (no tiktoken, js-tiktoken, gpt-tokenizer, or @anthropic-ai/tokenizer) and does not call the Anthropic `count_tokens` API endpoint. Instead it uses a **two-track approach**:
+
+**Track 1 — Pre-call character approximation (guards, pruning, adaptive sizing)**
+
+Three modules share the same 4 chars ≈ 1 token heuristic for decisions that must happen before an API call is made:
+
+| Module | Constant | Rate | Purpose |
+|--------|----------|------|---------|
+| `src/agents/pi-tools.read.ts` | `CHARS_PER_TOKEN_ESTIMATE` | 4 | Adaptive read page sizing |
+| `src/agents/pi-extensions/context-pruning/pruner.ts` | `CHARS_PER_TOKEN_ESTIMATE` | 4 | Context pruning decisions |
+| `src/agents/pi-embedded-runner/tool-result-context-guard.ts` | `CHARS_PER_TOKEN_ESTIMATE` | 4 | General context guard |
+| `src/agents/pi-embedded-runner/tool-result-context-guard.ts` | `TOOL_RESULT_CHARS_PER_TOKEN_ESTIMATE` | **2** | Tool-result context guard |
+
+The tool-result guard uses **2 chars/token** (not 4) because tool output — code, JSON, file contents — is token-denser than prose. The code comment explains: "Keep a conservative input budget to absorb tokenizer variance and provider framing overhead." Tool result truncation in `src/agents/pi-embedded-runner/tool-result-truncation.ts` also references the 4 chars/token baseline for its cap calculation.
+
+**Track 2 — Actual API-returned counts (post-call usage tracking and display)**
+
+After each API call, OpenClaw reads the real token counts from the response fields `input_tokens`, `output_tokens`, `total_tokens`, `cache_read_tokens`, and `cache_write_tokens`. These are used for usage logging (`src/cron/run-log.ts`) and for status display via `formatTokenCount` (`src/cron/isolated-agent/run.ts`).
+
+**Summary:** Pre-call decisions are governed by a fast character heuristic (4 or 2 chars/token). Post-call reporting uses exact counts from the provider's API response.
+
+### 9. Accuracy and mapping notes
 
 - Updated legacy config paths like `provider.model` to current model selection paths (`agents.defaults.model.primary`).
 - Updated free OpenRouter routing examples to current model-ref style (`openrouter/<provider>/<model>:free`) instead of `openrouter/free`.
@@ -277,7 +300,7 @@ agents:
       primary: openrouter/auto
 ```
 
-For explicit model pinning, use `openrouter/<provider>/<model>` (example: `openrouter/anthropic/claude-sonnet-4-5`).
+For explicit model pinning, use `openrouter/<provider>/<model>` (example: `openrouter/anthropic/claude-sonnet-4-6`).
 
 ---
 
@@ -378,13 +401,13 @@ OpenRouter offers model variants that modify routing behavior:
 
 ```bash
 # Default - balanced quality/cost/speed
-openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-5
+openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-6
 
 # Cheapest provider for Claude Sonnet
-openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-5:floor
+openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-6:floor
 
 # Fastest provider for Claude Sonnet
-openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-5:nitro
+openclaw config set agents.defaults.model.primary openrouter/anthropic/claude-sonnet-4-6:nitro
 ```
 
 ### When to Use Each
@@ -541,7 +564,7 @@ Prevent unnecessarily verbose responses with per-model params:
 agents:
   defaults:
     models:
-      "openrouter/anthropic/claude-sonnet-4-5":
+      "openrouter/anthropic/claude-sonnet-4-6":
         params:
           maxTokens: 1000
 ```
@@ -578,8 +601,8 @@ Prices are per million tokens via OpenRouter (Feb 2026). Append `:floor` to any 
 
 | Model | Input / M tokens | Output / M tokens | Notes |
 | ----- | ----- | ----- | ----- |
-| `anthropic/claude-opus-4-5` | $5.00 | $25.00 | Best quality, highest cost |
-| `anthropic/claude-sonnet-4-5` | $3.00 | $15.00 | Good balance of quality and cost |
+| `anthropic/claude-opus-4-6` | $5.00 | $25.00 | Best quality, highest cost |
+| `anthropic/claude-sonnet-4-6` | $3.00 | $15.00 | Good balance of quality and cost |
 | `anthropic/claude-haiku-4-5` | $1.00 | $5.00 | Fast and cheap — ideal for heartbeat |
 | `openai/gpt-5.2` | $1.75 | $14.00 | Strong reasoning, competitive cost |
 | `openai/gpt-4o-mini` | $0.15 | $0.60 | Very cheap, decent for simple tasks |
@@ -604,12 +627,12 @@ Configure different models for different scenarios:
 agents:
   defaults:
     model:
-      primary: anthropic/claude-sonnet-4-5
+      primary: anthropic/claude-sonnet-4-6
   list:
     - id: quick-lookup
       model: anthropic/claude-haiku-4-5
     - id: deep-analysis
-      model: anthropic/claude-opus-4-5
+      model: anthropic/claude-opus-4-6
 ```
 
 ---
@@ -624,13 +647,13 @@ Different OpenClaw functions have varying compute requirements. Using the right 
 
 | Function | Optimal Model | Cheapest Model | Config Path |
 |----------|--------------|----------------|-------------|
-| **Main Chat (Brain)** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | `agents.defaults.model.primary` |
+| **Main Chat (Brain)** | `anthropic/claude-opus-4-6` | `moonshot/kimi-k2.5` | `agents.defaults.model.primary` |
 | **Heartbeat** | `anthropic/claude-haiku-4-5` | `anthropic/claude-haiku-4-5` | `agents.defaults.heartbeat.model` |
 | **Coding** | `codex-cli/gpt-5.2-codex` | `minimax/MiniMax-M2.1` | `agents.defaults.cliBackends` |
 | **Web Search/Browsing** | `perplexity/sonar-pro` | `perplexity/sonar` | `tools.web.search.perplexity.model` |
-| **Content Writing** | `anthropic/claude-opus-4-5` | `moonshot/kimi-k2.5` | (same as main chat) |
+| **Content Writing** | `anthropic/claude-opus-4-6` | `moonshot/kimi-k2.5` | (same as main chat) |
 | **Voice** | `openai/gpt-4o-mini-transcribe` | `openai/gpt-4o-mini-transcribe` | `tools.media.audio.models` |
-| **Vision** | `anthropic/claude-opus-4-5` | `google/gemini-3-flash-preview` | `agents.defaults.imageModel` |
+| **Vision** | `anthropic/claude-opus-4-6` | `google/gemini-3-flash-preview` | `agents.defaults.imageModel` |
 
 ---
 
@@ -640,15 +663,15 @@ The primary model used for direct communication and decision making.
 
 **Config path:** `agents.defaults.model.primary` and `agents.defaults.model.fallbacks`
 
-#### Optimal Configuration (Opus 4.5)
+#### Optimal Configuration (Opus 4.6)
 
 ```yaml
 agents:
   defaults:
     model:
-      primary: anthropic/claude-opus-4-5
+      primary: anthropic/claude-opus-4-6
       fallbacks:
-        - anthropic/claude-sonnet-4-5
+        - anthropic/claude-sonnet-4-6
         - openai/gpt-5.2
 ```
 
@@ -674,7 +697,7 @@ agents:
     model:
       primary: moonshot/kimi-k2.5
       fallbacks:
-        - anthropic/claude-sonnet-4-5
+        - anthropic/claude-sonnet-4-6
 ```
 
 **Why Kimi K2.5?** Near-Opus intelligence and personality at a fraction of the price.
@@ -767,7 +790,7 @@ agents:
     model:
       primary: minimax/MiniMax-M2.1
       fallbacks:
-        - anthropic/claude-sonnet-4-5
+        - anthropic/claude-sonnet-4-6
 ```
 
 **Tip:** MiniMax also offers specific coding plans for specialized workloads.
@@ -903,7 +926,7 @@ Models used for analyzing images in emails, social media feeds, or direct upload
 agents:
   defaults:
     imageModel:
-      primary: anthropic/claude-opus-4-5
+      primary: anthropic/claude-opus-4-6
       fallbacks:
         - openai/gpt-5.2
         - google/gemini-3-pro-preview
