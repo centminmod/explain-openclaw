@@ -2,7 +2,7 @@
 
 ## `openclaw security audit` command reference
 
-> **Source:** `src/cli/security-cli.ts:39-44`, `src/security/audit.ts:605-687`, `src/security/fix.ts:372-458`
+> **Source:** `src/cli/security-cli.ts:45-51`, `src/security/audit.ts:657-742`, `src/security/fix.ts:387-473`, `src/security/audit-extra.sync.ts`, `src/security/audit-extra.async.ts`, `src/security/audit-channel.ts`
 >
 > The built-in security audit scans your local config, filesystem permissions, and channel policies for common misconfigurations. It does **not** scan source code for vulnerabilities.
 
@@ -11,31 +11,36 @@
 | Command | Behavior |
 | --------- | ---------- |
 | `openclaw security audit` | Read-only scan: 16 collector functions check config, filesystem, channels, models, plugins, hooks, gateway, browser. No network calls. |
-| `openclaw security audit --deep` | Everything above + `maybeProbeGateway()` connects to gateway WebSocket (5 s timeout), verifies auth, adds `gateway.probe_failed` if unreachable. |
+| `openclaw security audit --deep` | Everything above + static code-safety scan of installed plugins and skills (`collectPluginsCodeSafetyFindings`, `collectInstalledSkillsCodeSafetyFindings`); also `maybeProbeGateway()` connects to gateway WebSocket (5 s timeout), verifies auth, adds `gateway.probe_failed` if unreachable. |
 | `openclaw security audit --fix` | Runs `fixSecurityFootguns()` first, then full audit. Report reflects post-fix state. Also accepts `--deep`. |
 | `openclaw security audit --json` | Any mode above with JSON output instead of formatted text. |
 
-### Check categories (50+ check IDs)
+### Check categories (70+ check IDs)
 
 | # | Category | Check ID prefix | Severities | What it checks |
 | --- | ---------- | ---------------- | ------------ | --------------- |
-| 1 | Attack surface summary | `summary.attack_surface` | info | Counts open groups, elevated tools, hooks, browser control |
+| 1 | Attack surface summary | `summary.attack_surface` | info | Counts open groups, elevated tools, hooks (reports `hooks.webhooks` and `hooks.internal` as separate lines), browser control |
 | 2 | Synced folders | `fs.synced_dir` | warn | State/config in iCloud, Dropbox, OneDrive, Google Drive |
 | 3 | Filesystem permissions | `fs.state_dir.*`, `fs.config.*`, `fs.credentials_dir.*`, `fs.auth_profiles.*`, `fs.sessions_store.*`, `fs.log_file.*` | critical/warn | World/group-writable dirs, world/group-readable config/credentials, symlink detection |
 | 4 | Config include files | `fs.config_include.*` | critical/warn | Permissions on included config files |
-| 5 | Gateway configuration | `gateway.bind_no_auth`, `gateway.loopback_no_auth`, `gateway.tailscale_funnel`, `gateway.tailscale_serve`, `gateway.control_ui.*`, `gateway.token_too_short`, `gateway.trusted_proxies_missing` | critical/warn/info | Non-loopback bind without auth, Tailscale Funnel public exposure, Control UI insecure auth/device auth, token length, missing trusted proxy |
+| 5 | Gateway configuration | `gateway.bind_no_auth`, `gateway.loopback_no_auth`, `gateway.tailscale_funnel`, `gateway.tailscale_serve`, `gateway.control_ui.*`, `gateway.token_too_short`, `gateway.trusted_proxies_missing`, `gateway.http.no_auth`, `gateway.http.session_key_override_enabled`, `gateway.tools_invoke_http.dangerous_allow` | critical/warn/info | Non-loopback bind without auth, Tailscale Funnel public exposure, Control UI insecure auth/device auth, token length, missing trusted proxy; `gateway.http.no_auth`=warn/critical when `auth.mode="none"` (lists exposed HTTP endpoints; critical if remotely exposed); `gateway.http.session_key_override_enabled`=info; `gateway.tools_invoke_http.dangerous_allow`=warn/critical when `gateway.tools.allow` re-enables default-denied HTTP tools (sessions_spawn, sessions_send, gateway, whatsapp_login) |
+| 5a | Gateway nodes | `gateway.nodes.deny_commands_ineffective` | warn | `denyCommands` has pattern-like or unknown entries that won't match (exact command-name matching only) |
 | 6 | Browser control | `browser.remote_cdp_http`, `browser.control_invalid_config` | warn | Remote CDP over plain HTTP, invalid CDP config |
 | 7 | Logging | `logging.redact_off` | warn | `redactSensitive="off"` leaks secrets in tool summaries |
 | 8 | Elevated tools | `tools.elevated.allowFrom.*.wildcard`, `tools.elevated.allowFrom.*.large` | critical/warn | Wildcard `"*"` in elevated allowlist, oversized allowlist (>25 entries) |
-| 9 | Hooks hardening | `hooks.path_root`, `hooks.token_too_short`, `hooks.token_reuse_gateway_token` | critical/warn | Hooks base path is `"/"`, short token (<24 chars), token reuses gateway token |
+| 8a | Exec runtime / sandboxing | `tools.exec.host_sandbox_no_sandbox_defaults`, `tools.exec.host_sandbox_no_sandbox_agents` | warn | Exec host sandbox not applied to default or agent profiles |
+| 8b | Sandbox config | `sandbox.docker_config_mode_off`, `sandbox.dangerous_bind_mount`, `sandbox.dangerous_network_mode`, `sandbox.dangerous_seccomp_profile`, `sandbox.dangerous_apparmor_profile`, `sandbox.bind_mount_non_absolute` | critical/warn | Docker config present but `sandbox.mode=off`; dangerous bind mounts, network modes, seccomp/apparmor profiles (critical); non-absolute bind mount path (warn) |
+| 8c | Tools profile | `tools.profile_minimal_overridden` | warn | Global `tools.profile=minimal` overridden by an agent-level profile |
+| 9 | Hooks hardening | `hooks.path_root`, `hooks.token_too_short`, `hooks.token_reuse_gateway_token`, `hooks.default_session_key_unset`, `hooks.request_session_key_enabled`, `hooks.request_session_key_prefixes_missing` | critical/warn | Hooks base path is `"/"`, short token (<24 chars), token reuses gateway token (**critical** as of Feb 19 2026 sync); session key unset (warn); request session key enabled or prefixes missing (critical if remotely exposed, warn otherwise) |
 | 10 | Model hygiene | `models.legacy`, `models.weak_tier`, `models.small_params` | critical/warn | Legacy models (GPT-3.5, Claude 2), weak tier (Haiku, pre-GPT-5), small models (<=300B params) without sandboxing exposed to web tools |
 | 11 | Config secrets | `config.secrets.gateway_password_in_config`, `config.secrets.hooks_token_in_config` | warn/info | Secrets stored in config file instead of env vars |
-| 12 | Plugins/extensions | `plugins.extensions_no_allowlist` | critical | Extensions present but `plugins.allow` not configured (especially with skill commands exposed) |
+| 12 | Plugins/extensions | `plugins.extensions_no_allowlist`, `plugins.tools_reachable_permissive_policy`, `plugins.installs_unpinned_npm_specs`, `plugins.installs_missing_integrity`, `plugins.installs_version_drift`, `hooks.installs_unpinned_npm_specs`, `hooks.installs_missing_integrity`, `hooks.installs_version_drift` | critical/warn | Extensions present but `plugins.allow` not configured; permissive tool reachability policy; unpinned/missing-integrity/version-drifted npm specs in plugin or hook installs |
 | 13 | Channel security | `channels.discord.*`, `channels.slack.*`, `channels.telegram.*`, `channels.*.dm.*` | critical/warn/info | DM policies (open/disabled/scoped), group policies, slash command restrictions, sender allowlists, multi-user DM session isolation |
 | 14 | Exposure matrix | `security.exposure.open_groups_with_elevated` | critical | Dangerous combination: open `groupPolicy` + elevated tools enabled |
 | — | Deep probe | `gateway.probe_failed` | warn | `--deep` only: gateway WebSocket unreachable or auth failed |
+| — | Plugin/skill code safety | `plugins.code_safety.*`, `skills.code_safety.*` | critical/warn | `--deep` only: static pattern scan of installed plugin/skill JS/TS/JSON for dangerous patterns; `entry_escape`=critical, `entry_path`/`scan_failed`=warn |
 
-### What `--fix` applies (`src/security/fix.ts:372-458`)
+### What `--fix` applies (`src/security/fix.ts:387-473`)
 
 **Config changes** (`applyConfigFixes`, line 276):
 
@@ -56,6 +61,7 @@
 | `agents/<id>/agent/auth-profiles.json` | `600` | API keys and tokens |
 | `agents/<id>/sessions/` | `700` | Session transcript directory |
 | `agents/<id>/sessions/sessions.json` | `600` | Session metadata |
+| `agents/<id>/sessions/*.jsonl` | `600` | Session transcript files |
 
 On Windows: uses `icacls` ACL reset instead of `chmod`.
 
@@ -104,4 +110,4 @@ The audit is a **configuration and filesystem hardening tool**. It detects misco
 
 #### Verdict
 
-> **The audit catches ~6 of 37 documented issues** (config/filesystem misconfigurations). The remaining ~31 are code-level vulnerabilities that require upstream patches. For defense-in-depth: run `openclaw security audit --fix` **and** monitor the [open upstream security issues](./open-upstream-issues.md) list.
+> **The audit catches ~6 of 37 documented issues** (config/filesystem misconfigurations). The expanded check set (70+ check IDs) adds sandbox config, exec runtime sandboxing, gateway HTTP auth gaps, plugin/hook supply-chain checks, and `--deep` plugin/skill code-safety scanning. The remaining ~31 issues are code-level vulnerabilities that require upstream patches. For defense-in-depth: run `openclaw security audit --fix` **and** monitor the [open upstream security issues](./open-upstream-issues.md) list.
