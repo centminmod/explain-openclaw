@@ -4,17 +4,20 @@
 
 > **Status:** These issues are open in upstream openclaw/openclaw and confirmed to affect the local codebase. Monitor for patches.
 >
-> **Last checked:** 16-02-2026 (06:24 AEST)
+> **Last checked:** 20-02-2026 (20:48 AEST)
 
 | Issue | Severity | Summary | Local Impact |
 |-------|----------|---------|--------------|
 | [#8512](https://github.com/openclaw/openclaw/issues/8512) | CRITICAL | Plugin HTTP routes bypass gateway authentication | `src/gateway/server/plugins-http.ts:17-59` |
+| [#20683](https://github.com/openclaw/openclaw/issues/20683) | HIGH | Control UI allows token-only auth over HTTP (allowInsecureAuth bypass) | `src/gateway/server/ws-connection/message-handler.ts:340-344` — opt-in but bypasses HTTPS + device pairing; security audit flags as critical at `src/security/audit.ts:350` |
+| [#17936](https://github.com/openclaw/openclaw/issues/17936) | HIGH | message/sendAttachment exfiltrates local files when sandbox disabled | `src/infra/outbound/message-action-params.ts:240-241` — `normalizeSandboxMediaParams()` skips path validation when `sandboxRoot` absent; default sandbox-off mode is affected |
+| [#20305](https://github.com/openclaw/openclaw/issues/20305) | HIGH | message tool cross-user sends in multi-tenant deployments (no per-agent scoping) | `src/infra/outbound/message-action-runner.ts` — no `allowedRecipients` or per-agent channel filtering; affects deployments with `dmScope: "per-channel-peer"` and 200+ agents |
 | [#3277](https://github.com/openclaw/openclaw/issues/3277) | ~~HIGH~~ FIXED | Path validation bypass via `startsWith` prefix | Fixed upstream (COMPLETED 2026-02-15, consolidated Feb 19 sync 2); `src/infra/archive-path.ts:12,50` - `validateArchiveEntryPath()` + `resolveArchiveOutputPath()` (hardened Feb 15, consolidated to module Feb 19) |
-| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH | Browser control server DNS rebinding | `src/browser/server.ts:59` - auth middleware extracted to `src/browser/server-middleware.ts:24-35`; no Host header validation |
-| [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH | Arbitrary JS execution via browser evaluate (default on) | `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true` |
+| [#4949](https://github.com/openclaw/openclaw/issues/4949) | HIGH (WONTFIX) | Browser control server DNS rebinding | Closed upstream as NOT_PLANNED (2026-02-17); still affects local code at `src/browser/server.ts:59`; no Host header validation |
+| [#4950](https://github.com/openclaw/openclaw/issues/4950) | HIGH (WONTFIX) | Arbitrary JS execution via browser evaluate (default on) | Closed upstream as NOT_PLANNED (2026-02-17); still affects local code at `src/browser/constants.ts:2` - `DEFAULT_BROWSER_EVALUATE_ENABLED = true` |
 | [#4995](https://github.com/openclaw/openclaw/issues/4995) | HIGH | iMessage dmPolicy auto-responds with pairing codes | `src/imessage/monitor/monitor-provider.ts:142,247-278` |
 | [#5052](https://github.com/openclaw/openclaw/issues/5052) | HIGH | Config validation fail-open returns `{}` | `src/config/io.ts:651,654` - security settings reset |
-| [#5255](https://github.com/openclaw/openclaw/issues/5255) | HIGH | Browser file upload arbitrary read | `src/browser/pw-tools-core.interactions.ts:531` |
+| [#5255](https://github.com/openclaw/openclaw/issues/5255) | HIGH (WONTFIX) | Browser file upload arbitrary read | Closed upstream as NOT_PLANNED (2026-02-17); still affects local code at `src/browser/pw-tools-core.interactions.ts:531` |
 | [#5995](https://github.com/openclaw/openclaw/issues/5995) | HIGH | Secrets exposed in session transcripts | `config.get` now redacted via `redactConfigSnapshot()` (PR #9858); transcripts still expose by design |
 | [#6606](https://github.com/openclaw/openclaw/issues/6606) | HIGH (WONTFIX) | Telegram webhook binds to 0.0.0.0 with optional secret | Closed upstream as NOT_PLANNED (2026-02-13); still affects local code at `src/telegram/webhook.ts:31,41,42-48` |
 | [#6609](https://github.com/openclaw/openclaw/issues/6609) | ~~HIGH~~ FIXED | Browser bridge server optional authentication | Fixed upstream (COMPLETED 2026-02-14); `src/browser/bridge-server.ts:33-42` |
@@ -37,11 +40,11 @@
 | [#9667](https://github.com/openclaw/openclaw/issues/9667) | INVALID | JWT verification in nonexistent file | `src/auth/jwt.ts` (does not exist) |
 | [#4940](https://github.com/openclaw/openclaw/issues/4940) | MEDIUM | commands.restart bypass via exec tool | `src/agents/bash-tools.exec.ts` (no commands.restart check — remains open) |
 | [#5120](https://github.com/openclaw/openclaw/issues/5120) | ~~MEDIUM~~ FIXED | Webhook token accepted via query parameters | Fixed in PR [#9436](https://github.com/openclaw/openclaw/pull/9436) — query token extraction removed from `src/gateway/hooks.ts` (note: upstream issue still OPEN) |
-| [#5122](https://github.com/openclaw/openclaw/issues/5122) | ~~MEDIUM~~ MITIGATED | readJsonBody() Slowloris DoS (no read timeout) | `src/gateway/hooks.ts:177-194` — now delegates to `readJsonBodyWithLimit()` from `src/infra/http-body.ts` with 30s timeout (commit `3cbcba10c`) |
-| [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM | ReDoS in session filter regex | `src/infra/exec-approval-forwarder.ts:53-60` |
+| [#5122](https://github.com/openclaw/openclaw/issues/5122) | ~~MEDIUM~~ WONTFIX | readJsonBody() Slowloris DoS (no read timeout) | Closed upstream as NOT_PLANNED (2026-02-17); local mitigation remains: `src/gateway/hooks.ts:177-194` delegates to `readJsonBodyWithLimit()` with 30s timeout (commit `3cbcba10c`) |
+| [#5123](https://github.com/openclaw/openclaw/issues/5123) | MEDIUM (WONTFIX) | ReDoS in session filter regex | Closed upstream as NOT_PLANNED (2026-02-17); still affects local code at `src/infra/exec-approval-forwarder.ts:53-60` |
 | [#5124](https://github.com/openclaw/openclaw/issues/5124) | ~~MEDIUM~~ FIXED | ReDoS in log redaction patterns | Fixed upstream (COMPLETED 2026-02-14); `src/logging/redact.ts:49-63` |
 | [#6021](https://github.com/openclaw/openclaw/issues/6021) | MEDIUM (WONTFIX) | Timing attack in non-gateway token comparisons | Closed upstream as NOT_PLANNED (2026-02-13); partially mitigated locally (hook token + device pairing use `safeEqualSecret`); `src/infra/node-pairing.ts:277` still uses `===` |
-| [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 | `src/auto-reply/reply/session.ts:87` |
+| [#7862](https://github.com/openclaw/openclaw/issues/7862) | MEDIUM | Session transcripts 644 instead of 600 (upstream FIXED, local reverted) | Closed upstream COMPLETED (2026-02-16); 0o600 fix applied locally in `ae0b110e4` but accidentally reverted by `9f261f592`; still affects `src/auto-reply/reply/session.ts:92`, `src/agents/pi-embedded-runner/session-manager-init.ts`, `src/gateway/server-methods/sessions.ts:500` |
 | [#8027](https://github.com/openclaw/openclaw/issues/8027) | MEDIUM | web_fetch hidden text prompt injection | `src/agents/tools/web-fetch-utils.ts:59-61` |
 | [#8592](https://github.com/openclaw/openclaw/issues/8592) | MEDIUM | No detection of encoded/obfuscated commands | `src/infra/exec-safety.ts:1-44` |
 | [#8588](https://github.com/openclaw/openclaw/issues/8588) | MEDIUM | Sensitive config files accessible when sandbox is home dir | `src/agents/sandbox/context.ts:42-49` (workspaceAccess=rw) |
@@ -63,7 +66,7 @@
 | [#11832](https://github.com/openclaw/openclaw/issues/11832) | MEDIUM | Per-agent tools.exec config not applied | `src/auto-reply/reply/get-reply-directives.ts:66-81` — `resolveExecOverrides()` ignores `agentCfg` |
 | [#12541](https://github.com/openclaw/openclaw/issues/12541) | LOW | Voice-call webhook spoofing via signature bypass config | `extensions/voice-call/src/config.ts` — `skipSignatureVerification` config disables HMAC-SHA256 verification; opt-in, not default |
 | [#6304](https://github.com/openclaw/openclaw/issues/6304) | LOW | Matrix plugin transitive dep vuln (request pkg) | `extensions/matrix/package.json` — transitive via `@vector-im/matrix-bot-sdk` (CVE-2023-28155) |
-| [#4807](https://github.com/openclaw/openclaw/issues/4807) | LOW | Sandbox setup script missing from npm package | `package.json` files array excludes `scripts/`; `scripts/sandbox-common-setup.sh` not shipped |
+| [#4807](https://github.com/openclaw/openclaw/issues/4807) | LOW (WONTFIX) | Sandbox setup script missing from npm package | Closed upstream as NOT_PLANNED (2026-02-17); `package.json` files array excludes `scripts/`; `scripts/sandbox-common-setup.sh` not shipped |
 | [#3359](https://github.com/openclaw/openclaw/issues/3359) | ~~MEDIUM~~ MITIGATED | npm audit vulns in tar/hono | `package.json` pnpm.overrides: tar@7.5.7, hono@4.11.8 (above vuln thresholds) |
 | [#3086](https://github.com/openclaw/openclaw/issues/3086) | ~~LOW~~ FIXED | Windows ACL false flag as mode=666 | `src/security/audit-fs.ts:86-116` + `src/security/windows-acl.ts` — icacls-based ACL checks implemented |
 | [#10521](https://github.com/openclaw/openclaw/issues/10521) | INVALID | Security audit flags claude-opus-4-6 as below 4.5 | `src/security/audit-extra.sync.ts:177` (`isClaude45OrHigher` regex) correctly matches `claude-opus-4-6` in current code (2026.2.6) |
@@ -95,6 +98,7 @@
 | [#10992](https://github.com/openclaw/openclaw/issues/10992) | MEDIUM | Sub-agents bypass exec approvals for safeBins commands | `src/agents/bash-tools.exec.ts:137,265-277,333` — safeBins allowlist bypasses approval workflow for sub-agents |
 | [#15990](https://github.com/openclaw/openclaw/issues/15990) | MEDIUM | Context compaction leaks content between sessions | `src/agents/pi-embedded-runner/compact.ts` — cross-session data bleed during compaction; relates to #12571/#14117 |
 | [#12542](https://github.com/openclaw/openclaw/issues/12542) | MEDIUM | Diagnostics-OTEL exports unredacted session/chat IDs | `extensions/diagnostics-otel/src/service.ts:391,427-494` — no redaction pipeline; requires opt-in config |
+| [#21656](https://github.com/openclaw/openclaw/issues/21656) | MEDIUM | System event format spoofing via external channels (prompt injection) | `src/auto-reply/reply/session-updates.ts:110-111` — `System: [timestamp]` prefix unauthenticated; external Telegram/WhatsApp messages indistinguishable from real system events |
 | [#12173](https://github.com/openclaw/openclaw/issues/12173) | ~~MEDIUM~~ FIXED | apply_patch tool path traversal when sandbox disabled | Fixed by `5544646a0` — `resolvePatchPath()` now calls `assertSandboxPath()` at `src/agents/apply-patch.ts:274` regardless of sandbox mode; further hardened by `5e7c3250c` adding `workspaceOnly` guards |
 | [#10659](https://github.com/openclaw/openclaw/issues/10659) | ENHANCEMENT | Feature: Masked secrets to prevent agent reading raw API keys | Enhancement request; relates to #10033 (secrets management) |
 | [#9325](https://github.com/openclaw/openclaw/issues/9325) | NOT APPLICABLE | Skill removal without notification | ClawHub platform moderation issue, not a codebase vulnerability |
@@ -367,11 +371,12 @@ A Docker sandbox implementation exists with proper isolation (`--network none`, 
 
 **Vulnerability:** Session transcript `.jsonl` files are created with default permissions (0o644) instead of restrictive permissions (0o600). Other local users can read session data containing tool calls, messages, and potentially secrets.
 
-**Affected code:**
-- `src/auto-reply/reply/session.ts:87` - `writeFileSync` with no explicit mode
-- `src/gateway/server-methods/chat.ts:285` - transcript file creation with no explicit mode
+**Upstream status:** FIXED — closed as COMPLETED 2026-02-16; commit `ae0b110e4` added `mode: 0o600` to all three write paths.
 
-**Note:** `src/security/fix.ts:442,451` applies 0o600 to `auth-profiles.json` and `sessions.json` but NOT individual `.jsonl` transcript files.
+**Local status:** NOT FIXED — the 0o600 fix was applied in `ae0b110e4` but accidentally reverted by `9f261f592 revert: PR 18288 accidental merge`. Three sites remain unpatched:
+- `src/auto-reply/reply/session.ts:92` - `fs.writeFileSync(sessionFile, ..., "utf-8")` (no mode)
+- `src/agents/pi-embedded-runner/session-manager-init.ts` - no mode on session file reset
+- `src/gateway/server-methods/sessions.ts:500` - `fs.writeFileSync(filePath, ..., "utf-8")` (no mode)
 
 ### #8516: Browser Download/Trace Endpoints Arbitrary File Write
 
@@ -1112,6 +1117,63 @@ All changes take effect immediately via automatic restart.
 - `extensions/voice-call/src/runtime.ts` -- bypass logic when option is enabled
 
 **Mitigation:** Optional extension. Config option is intended for development/testing and is not enabled by default. Production deployments should never enable it. Low severity because it requires deliberate misconfiguration.
+
+### #20683: Control UI Allows Token-Only Auth Over HTTP (allowInsecureAuth)
+
+**Severity:** HIGH (CVSS 8.3)
+**CWE:** CWE-319 (Cleartext Transmission of Sensitive Information) / CWE-287 (Improper Authentication)
+
+**Vulnerability:** When `gateway.controlUi.allowInsecureAuth: true` is configured, the gateway bypasses two security layers: (1) the HTTPS/localhost enforcement block for Control UI connections, and (2) the device identity verification and pairing requirement. Any client presenting a valid token can connect over unencrypted HTTP. Tokens in transit are fully plaintext-exposed to MITM attackers.
+
+**Affected code:**
+- `src/gateway/server/ws-connection/message-handler.ts:340-344` — `allowInsecureControlUi` + `allowControlUiBypass` flags
+- `src/gateway/server/ws-connection/message-handler.ts:429-437` — HTTPS enforcement block skipped when `allowControlUiBypass = true`
+- `src/gateway/server/ws-connection/message-handler.ts:623` — device pairing requirement skipped
+- `src/security/audit.ts:348-356` — security audit detects and flags as `severity: "critical"` (checkId: `gateway.control_ui.insecure_auth`), but audit is advisory only
+
+**Exploit conditions:** Admin must set `allowInsecureAuth: true` (opt-in). Once enabled, passive MITM on the local network can capture the auth token and gain full `operator.admin + operator.approvals + operator.pairing` access.
+
+### #17936: message/sendAttachment Local File Exfiltration When Sandbox Disabled
+
+**Severity:** HIGH
+**CWE:** CWE-22 (Path Traversal) / CWE-200 (Exposure of Sensitive Information)
+
+**Vulnerability:** `normalizeSandboxMediaParams()` is the sole path-validation guard for the `message` tool's `media`, `path`, and `filePath` parameters. When `sandboxRoot` is absent (which is the case whenever sandbox mode is "off" — the default), the function skips validation entirely via an early `continue`. A prompt-injected or malicious agent can call `message(action: "sendAttachment", filePath: "/etc/passwd")`, which will be read from disk and sent to the attacker-controlled channel with zero path restriction.
+
+**Affected code:**
+- `src/infra/outbound/message-action-params.ts:240-241` — `if (!sandboxRoot) { continue; }` skips path validation
+- `src/infra/outbound/message-action-runner.ts:761` — `sandboxRoot: input.sandboxRoot` — passes `undefined` when sandbox disabled
+- Targets: credential files (`~/.openclaw/credentials/`), config (`~/.openclaw/openclaw.json`), SSH keys, `.env` files
+
+**Impact:** Affects all deployments running without sandbox (default configuration). Requires prompt-injection vector (e.g., malicious web content via web_fetch, external message with injected instructions).
+
+### #20305: message Tool Cross-User Sends in Multi-Tenant Deployments
+
+**Severity:** HIGH
+**CWE:** CWE-284 (Improper Access Control) / CWE-862 (Missing Authorization)
+
+**Vulnerability:** In multi-tenant deployments where multiple agents serve different Telegram users via `dmScope: "per-channel-peer"`, the `message` tool has no per-agent recipient scoping. Any agent can send messages to any Telegram user or group the bot has ever interacted with — not just its own operator. Confirmed in a live security audit with 230 agents where 5 cross-user prompt injections were successfully delivered.
+
+**Affected code:**
+- `src/infra/outbound/message-action-runner.ts` — no `allowedRecipients`, `dmScope` filter, or per-agent channel restriction
+- `src/agents/tools/message-tool.ts:450` — `sendAttachment` action has no cross-tenant recipient restriction
+- No grep matches for `allowedRecipients`, `restrictSend`, `sendScope`, `channelFilter`, `recipientFilter` in the message pipeline
+
+**Impact:** A malicious or prompt-injected agent can impersonate the bot to any user, deliver prompt injection payloads to other users' sessions, and enumerate all connected users. Single-user setups are unaffected.
+
+### #21656: System Event Format Spoofing via External Channels
+
+**Severity:** MEDIUM
+**CWE:** CWE-345 (Insufficient Verification of Data Authenticity) / CWE-74 (Injection)
+
+**Vulnerability:** Internal system events (post-compaction audit warnings, heartbeat status, cron events) are prepended to the `role: user` message body using the `System: [timestamp] <text>` format. This format is not authenticated, signed, or delivered via a separate message role. External attackers who know the format (documented in public issue #20484) can craft Telegram/WhatsApp messages that begin with `System: [timestamp] ⚠️ Post-Compaction Audit: ...` and the agent will receive them indistinguishably from real system events. Default-configured agents without explicit injection detection rules would likely comply with spoofed system instructions.
+
+**Affected code:**
+- `src/auto-reply/reply/session-updates.ts:110-111` — `const block = systemLines.map((l) => \`System: ${l}\`).join("\\n")` — unauthenticated `System:` prefix
+- `src/infra/system-events.ts:51-82` — server-side queue is correctly server-generated, but the format is also injectable from external channels
+- No HMAC, no signed prefix, no separate `role: system` delivery distinguishes real from spoofed
+
+**Prerequisites:** Attacker must have access to a channel the agent listens to (Telegram, WhatsApp, etc.). Exploitation depends on agent configuration — agents with explicit injection detection (like HEARTBEAT.md rules) are resistant.
 
 ### Notable Non-Core Issues
 
