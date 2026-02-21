@@ -178,6 +178,8 @@ If a skill is available on both platforms, always prefer the ClawHub version.
 
 ---
 
+> **See also:** [Cline CLI Supply Chain Attack](../08-security-analysis/cline-supply-chain-attack.md) — real-world example of npm `postinstall` hook abuse (Feb 2026)
+
 ## Related Documentation
 
 - [ClawHub Marketplace Risks](./clawhub-marketplace-risks.md) - ClawHub-specific supply chain analysis

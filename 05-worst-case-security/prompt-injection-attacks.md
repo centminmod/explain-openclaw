@@ -80,6 +80,8 @@ The AI model sees both as text. A clever attacker crafts messages that look like
 ```
 
 > **Combined threat:** Prompt injection becomes more dangerous when the model itself has been poisoned with a sleeper agent backdoor. An injection attack could deliver the trigger phrase that activates a backdoored model. See [Model Poisoning and Sleeper Agent Backdoors](../08-security-analysis/model-poisoning-sleeper-agents.md) for details.
+>
+> **Real-world precedent (Feb 2026):** The "Clinejection" attack demonstrated prompt injection causing real-world supply chain compromise — an attacker used a crafted GitHub issue title to trick a Claude-powered CI/CD triage bot into executing arbitrary commands, ultimately leading to a compromised npm package affecting ~4,000 developers. See [full analysis](../08-security-analysis/cline-supply-chain-attack.md).
 
 ### Attack Success Factors
 

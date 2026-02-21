@@ -43,6 +43,7 @@
   - [Model poisoning and sleeper agent backdoors](./08-security-analysis/model-poisoning-sleeper-agents.md) *(Feb 2026 Microsoft research)*
   - [Cisco AI Defense skill scanner analysis](./08-security-analysis/cisco-ai-defense-skill-scanner.md) *(Feb 2026, blog post + tool evaluation)*
   - [Hudson Rock infostealer analysis](./08-security-analysis/hudson-rock-infostealer-analysis.md) *(Feb 2026, first confirmed config theft)*
+  - [Cline CLI supply chain attack ("Clinejection")](./08-security-analysis/cline-supply-chain-attack.md) *(Feb 2026, GHSA-9ppg-jx86-fqw7)*
 - [AI model analysis comparison](./08-security-analysis/ai-model-analysis-comparison.md)
 - **Worst-case security scenarios:**
   - [Overview](./05-worst-case-security/README.md)
@@ -477,6 +478,10 @@ See: https://docs.openclaw.ai/gateway/security ("DM session isolation") and http
 ---
 
 > **See:** [Hudson Rock Infostealer Analysis](./08-security-analysis/hudson-rock-infostealer-analysis.md) — First confirmed case of commodity malware stealing OpenClaw config files (Feb 2026)
+
+---
+
+> **See:** [Cline CLI Supply Chain Attack ("Clinejection")](./08-security-analysis/cline-supply-chain-attack.md) — Compromised Cline CLI v2.3.0 installed OpenClaw via postinstall hook; first real-world prompt injection → supply chain compromise (Feb 2026, GHSA-9ppg-jx86-fqw7)
 
 ---
 

@@ -202,6 +202,7 @@ You trust OpenClaw
 - **event-stream (2018):** Popular package hijacked to steal cryptocurrency
 - **ua-parser-js (2021):** Popular package compromised with malware
 - **colors/faker (2022):** Maintainer intentionally broke packages in protest
+- **Cline CLI / "Clinejection" (2026):** Prompt injection in CI/CD bot → npm token theft → malicious package installed OpenClaw on ~4,000 machines ([full analysis](../08-security-analysis/cline-supply-chain-attack.md))
 
 **What OpenClaw Does:**
 - Uses lockfiles to pin exact versions

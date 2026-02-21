@@ -1,4 +1,4 @@
-> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Hudson Rock](./hudson-rock-infostealer-analysis.md) | [Model Comparison](./ai-model-analysis-comparison.md)
+> **Navigation:** [Main Guide](../README.md) | [Security Audit Reference](./security-audit-command-reference.md) | [CVEs/GHSAs](./official-security-advisories.md) | [Issue #1796](./issue-1796-argus-audit.md) | [Medium Article](./medium-article-audit.md) | [ZeroLeeks](./zeroleeks-audit.md) | [Post-merge Hardening](./post-merge-hardening.md) | [Open Issues](./open-upstream-issues.md) | [Open PRs](./open-upstream-prs.md) | [Ecosystem Threats](./ecosystem-security-threats.md) | [SecurityScorecard](./securityscorecard-strike-report.md) | [Cisco AI Defense](./cisco-ai-defense-skill-scanner.md) | [Model Poisoning](./model-poisoning-sleeper-agents.md) | [Hudson Rock](./hudson-rock-infostealer-analysis.md) | [Cline Supply Chain](./cline-supply-chain-attack.md) | [Model Comparison](./ai-model-analysis-comparison.md)
 
 ## Ecosystem Security Threats
 
@@ -17,6 +17,7 @@
 - [6. ClawHub Malicious Skills (ClawHavoc Campaign)](#6-clawhub-malicious-skills-clawhavoc-campaign)
 - [7. Model Poisoning (Sleeper Agent Backdoors)](#7-model-poisoning-sleeper-agent-backdoors)
 - [8. AI Agent Config File Theft (Infostealers)](#8-ai-agent-config-file-theft-infostealers)
+- [9. Cline CLI Supply Chain Attack ("Clinejection")](#9-cline-cli-supply-chain-attack-clinejection)
 - [Quick Protection Checklist](#quick-protection-checklist)
 - [Threat Summary](#threat-summary)
 
@@ -231,6 +232,34 @@ For the full analysis, see: [Model Poisoning and Sleeper Agent Backdoors](./mode
 
 For the full analysis, see: [Hudson Rock Infostealer Analysis](./hudson-rock-infostealer-analysis.md)
 
+### 9. Cline CLI Supply Chain Attack ("Clinejection")
+
+**What it is:** On Feb 17, 2026, a prompt injection attack against Cline's Claude-powered GitHub issue triage bot led to GitHub Actions cache poisoning, npm publish token theft, and the publication of a malicious `cline@2.3.0` package with a `postinstall` hook that ran `npm install -g openclaw@latest` on ~4,000 developer machines.
+
+**How it works:**
+1. Attacker opens a GitHub issue with a prompt injection payload in the title
+2. Claude-powered triage bot executes arbitrary commands (excessive permissions)
+3. Bot poisons GitHub Actions cache entries (>10 GB junk → LRU eviction)
+4. Poisoned cache triggers in nightly publish workflow → steals `NPM_RELEASE_TOKEN`
+5. Attacker uses stolen long-lived token to publish `cline@2.3.0` via `clinebotorg` account
+6. Malicious `postinstall` hook runs `npm install -g openclaw@latest` on victim machines
+
+**Impact on OpenClaw:** LOW — OpenClaw was the benign payload installed by the hook, not the attack vector. The Gateway daemon was never started, no credentials were exfiltrated, and no credential rotation is needed. The advisory [GHSA-9ppg-jx86-fqw7](https://github.com/cline/cline/security/advisories/GHSA-9ppg-jx86-fqw7) is filed under Cline's repository, not OpenClaw's.
+
+**Real-world sources:**
+- [Endor Labs](https://www.endorlabs.com/learn/cline-ai-supply-chain-attack-when-your-ai-assistant-installs-malware)
+- [The Hacker News](https://thehackernews.com/2026/02/compromised-cline-vscode-extension.html)
+- [Snyk](https://snyk.io/blog/cline-ai-supply-chain-attack/)
+- [Adnan Khan](https://adnanthekhan.com/2026/02/17/clinejection/)
+
+**Mitigations:**
+- Check npm package provenance attestations before installing CLI tool updates
+- Inspect `postinstall` hooks in `package.json` of developer tools
+- Disable legacy npm publish tokens when trusted publishing (OIDC) is enabled
+- Use `npm install --ignore-scripts` when evaluating unfamiliar packages
+
+For the full analysis, see: [Cline CLI Supply Chain Attack](./cline-supply-chain-attack.md)
+
 ### Quick Protection Checklist
 
 - [ ] Verify exact package name before `npm install openclaw`
@@ -250,6 +279,8 @@ For the full analysis, see: [Hudson Rock Infostealer Analysis](./hudson-rock-inf
 - [ ] Disable `skills.autoDiscover` to prevent automatic skill installation from skills.sh
 - [ ] If using local models: download only from verified sources, verify checksums
 - [ ] Use API-based embeddings or verify local embedding model integrity
+- [ ] Verify npm package provenance attestations before installing CLI tool updates
+- [ ] Check for unexpected `postinstall` hooks in `package.json` of developer tools
 
 ### Threat Summary
 
@@ -266,6 +297,7 @@ For the full analysis, see: [Hudson Rock Infostealer Analysis](./hudson-rock-inf
 | **Skills.sh auto-install** | Unvetted skill distribution | Full Gateway compromise | Disable `skills.autoDiscover`, use ClawHub only |
 | **Model poisoning (sleeper agents)** | Compromised model weights | Tool-amplified data exfiltration, insecure code | Verify model checksums, use API providers, allowlist tools |
 | **AI agent config theft (infostealers)** | Commodity malware (Vidar, Atomic Stealer) | Gateway RCE, API key theft, device impersonation | Endpoint protection, disk encryption, loopback-only binding; see [Hudson Rock analysis](./hudson-rock-infostealer-analysis.md) |
+| **Cline CLI supply chain ("Clinejection")** | Prompt injection → cache poisoning → npm token theft | Unwanted global OpenClaw install | Check npm provenance attestation, verify publisher account; see [full analysis](./cline-supply-chain-attack.md) |
 
 For detailed hardening guidance, see:
 - [Hardening checklist](../04-privacy-safety/hardening-checklist.md)
