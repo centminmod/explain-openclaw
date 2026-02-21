@@ -37,7 +37,7 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 | 11 | **Memory sync** — file hashing + markdown chunking + embedding + SQLite FTS5/vec indexing | `src/memory/manager.ts:327+` | Medium (periodic) | Like re-indexing a library catalog — scanning, categorizing, and filing every document |
 | 12 | **TTS generation** — ElevenLabs/OpenAI/Edge TTS API calls + audio buffer handling | `src/tts/tts.ts:522-691` | Medium | API calls are remote but audio buffer conversion is local CPU work |
 | 13 | **Agent execution loop** — continuous model response processing | `src/auto-reply/reply/agent-runner-execution.ts:67` | Medium (continuous) | The main "brain" loop — always running while the bot is responding |
-| 14 | **Cron timer loop** — infinite loop for scheduled job processing | `src/cron/service/timer.ts:422` | Low (idle) | Like a clock ticking in the background — minimal CPU unless jobs are firing |
+| 14 | **Cron timer loop** — infinite loop for scheduled job processing | `src/cron/service/timer.ts:308` | Low (idle) | Like a clock ticking in the background — minimal CPU unless jobs are firing |
 
 ### Other CPU consumers
 

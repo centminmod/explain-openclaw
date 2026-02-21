@@ -2,7 +2,7 @@
 
 > **Time:** 5 minutes
 > **Difficulty:** Beginner-friendly with practical examples
-> **Severity:** HIGH (unverified supply chain with auto-install capabilities)
+> **Severity:** HIGH (unverified supply chain risk when third-party skills are manually imported or auto-imported by external tooling)
 
 ---
 
@@ -38,46 +38,48 @@
 
 ### Overview
 
-> **The Analogy:** If ClawHub is like an unofficial app store, skills.sh is like a bulletin board at a coffee shop where anyone can pin a flyer advertising software. There's no store, no review process, no front door — just URLs pointing to skill files that your agent can discover and install automatically.
+> **The Analogy:** If ClawHub is like an unofficial app store, skills.sh is like a bulletin board at a coffee shop where anyone can pin a flyer advertising software. There's no built-in front door in OpenClaw for skills.sh, but users or wrappers can still pull those flyers into their local skills folders.
 
-Skills.sh is a third-party website that aggregates and distributes OpenClaw skills. Unlike ClawHub (which at least has VirusTotal scanning since Feb 2026), skills.sh has no automated security scanning, no vetting process, and no publisher accountability.
+Skills.sh is a third-party website that aggregates and distributes OpenClaw skills. In the current OpenClaw core codebase, skills are loaded from local directories and ClawHub workflows; there is no built-in skills.sh discovery pipeline. The risk remains high when operators (or external automation around OpenClaw) import unvetted skills from skills.sh and then run install steps.
 
 ### Platform Comparison
 
-| Feature | ClawHub | skills.sh | npm |
-|---------|---------|-----------|-----|
-| **Publisher verification** | GitHub account >= 1 week | None | npm account |
-| **Automated scanning** | VirusTotal + Gemini LLM (Feb 2026) | None | None |
-| **Local scanning** | OpenClaw skill scanner at install | OpenClaw skill scanner at install | `npm audit` |
-| **Code review** | None (human) | None | None |
-| **Sandboxing** | None (runs in-process) | None (runs in-process) | None |
-| **Auto-discovery** | Manual search on clawhub.ai | "Find Skills" automation pipeline | Manual `npm search` |
-| **Takedown process** | Report-based (3+ reports) | Unknown | Report-based |
+| Feature | ClawHub | skills.sh | OpenClaw core (current repo) |
+|---------|---------|-----------|------------------------------|
+| **Publisher verification** | GitHub account >= 1 week | None | N/A (local loading from filesystem/workspace) |
+| **Automated scanning** | VirusTotal + Gemini LLM (Feb 2026) | None | N/A for remote marketplaces |
+| **Local scanning** | Local scanner + `openclaw security audit` | Local scanner + `openclaw security audit` | Local scanner warnings + `openclaw security audit` |
+| **Code review** | None (human) | None | Operator-dependent |
+| **Sandboxing** | Default: none; opt-in via sandbox config | Default: none; opt-in via sandbox config | Depends on your `tools.*`/sandbox config |
+| **Auto-discovery** | Manual (`npx clawhub ...`) | External/third-party tooling only | No built-in skills.sh auto-discovery |
+| **Takedown process** | Report-based (3+ reports) | Unknown | N/A |
 
-**Key difference:** ClawHub at least runs VirusTotal scanning before publishing. Skills.sh skills bypass this entirely — they go straight from an anonymous publisher to your Gateway process.
+**Key difference:** ClawHub at least runs marketplace-side scanning before publish. Skills.sh has no equivalent guardrail, and imported skills bypass any ClawHub-specific checks.
+
+**Scanner limitations:** The local scanner (`openclaw security audit`) only inspects JS/TS file types (`.js`, `.ts`, `.mjs`, `.cjs`, `.mts`, `.cts`, `.jsx`, `.tsx`) — it does **not** scan `.md`, `.sh`, `.py`, or `.mmd` files. It also caps at 500 files and 1 MB per file (silently skipping anything over-limit), and warns on suspicious patterns but does **not** block installation. See `src/security/skill-scanner.ts` and `src/agents/skills-install.ts`.
 
 Source: [YouTube video](https://www.youtube.com/watch?v=_CzEmKTk5Rs) [[24:42](https://www.youtube.com/watch?v=_CzEmKTk5Rs&t=1482)]
 
 ---
 
-## B. "Find Skills" Automation Attack
+## B. External "Find Skills" Automation Attack
 
 ### The Pipeline
 
-> **The Analogy:** Imagine your assistant has a "find me apps" feature that automatically searches the coffee shop bulletin board, downloads whatever looks useful, and installs it — all without asking you. The bulletin board has no security guards.
+> **The Analogy:** Imagine your assistant has a custom "find me apps" wrapper that scrapes the coffee shop bulletin board, downloads whatever looks useful, and installs dependencies with minimal review. The bulletin board has no security guards.
 
-The "Find Skills" feature in some OpenClaw configurations creates an automated pipeline:
+This is a **third-party automation pattern**, not a built-in OpenClaw core workflow (as of Feb 21, 2026):
 
 ```
 User asks agent to perform a task
   ↓
 Agent doesn't have a matching skill
   ↓
-"Find Skills" searches skills.sh for matches
+External wrapper/tool searches skills.sh for matches
   ↓
-Agent auto-discovers a skill that claims to do the job
+Wrapper downloads skill files into local workspace
   ↓
-Skill is installed and runs in-process with full Gateway access
+Operator or workflow runs install steps for that skill
   ↓
 If malicious: credential theft, data exfiltration, persistence
 ```
@@ -86,11 +88,11 @@ If malicious: credential theft, data exfiltration, persistence
 
 | Risk | Description |
 |------|-------------|
-| **No human review** | The discovery-to-install pipeline can execute without user approval |
+| **No human review** | Third-party wrappers can automate discovery/import with little or no review |
 | **No scanning** | Skills.sh has no VirusTotal or equivalent scanning |
-| **Trust by proximity** | Users assume skills found by their agent are vetted |
-| **Full access** | Installed skills run in-process with access to credentials, sessions, and network |
-| **Persistence** | Once installed, a malicious skill continues running across sessions |
+| **Trust by proximity** | Users may assume "found by automation" means vetted |
+| **Operational impact** | Untrusted skill metadata/install steps can trigger risky dependency installs |
+| **Persistence** | Once imported and enabled, malicious prompts/dispatch rules persist across sessions |
 
 ### Attack Scenario
 
@@ -99,11 +101,11 @@ Attacker publishes "data-analysis-pro" on skills.sh
   ↓
 User tells agent: "Analyze this spreadsheet"
   ↓
-Agent searches skills.sh, finds "data-analysis-pro"
+External automation imports "data-analysis-pro" into workspace
   ↓
-Skill installs automatically (or with minimal prompt)
+Operator/workflow runs install steps with minimal review
   ↓
-Skill reads ~/.openclaw/credentials/* and exfiltrates to attacker
+Malicious dependency/script/tool-dispatch reads ~/.openclaw/credentials/* and exfiltrates to attacker
   ↓
 User sees spreadsheet analysis output (skill works as advertised)
   ↓
@@ -116,18 +118,22 @@ Source: [YouTube video](https://www.youtube.com/watch?v=_CzEmKTk5Rs) [[25:07](ht
 
 ## C. Practical Defenses
 
-### Disable Auto-Discovery
+### Use Current Hardening Controls (Not Deprecated Keys)
 
 ```bash
-# Check if "Find Skills" or auto-install is enabled
-openclaw config get skills.autoDiscover
+# Restrict exec behavior (current keys)
+openclaw config set tools.exec.security allowlist
+openclaw config set tools.exec.ask on-miss
 
-# Disable automatic skill discovery
-openclaw config set skills.autoDiscover false
+# Avoid loading extra skill directories unless explicitly trusted
+openclaw config set skills.load.extraDirs []
 
-# Require manual approval for all skill installations
-openclaw config set skills.requireApproval true
+# Manage executable allowlist entries used by exec approvals
+openclaw approvals get
+openclaw approvals allowlist add "/usr/bin/uname"
 ```
+
+`skills.autoDiscover`, `skills.requireApproval`, and `skills.sources` are not in the current OpenClaw config schema.
 
 ### Manual Skill Vetting
 
@@ -155,20 +161,20 @@ openclaw security audit --deep
 
 | Setting | Recommended Value | Why |
 |---------|-------------------|-----|
-| `skills.autoDiscover` | `false` | Prevents automatic skill search |
-| `skills.requireApproval` | `true` | Forces human approval before install |
-| `tools.shell.security` | `allowlist` | Limits what installed skills can execute |
-| `skills.sources` | `["clawhub"]` only | Excludes skills.sh from search sources |
+| `tools.exec.security` | `allowlist` | Limits shell execution capability |
+| `tools.exec.ask` | `on-miss` or `always` | Requires approval flow when not allowlisted |
+| `skills.load.extraDirs` | `[]` (or trusted dirs only) | Reduces untrusted skill ingestion paths |
+| `agents.list[].skills` | explicit allowlist | Restricts which skills a given agent can load |
 
 ### Prefer ClawHub Over Skills.sh
 
-While neither platform is perfect, ClawHub at least provides:
+While neither platform is perfect, ClawHub is the source currently surfaced in OpenClaw docs/system prompt and at least provides:
 - VirusTotal scanning (70+ AV engines + Gemini LLM review)
 - Daily rescans of previously approved skills
 - Publisher identity tied to GitHub accounts
 - Community reporting and takedown process
 
-If a skill is available on both platforms, always prefer the ClawHub version.
+If a skill is available on both platforms, prefer the ClawHub version and still review the skill locally before enabling/installing dependencies.
 
 ---
 
