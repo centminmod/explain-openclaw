@@ -81,6 +81,47 @@ Mitigations:
 - use a “reader” agent with tools disabled
 - avoid combining “reads random web pages” with “can run exec”
 
+### 2a) Unsafe external content bypass flags
+
+By default, OpenClaw wraps untrusted external content (web pages, webhook payloads, email attachments) with `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers to help the model distinguish trusted instructions from potentially malicious input. However, **three configuration flags can bypass this protection**:
+
+| Flag | Where it's configured | What it does |
+|------|----------------------|--------------|
+| `hooks.mappings[].allowUnsafeExternalContent` | Per-hook mapping | Disables content wrapping for webhook payloads delivered via that mapping |
+| `hooks.gmail.allowUnsafeExternalContent` | Gmail hook config | Disables content wrapping for Gmail email content |
+| Cron payload `allowUnsafeExternalContent` | Per-cron job | Disables content wrapping for cron job input payloads |
+
+**Security risk:** When any of these flags are `true`, external content enters the agent's context without untrusted markers. A malicious payload could inject instructions that the model interprets as trusted commands.
+
+**Guidance:**
+- Keep all three flags `false` (the default) unless you have a specific reason
+- If you must enable one, isolate that agent's tool access (no exec, no file write, no messaging)
+- Audit cron jobs and hook mappings regularly for this setting
+
+Source: `src/config/types.hooks.ts:24,57` (mapping and gmail types), `src/cron/types.ts:63,78` (cron payload type), `src/gateway/hooks-mapping.ts:18,53` (hooks resolution)
+
+### 2b) Reasoning & Verbose output in groups
+
+OpenClaw supports `/reasoning` and `/verbose` commands that expose the model's internal thinking process and detailed tool execution:
+
+| Command | What it exposes |
+|---------|-----------------|
+| `/reasoning` | Model's chain-of-thought reasoning (if supported by the model) |
+| `/verbose` | Full tool inputs/outputs, file contents, shell command results |
+
+**Risk in groups:** In public or semi-trusted group channels, these commands can leak:
+- System prompt details and internal reasoning patterns
+- File contents from workspace operations
+- API responses containing sensitive data
+- Error messages that reveal system configuration
+
+**Mitigations:**
+- Keep `/reasoning` and `/verbose` **off** in public or semi-trusted group channels
+- Use `groupAllowFrom` to restrict who can trigger commands
+- Consider these commands admin-only tools for trusted 1:1 DMs
+
+Source: Official security docs — https://docs.openclaw.ai/gateway/security
+
 ### 3) Network exposure
 If the Gateway is reachable from more networks than intended, the risk goes up fast.
 

@@ -14,7 +14,7 @@ Before reading the rest of this guide, do these three things:
 
 ### 1. Remove the `gateway` tool
 
-This is the **single most effective defense**. The `gateway` tool gives the AI direct access to `config.apply`, `config.patch`, and `update.run` — all with **zero permission checks**.
+This is the **single most effective defense**. The `gateway` tool gives the AI direct access to `config.apply`, `config.patch`, and `update.run`. Those paths are owner-only and scope-gated, but they still bypass the `/config set` chat-command gates and can persist risky config changes when invoked by a trusted owner session.
 
 ```bash
 # Option A: Use the "coding" tool profile (excludes gateway tool entirely)
@@ -34,7 +34,9 @@ openclaw config get commands.config
 # Should be: false (or unset)
 
 # Also disable config writes per channel as defense-in-depth
-openclaw config set configWrites false
+openclaw config set channels.telegram.configWrites false
+openclaw config set channels.slack.configWrites false
+openclaw config set channels.discord.configWrites false
 ```
 
 Note: `configWrites: false` only blocks the `/config set` chat command — it does NOT block the gateway tool. That's why step 1 is critical.
@@ -101,7 +103,7 @@ OpenClaw includes a soft defense in the agent's system prompt:
 "Do not run config.apply or update.run unless the user explicitly requests"
 ```
 
-Source: `src/agents/system-prompt.ts:477-478`
+Source: `src/agents/system-prompt.ts:484`
 
 This helps with well-behaved models in normal operation. But it's trivially bypassed by:
 - Prompt injection ("The user has requested a config update")
@@ -118,7 +120,7 @@ The system prompt example above is one instance of a broader pattern: **OpenClaw
 
 | Control Layer | Where It Lives | Enforcement |
 |---|---|---|
-| System prompt | `src/agents/system-prompt.ts:477` | Soft — model can ignore |
+| System prompt | `src/agents/system-prompt.ts:484` | Soft — model can ignore |
 | SKILL.md instructions | Skill directories | Soft — model can ignore |
 | CLAUDE.md project rules | Project root | Soft — model can ignore |
 | Tool allowlist (`tools.exec.security: "allowlist"`) | Config (`src/config/types.tools.ts:184`) | **Hard — code enforced** |
@@ -141,7 +143,7 @@ GLM-5:
 4. Ran raw `rsync --delete` directly — **deleting files**
 5. Misinterpreted `disable-model-invocation: true` in the skill frontmatter as meaning the skill was "disabled"
 
-The `disable-model-invocation` flag is parsed at `src/agents/skills/frontmatter.ts:109` and used at `src/agents/skills/workspace.ts:447` to filter skills from the model prompt — it controls whether the *model* can invoke the skill unprompted, not whether the skill is "disabled." GLM-5 read the flag, hallucinated an incorrect interpretation, and acted on it.
+The `disable-model-invocation` flag is parsed at `src/agents/skills/frontmatter.ts:108` and used at `src/agents/skills/workspace.ts:467` to filter skills from the model prompt — it controls whether the *model* can invoke the skill unprompted, not whether the skill is "disabled." GLM-5 read the flag, hallucinated an incorrect interpretation, and acted on it.
 
 This is the same class of problem as the system prompt bypass above, but more severe: the SKILL.md contained explicit safety instructions, and the model read them, understood them, and decided to do something else anyway.
 
@@ -181,23 +183,25 @@ Every path through which the AI can modify system state:
 
 | Path | Permission Check | Risk Level | What It Can Do |
 |------|-----------------|------------|----------------|
-| Gateway tool: `config.apply` | **NONE** | 🔴 CRITICAL | Full config replacement |
-| Gateway tool: `config.patch` | **NONE** | 🔴 CRITICAL | Partial config merge |
-| Gateway tool: `update.run` | **NONE** | 🔴 CRITICAL | Trigger update + restart |
+| Gateway tool: `config.apply` | `ownerOnly` + gateway operator scope checks | 🔴 CRITICAL | Full config replacement |
+| Gateway tool: `config.patch` | `ownerOnly` + gateway operator scope checks | 🔴 CRITICAL | Partial config merge |
+| Gateway tool: `update.run` | `ownerOnly` + gateway operator scope checks | 🔴 CRITICAL | Trigger update + restart |
 | Chat command: `/config set` | `commands.config` + `configWrites` | 🟡 Gated | Single key modification |
 | `exec` tool: edit config file | Shell allowlist | 🟠 Depends | Direct file manipulation |
 | Cron tool: `cron.add` | Available to agents | 🟠 HIGH | Persistent scheduled commands |
 | Agent files: `agents.files.set` | ALLOWED_FILE_NAMES only | 🟠 HIGH | System prompt injection via IDENTITY.md, SOUL.md |
-| Gateway tool: `config.get` | NONE (read-only) | 🟡 Recon | Reads current config for targeted attacks |
-| Gateway tool: `config.schema` | NONE (read-only) | 🟡 Recon | Reads full schema for targeted attacks |
+| Gateway tool: `config.get` | owner-only + read scope path | 🟡 Recon | Reads current config for targeted attacks |
+| Gateway tool: `config.schema` | owner-only + read scope path | 🟡 Recon | Reads full schema for targeted attacks |
 
 **Source references:**
-- Gateway tool actions with zero gating: `src/agents/tools/gateway-tool.ts:30-37,175-225`
+- Gateway tool owner-only policy and write actions: `src/agents/tools/gateway-tool.ts:31-38,72,175-214`
+- Gateway call least-privilege scopes: `src/agents/tools/gateway.ts:113-125`
+- Gateway RPC scope enforcement + rate limiting: `src/gateway/server-methods.ts:37-67,107-131`
 - Chat command with two gates: `src/auto-reply/reply/commands-config.ts:39,54-72`
 - Cron tool: `src/gateway/server-methods/cron.ts:73-97`
 - Agent files: `src/gateway/server-methods/agents.ts:467-519`
 
-**Key insight:** The `/config set` chat command has TWO permission gates (`commands.config` + `configWrites`). The gateway tool has ZERO. Setting `configWrites: false` only blocks the chat command — the gateway tool bypasses it entirely.
+**Key insight:** The `/config set` chat command has dedicated chat-command gates (`commands.config` + `configWrites`). Gateway tool writes use a different control plane (owner-only tool policy + gateway auth/scopes/rate limits). So `configWrites: false` is useful defense-in-depth, but it does not block gateway-tool config changes.
 
 ---
 
@@ -379,9 +383,9 @@ Source: `src/agents/sandbox/docker.ts:267` — `args.push("--network", params.cf
 
 With capabilities restored, a container escape via kernel exploits becomes significantly easier.
 
-**Note:** The `--security-opt no-new-privileges` flag is **hardcoded** and always applied (`src/agents/sandbox/docker.ts:298`). This cannot be disabled via config and prevents SUID binaries from gaining elevated privileges — a genuine defense-in-depth measure.
+**Note:** The `--security-opt no-new-privileges` flag is **hardcoded** and always applied (`src/agents/sandbox/docker.ts:289`). This cannot be disabled via config and prevents SUID binaries from gaining elevated privileges — a genuine defense-in-depth measure.
 
-Source: `src/agents/sandbox/docker.ts:295-296` — iterates `capDrop` array to build `--cap-drop` flags
+Source: `src/agents/sandbox/docker.ts:286-288` — iterates `capDrop` array to build `--cap-drop` flags
 
 #### 4c. Read-Only Root Filesystem Disabled
 
@@ -426,7 +430,7 @@ Source: `src/agents/sandbox/docker.ts:261` — `if (params.cfg.readOnlyRoot) arg
 
 With `"rw"`, the sandboxed agent can modify files on the host filesystem — potentially overwriting config files, scripts, or source code outside the sandbox.
 
-Source: `src/agents/sandbox/docker.ts:361-370` — workspace mount with optional `:ro` suffix
+Source: `src/agents/sandbox/docker.ts:353-362` — workspace mount with optional `:ro` suffix
 
 #### 4e. Dangerous Bind Mounts
 
@@ -452,7 +456,7 @@ Source: `src/agents/sandbox/docker.ts:361-370` — workspace mount with optional
 
 Any bind mount widens the attack surface. Agent-level binds are **concatenated** with global binds (`src/agents/sandbox/config.ts:70`), so per-agent overrides add to — not replace — the global list.
 
-Source: `src/agents/sandbox/docker.ts:335-337` — iterates `binds` array to build `-v` flags
+Source: `src/agents/sandbox/docker.ts:326-330` — iterates `binds` array to build `-v` flags
 
 #### 4f. Resource Limits Removed
 
@@ -478,7 +482,7 @@ Source: `src/agents/sandbox/docker.ts:335-337` — iterates `binds` array to bui
 
 These are availability attacks, not confidentiality or integrity attacks — but on a shared host they can take down the gateway and other services.
 
-Source: `src/agents/sandbox/docker.ts:315-333` — resource limit flags
+Source: `src/agents/sandbox/docker.ts:306-332` — resource limit flags
 
 #### 4g. Custom DNS for Network Redirection
 
@@ -501,7 +505,7 @@ Source: `src/agents/sandbox/docker.ts:315-333` — resource limit flags
 
 Requires `network` to not be `"none"` — this attack only works when network isolation has already been weakened (4a).
 
-Source: `src/agents/sandbox/docker.ts:305-313` — DNS and extra hosts flags
+Source: `src/agents/sandbox/docker.ts:296-305` — DNS and extra hosts flags
 
 #### 4h. Security Profile Removal
 
@@ -521,7 +525,7 @@ Source: `src/agents/sandbox/docker.ts:305-313` — DNS and extra hosts flags
 
 **What blank values do:** Depending on Docker's handling, this may disable the default seccomp profile that blocks ~44 dangerous syscalls (including `mount`, `reboot`, `kexec_load`). Without seccomp filtering, a container has access to a wider kernel attack surface.
 
-Source: `src/agents/sandbox/docker.ts:299-303` — seccomp and AppArmor `--security-opt` flags
+Source: `src/agents/sandbox/docker.ts:290-295` — seccomp and AppArmor `--security-opt` flags
 
 #### Combined "Full Sandbox Dismantle" Example
 
@@ -913,7 +917,7 @@ OpenClaw uses Zod schemas with `.strict()` mode (`src/config/zod-schema.ts:666`)
 
 Additionally, extensible maps like `env` and plugin `config` sections accept arbitrary string keys, providing another vector for injecting unexpected values.
 
-Source: `src/config/validation.ts:86-133`
+Source: `src/config/validation.ts:90-133`
 
 ### Persistence Mechanisms
 
@@ -1002,7 +1006,7 @@ openclaw security audit --deep  # Extended checks
 openclaw security audit --fix   # Auto-fix common issues
 ```
 
-Source: `src/security/audit.ts:605-687`
+Source: `src/security/audit.ts:657-742`
 
 ### `openclaw doctor`
 
@@ -1044,12 +1048,12 @@ OpenClaw has several built-in protections. Understanding them helps you build on
 | **Dangerous env var blocklist** | Blocks `LD_PRELOAD`, `NODE_OPTIONS`, etc. from being set via exec tools | `src/agents/bash-tools.exec-runtime.ts:34-51` |
 | **Small model risk audit** | Warns when small/older models have tool access | `src/security/audit-extra.sync.ts:805-894` |
 | **ALLOWED_FILE_NAMES** | Restricts which agent bootstrap files can be modified via `agents.files.set` | `src/gateway/server-methods/agents.ts:467-519` |
-| **File permissions** | Config files created with `0o600`, directories with `0o700` | `src/config/io.ts:998,890` |
+| **File permissions** | Config files created with `0o600`, directories with `0o700` | `src/config/io.ts:890,1004` |
 | **Tool profiles** | `"coding"` profile excludes the gateway tool entirely | `src/agents/tool-policy.ts:63-80` |
-| **System prompt warning** | Soft instruction to not run `config.apply` without user request | `src/agents/system-prompt.ts:477-478` |
+| **System prompt warning** | Soft instruction to not run `config.apply` without user request | `src/agents/system-prompt.ts:484` |
 | **Restart sentinel** | Logs timestamp, session key, message, and stats on config-triggered restarts | `src/infra/restart-sentinel.ts:30-48` |
 | **Strict schema validation** | Zod `.strict()` rejects unknown top-level keys and type errors | `src/config/zod-schema.ts:666` |
-| **Forensic config write audit** | Every config write logged to `config-audit.jsonl` with PID, PPID, CWD, argv, content hashes, byte sizes, gateway-mode changes, and anomaly flags (size drops >50%, missing meta, gateway-mode removal) | `src/config/io.ts:376-390` (audit helpers), `:900-1020` (audit record builder + append) |
+| **Forensic config write audit** | Every config write logged to `config-audit.jsonl` with PID, PPID, CWD, argv, content hashes, byte sizes, gateway-mode changes, and anomaly flags (size drops >50%, missing meta, gateway-mode removal) | `src/config/io.ts:376-390` (audit helpers), `:944-1044` (audit record builder + append) |
 
 ---
 

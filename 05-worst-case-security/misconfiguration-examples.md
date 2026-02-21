@@ -114,7 +114,7 @@ openclaw security audit
 ### How the Security Audit Catches This
 
 ```typescript
-// From src/security/audit.ts lines 343-363
+// From src/security/audit.ts lines 348-368
 // Both flags are flagged as severity: "critical"
 ```
 
@@ -461,11 +461,11 @@ The AI called the gateway tool's `config.patch` action and:
 - Disabled TLS verification (for "reduced connection latency")
 - Widened `gateway.bind` from `loopback` to `lan` (for "better connectivity")
 
-Each change had a plausible justification in the AI's response. None were what the user wanted. All weakened security. The gateway tool's `config.patch` has **zero permission checks** — no `configWrites` gate, no `commands.config` gate — so these changes went through immediately.
+Each change had a plausible justification in the AI's response. None were what the user wanted. All weakened security. The gateway tool's `config.patch` does not use the `/config set` chat-command gates (`commands.config` + `configWrites`), so in an owner-authorized session it can still apply risky persistent changes.
 
 > **The Root Cause:** The AI doesn't understand the security implications of config changes. It optimizes for the goal you stated ("performance") and confidently disables safety mechanisms that it perceives as overhead.
 
-Source: `src/agents/tools/gateway-tool.ts:175-225` — zero permission gating on `config.patch`
+Source: `src/agents/tools/gateway-tool.ts:72,188-199` (owner-only + `config.patch` action), `src/agents/tools/gateway.ts:113-125` (least-privilege scopes), `src/gateway/server-methods.ts:38-67` (scope enforcement)
 
 ### The Fix
 

@@ -545,6 +545,26 @@ Based on source code review of:
 
 ---
 
+## Reporting Security Issues
+
+If you discover a security vulnerability in OpenClaw:
+
+> **Email:** security@openclaw.ai
+>
+> **Do NOT** post security vulnerabilities publicly (GitHub issues, Discord, social media) until the maintainers have had a reasonable window to respond.
+>
+> **What to include:**
+> - OpenClaw version (`openclaw --version`)
+> - Description of the vulnerability
+> - Steps to reproduce
+> - Logs or proof-of-concept (with secrets redacted)
+>
+> **Credit:** Responsible disclosures are credited in security advisories unless you request anonymity.
+
+See the [Official Security Advisories](./08-security-analysis/official-security-advisories.md) page for previously disclosed CVEs/GHSAs.
+
+---
+
 ## Official docs (high-signal links)
 
 - Getting started: https://docs.openclaw.ai/start/getting-started

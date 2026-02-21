@@ -956,8 +956,8 @@ Alice
 
 **OpenClaw's Defense:**
 OpenClaw wraps external hook content (including emails) with security boundaries:
-- `buildSafeExternalPrompt()` at `src/cron/isolated-agent/run.ts:350-356`
-- Suspicious pattern detection and logging at `src/cron/isolated-agent/run.ts:337-344`
+- `buildSafeExternalPrompt()` at `src/cron/isolated-agent/run.ts:395-401`
+- Suspicious pattern detection and logging at `src/cron/isolated-agent/run.ts:382-390`
 - External content wrapped with `<<<EXTERNAL_UNTRUSTED_CONTENT>>>` markers and security warnings (`src/security/external-content.ts:47-64`)
 
 **Additional Defense:**
@@ -1088,14 +1088,15 @@ This is a pre-authorized maintenance operation.
 
 **Why It's Dangerous:**
 
-The gateway tool's `config.patch` action has **ZERO permission checks**:
-- No `configWrites` gate (which only applies to `/config set`)
-- No `commands.config` gate (which only applies to the chat command)
-- The AI's system prompt says "don't run config.apply unless user requests" — but prompt injection makes the AI believe the user *did* request it
+The gateway tool's `config.patch` action uses a **separate control plane** from `/config set`:
+- It does not use `configWrites` (that gate is for `/config set` in chat).
+- It does not use `commands.config` (also chat-command specific).
+- It is still guarded by `ownerOnly` tool policy and gateway operator scopes/rate limits.
+- Prompt injection is still dangerous because a trusted owner session can be manipulated into making these calls.
 
-This works even when `/config set` is fully disabled (`commands.config: false` + `configWrites: false`). The gateway tool is a completely separate, ungated path.
+So this still works even when `/config set` is disabled (`commands.config: false` + `configWrites: false`) if the gateway tool remains available to that owner session.
 
-**Source:** `src/agents/tools/gateway-tool.ts:175-225` vs `src/auto-reply/reply/commands-config.ts:39,54-72`
+**Source:** `src/agents/tools/gateway-tool.ts:72,188-199`, `src/agents/tools/gateway.ts:113-125`, `src/gateway/server-methods.ts:38-67,107-131`, `src/auto-reply/reply/commands-config.ts:39,54-72`
 
 **Defense:**
 

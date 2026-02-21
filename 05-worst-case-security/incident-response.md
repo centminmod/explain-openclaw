@@ -183,6 +183,42 @@ After restoring the Gateway:
 
 ---
 
+## Collecting information for a security report
+
+If you need to report a security incident to the OpenClaw team or request assistance, gather this information first:
+
+### What to collect
+
+| Item | How to get it | Why it matters |
+|------|---------------|----------------|
+| **Timestamp of incident** | Approximate time when you noticed the issue | Correlates with logs |
+| **OpenClaw version** | `openclaw --version` | Confirms if vulnerability is patched |
+| **Gateway logs** | `/tmp/openclaw-gateway.log` or `./scripts/clawlog.sh --tail 500` | Shows attacker actions |
+| **Session transcripts** | `~/.openclaw/agents/*/sessions/*.jsonl` | Records what the attacker said/did |
+| **Config changes** | `diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json` | Detects self-misconfiguration |
+| **Pairing store** | `openclaw pairing list <channel>` | Identifies unauthorized pairings |
+| **Credential modification times** | `ls -la ~/.openclaw/credentials/` | Shows if tokens were accessed |
+
+### Before sharing
+
+- [ ] **Redact secrets:** Remove API keys, tokens, passwords from logs/transcripts
+- [ ] **Redact PII:** Remove phone numbers, email addresses, real names of non-attackers
+- [ ] **Keep attacker content:** Don't remove the attack payload itself — it helps analysis
+
+### Contact
+
+For security issues, contact the OpenClaw security team directly:
+
+> **Email:** security@openclaw.ai
+>
+> **Do NOT** post security vulnerabilities publicly (GitHub issues, Discord, forums) until coordinated disclosure is complete.
+>
+> **What to include:** OpenClaw version, description of the issue, steps to reproduce, logs (with secrets redacted), and any proof-of-concept code.
+>
+> **Credit:** Responsible disclosures are credited in security advisories unless you request anonymity.
+
+---
+
 ## Code references
 
 | Component | Source file | What it does |
