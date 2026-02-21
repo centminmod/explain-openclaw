@@ -95,7 +95,7 @@ Docs: https://docs.openclaw.ai/gateway/tailscale
 
 ## 4) Require auth for any non-loopback access
 
-- Token/password auth is required when binding beyond loopback.
+- For non-loopback binds, auth must be configured: token/password, or `trusted-proxy` mode with correctly configured `gateway.trustedProxies`.
 - The wizard generates a token by default.
 
 If you suspect auth is misconfigured:
@@ -241,7 +241,7 @@ See: [Threat model - Trusted proxies](./threat-model.md#trusted-proxies-reverse-
 
 ## 12) Audit workspace .md files for hidden content
 
-OpenClaw loads nine workspace bootstrap `.md` files directly into the agent's system prompt on every turn. These appear as trusted context — not wrapped with untrusted content markers. The built-in skill scanner does not scan `.md` files, so malicious content in these files is invisible to automated checks.
+For main sessions, OpenClaw loads nine workspace bootstrap `.md` files directly into the agent's system prompt. (Subagent/cron sessions are more limited: `AGENTS.md` + `TOOLS.md` only.) These appear as trusted context — not wrapped with untrusted content markers. The built-in skill scanner does not scan `.md` files, so malicious content in these files is invisible to automated checks.
 
 **Scan for hidden HTML comments** (the most common injection vector in `.md` files):
 
@@ -269,7 +269,7 @@ See: [Cisco AI Defense gap analysis](../08-security-analysis/cisco-ai-defense-sk
 
 ## 13) Never let AI modify security-critical config
 
-The gateway tool's `config.apply` and `config.patch` actions have **zero permission checks** — unlike the `/config set` chat command (which checks both `commands.config` and `configWrites`), the gateway tool bypasses both gates entirely. This is the primary AI self-misconfiguration risk.
+The gateway tool's `config.apply` and `config.patch` actions do **not** use the `/config set` chat-command gates (`commands.config` + channel `configWrites`). They use a different path (owner-only tool policy + gateway auth/scopes). This is still a primary AI self-misconfiguration risk for owner sessions hit by prompt injection.
 
 **Remove the `gateway` tool** (primary defense):
 
@@ -281,7 +281,7 @@ openclaw config set tools.profile coding
 openclaw config set tools.deny '["gateway"]'
 ```
 
-Source: `src/agents/tool-policy.ts:63-80` (coding profile), `src/agents/tools/gateway-tool.ts:175-225` (zero gating)
+Source: `src/agents/tool-policy.ts:63-80` (profiles + owner-only fallback), `src/agents/tools/gateway-tool.ts:72` (ownerOnly), `src/agents/tools/gateway.ts:113-125` (least-privilege scopes), `src/gateway/server-methods.ts:62-65` (scope enforcement)
 
 **Keep config commands disabled** (defense-in-depth):
 
@@ -294,7 +294,10 @@ openclaw config get commands.config
 **Set `configWrites: false`** on all channels:
 
 ```bash
-openclaw config set configWrites false
+# examples (set per channel/account)
+openclaw config set channels.telegram.configWrites false
+openclaw config set channels.slack.configWrites false
+openclaw config set channels.discord.configWrites false
 ```
 
 Note: `configWrites: false` only blocks the `/config set` chat command. It does NOT block the gateway tool — that's why removing the gateway tool (above) is the primary defense.
@@ -335,7 +338,7 @@ for line in sys.stdin:
 "
 ```
 
-Source: `src/config/io.ts:376-390` (audit helpers), `:900-1020` (audit record builder)
+Source: `src/config/io.ts:376-390` (audit helpers), `src/config/io.ts:900-1020` (audit record builder)
 
 See: [AI Self-Misconfiguration Guide](../05-worst-case-security/ai-self-misconfiguration.md), [Attack #28](../05-worst-case-security/prompt-injection-attacks.md#-attack-28-config-self-modification-via-gateway-tool)
 
