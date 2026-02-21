@@ -58,7 +58,7 @@ This is a "practical navigation guide" for new contributors/readers.
 
 - `src/entry.ts` — CLI entry (spawns/sets env, then loads `src/cli/run-main.ts`)
 - `src/cli/` — CLI command definitions
-- `src/commands/` — command implementations (277 files)
+- `src/commands/` — command implementations (280 files)
 
 ### Gateway
 
@@ -77,7 +77,7 @@ This is a "practical navigation guide" for new contributors/readers.
 
 - `src/auto-reply/` — reply pipeline
 - `src/auto-reply/reply/agent-runner.ts` — core agent-turn orchestrator
-- `src/agents/` — agent framework (573 files, 10 subdirectories): tools, sandbox, auth profiles, skills, multi-agent
+- `src/agents/` — agent framework (602 files, 10 subdirectories): tools, sandbox, auth profiles, skills, multi-agent
 
 ### Routing
 
@@ -96,18 +96,18 @@ The `src/` directory contains ~50 subdirectories. Key ones beyond the entrypoint
 
 | Directory | Files (approx.) | Purpose |
 |-----------|-----------------|---------|
-| `src/agents/` | ~573 | Agent framework, tools, sandbox, auth profiles, skills |
-| `src/gateway/` | ~237 | Gateway server, WS runtime, RPC handlers, config validation |
-| `src/auto-reply/` | ~215 | Reply pipeline, agent turn orchestration |
-| `src/cli/` | ~214 | CLI command definitions and parsing |
-| `src/commands/` | ~277 | CLI command implementations |
-| `src/infra/` | ~237 | Infrastructure: networking, SSRF guards, exec safety, archiving |
-| `src/config/` | ~155 | Configuration schema, types, validation, migrations |
-| `src/browser/` | ~102 | Browser automation (CDP/Puppeteer) |
-| `src/channels/` | ~96 | Shared channel logic, identities, allowlists, registry |
-| `src/memory/` | ~78 | Memory/context management, QMD |
-| `src/cron/` | ~64 | Cron job scheduling |
-| `src/plugins/` | ~52 | Plugin runtime and loading |
+| `src/agents/` | ~602 | Agent framework, tools, sandbox, auth profiles, skills |
+| `src/gateway/` | ~257 | Gateway server, WS runtime, RPC handlers, config validation |
+| `src/auto-reply/` | ~228 | Reply pipeline, agent turn orchestration |
+| `src/cli/` | ~220 | CLI command definitions and parsing |
+| `src/commands/` | ~280 | CLI command implementations |
+| `src/infra/` | ~265 | Infrastructure: networking, SSRF guards, exec safety, archiving |
+| `src/config/` | ~159 | Configuration schema, types, validation, migrations |
+| `src/browser/` | ~109 | Browser automation (CDP/Puppeteer) |
+| `src/channels/` | ~107 | Shared channel logic, identities, allowlists, registry |
+| `src/memory/` | ~81 | Memory/context management, QMD |
+| `src/cron/` | ~65 | Cron job scheduling |
+| `src/plugins/` | ~57 | Plugin runtime and loading |
 | `src/media-understanding/` | ~43 | Image/audio/video understanding via AI |
 | `src/tui/` | ~38 | Terminal UI |
 | `src/daemon/` | — | Background daemon process |
@@ -195,18 +195,18 @@ From repo root:
 
 ## Documentation Coverage
 
-This section tracks how well the `explain-clawdbot/` documentation covers the codebase. Updated by `/update-repo-map` skill.
+This section tracks how well the `explain-clawdbot/` documentation covers the codebase. Snapshot verified on 2026-02-21.
 
 ### Coverage by Area
 
 | Area | Files | Last Verified | Coverage | Notes |
 |------|-------|---------------|----------|-------|
-| CLI Commands | 39 commands | 2026-02-19 | ✅ Complete | `01-plain-english/cli-commands.md` |
-| Gateway Config | 31 root + 14 gateway fields | 2026-02-19 | ✅ Complete | `99-reference/commands-and-troubleshooting.md` |
-| Security | 8 audits + 125 PRs + 91 issues | 2026-02-19 | ✅ Complete | `08-security-analysis/` |
-| Architecture | Core paths | 2026-02-19 | ✅ Complete | `02-technical/architecture.md` |
-| Deployment | 3 runbooks | 2026-02-19 | ✅ Complete | `03-deploy/` |
-| Privacy/Safety | 4 guides | 2026-02-19 | ✅ Complete | `04-privacy-safety/` |
+| CLI Commands | 41 top-level commands (40 non-legacy) | 2026-02-21 | ✅ Complete | `01-plain-english/cli-commands.md` |
+| Gateway Config | 31 root + 14 gateway fields | 2026-02-21 | ✅ Complete | `99-reference/commands-and-troubleshooting.md` |
+| Security | 15 docs + 105 hardening logs + 261 PR refs + 95 issue refs | 2026-02-21 | ✅ Complete | `08-security-analysis/` |
+| Architecture | Core paths | 2026-02-21 | ✅ Complete | `02-technical/architecture.md` |
+| Deployment | 4 runbooks | 2026-02-21 | ✅ Complete | `03-deploy/` |
+| Privacy/Safety | 4 guides | 2026-02-21 | ✅ Complete | `04-privacy-safety/` |
 
 ### Known Gaps
 
@@ -221,7 +221,5 @@ This section tracks how well the `explain-clawdbot/` documentation covers the co
 
 | Skill | Frequency | Scope |
 |-------|-----------|-------|
-| `sync-explain-docs-with-upstream` | Per merge | Security commits |
-| `align-docs-upstream` | Weekly | All docs |
-| `update-repo-map` | Monthly | This file |
-| `doc-health-check` | Ad-hoc | Single file |
+| `doc-health-check` | Weekly | Single-file drift audit (report-only) |
+| `align-docs-upstream` | As needed | Apply targeted doc fixes after drift is found |
