@@ -55,7 +55,7 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 
 **Child process stdout/stderr accumulation:**
 - `src/process/exec.ts:133-162` — unbounded string concatenation of process output
-- `src/memory/qmd-manager.ts:656-661` — QMD output now **capped** at 200,000 characters via `appendOutputWithCap()` (`:1146`), configured by `MAX_QMD_OUTPUT_CHARS` (`:34`). Process is killed with descriptive error when cap is exceeded. Note: `src/process/exec.ts:133-162` remains unbounded.
+- `src/memory/qmd-manager.ts:826-831` — QMD output now **capped** at 200,000 characters via `appendOutputWithCap()` (`:1398`), configured by `MAX_QMD_OUTPUT_CHARS` (`:35`). Process is killed with descriptive error when cap is exceeded. Note: `src/process/exec.ts:133-162` remains unbounded.
 
 **Media fetch buffering:**
 - `src/media/fetch.ts:131-140` — media fetch is now **bounded** when `maxBytes` is specified: `readResponseWithLimit()` (`src/media/read-response-with-limit.ts`) streams chunk-by-chunk and aborts early on overflow, preventing unbounded memory consumption. Falls back to unbounded `arrayBuffer()` only when no limit is specified (e.g., document fetches without size constraints).
@@ -82,7 +82,7 @@ Users report OpenClaw can be resource-intensive. This guide documents every reso
 | Agent run sequence | `src/gateway/server-runtime-state.ts:185` | **No pruning** (maintenance timer skips it) | **Leak risk** |
 | WhatsApp group histories | `src/web/auto-reply/monitor.ts:103` | Helper has 1000-key cap, but web direct writes bypass it | **Partial leak** |
 | WhatsApp group member names | `src/web/auto-reply/monitor.ts:113` | **No eviction at all** | **Leak risk** |
-| Cost usage cache | `src/gateway/server-methods/usage.ts:51` | 30s TTL per entry, **no max entry count** | Low-Medium |
+| Cost usage cache | `src/gateway/server-methods/usage.ts:41` | 30s TTL per entry, **no max entry count** | Low-Medium |
 | Warned contexts | `src/infra/session-maintenance-warning.ts:14` | **Never pruned** | Low |
 | Announce queues | `src/agents/subagent-announce-queue.ts:45` | Per-queue cap, **no queue count cap** | Low |
 | Telegram sent msgs outer map | `src/telegram/sent-message-cache.ts:13` | Per-chat TTL, **outer map never evicts dead chat keys** | Low-Medium |

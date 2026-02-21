@@ -487,7 +487,7 @@ One security-adjacent commit (reliability/hardening focus):
 
 ### Post-Merge Hardening (Feb 10 sync 7) — 6 upstream commits
 
-One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:1080-1086`). Defense-in-depth for Gap #4 (memory `.md` scanning). Other: gateway QMD eager-init, legacy `memorySearch` config migration, test mock fix.
+One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only via new `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:1378-1384`). Defense-in-depth for Gap #4 (memory `.md` scanning). Other: gateway QMD eager-init, legacy `memorySearch` config migration, test mock fix.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation — Gap #3 partially mitigated, bootstrap/memory .md scanning — Gap #4 strengthened by collection scoping).
 
@@ -746,6 +746,12 @@ One LOW security fix: `ef4a0e92b` scopes QMD queries to managed collections only
 **Security relevance: LOW** — 2 security-relevant commits. **Hono timing-safe auth** (`ce2a39a27`): bumps hono to 4.11.10 for timing-safe auth handling — Claim 15 defense-in-depth. **Docker SHA256 digest pinning** (`8ae2d5110`): 9 Dockerfiles pinned to immutable SHA256 digests + Dependabot Docker config for automated updates — **Claim 16 strengthened** (supply chain/package integrity). 12 non-security commits: iOS/Gateway wake stabilization, model fallback lifecycle visibility (2 new files), version bump. 4 line shifts documented. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-20-sync-4.md).
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 21 sync 2) — 37 upstream commits
+
+**Security relevance: MEDIUM** — 6 security-relevant commits. **Gateway loopback hardening** (`47f397975`): forces `127.0.0.1` for self-connections with CWE-319 check for plaintext `ws://`. **Prompt injection defense** (`9a6b26d42`): `stripInboundMetadataBlocks()` strips injected metadata from message history at gateway layer. **Canvas path traversal** (`4ab946eeb`): centralized `isInboundPathAllowed()` check — **further mitigates Legitimate Gap #3**. **Discord ephemeral schema hardening** (`122bdfa4e`), **UTC offset bounds enforcement** (`844d84a7f`), **status reactions `.strict()` schema** (`30a0d3fce`). Cross-commit revert: `fe57bea08` changes neutralized by `f555835b0`. See [detailed entry](../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-21-sync-2.md).
+
+**Gap status: 1 closed, 3 remain open** — Gap #3 further mitigated (canvas path validation).
 
 For the full detailed analysis with code references, see [11 - Security Audit Analysis](./11-security-audit-analysis.md#second-security-audit-medium-article-january-2026).
 

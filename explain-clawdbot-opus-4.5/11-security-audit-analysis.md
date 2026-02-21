@@ -770,7 +770,7 @@ One security-relevant fix:
 
 **LOW (1):**
 
-- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** New `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:1080-1086`) restricts QMD searches to configured collections only. Returns empty results if no managed collections exist. Defense-in-depth for Gap #4 (bootstrap/memory `.md` scanning).
+- **`ef4a0e92b`** (PR [#11645](https://github.com/openclaw/openclaw/pull/11645)) — **fix(memory/qmd): scope query to managed collections:** New `buildCollectionFilterArgs()` (`src/memory/qmd-manager.ts:1378-1384`) restricts QMD searches to configured collections only. Returns empty results if no managed collections exist. Defense-in-depth for Gap #4 (bootstrap/memory `.md` scanning).
 
 Other changes: gateway eager-init for QMD backend (`efc79f69a`), legacy `memorySearch` config migration (`868873016`, `a76dea0d2`), changelog update (`8d80212f9`), test mock fix (`40919b1fc`).
 
@@ -1176,6 +1176,12 @@ Block destructive patterns in tool policies:
 **Security relevance: LOW** — 2 security-relevant commits. Hono bump for timing-safe auth handling (`ce2a39a27` — Claim 15 defense-in-depth). Docker SHA256 digest pinning across 9 Dockerfiles + Dependabot config (`8ae2d5110` — **Claim 16 strengthened**, supply chain). 12 non-security commits: iOS/Gateway wake stabilization, model fallback lifecycle (2 new files: `fallback-state.ts`, `model-runtime.ts`), version bump. 4 line shifts: `errors.ts` 580→597, `frontmatter.ts` 103→109, `agent-runner-execution.ts` ~103→67, `nodes.ts` 371-381→587-598. See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-20-sync-4.md).
 
 **Gap status: 1 closed, 3 remain open** — no gaps closed in this sync.
+
+### Post-Merge Hardening (Feb 21 sync 2) — 37 upstream commits
+
+**Security relevance: MEDIUM** — 6 security-relevant commits. **Gateway loopback hardening** (`47f397975`): `call.ts:121` forces `127.0.0.1` for self-connections; CWE-319 check at lines 142-155 blocks plaintext `ws://` to non-loopback. **Prompt injection defense** (`9a6b26d42`): `stripInboundMetadataBlocks()` at `chat-envelope.ts:65` strips injected metadata headers from message history in `chat-sanitize.ts`. **Canvas path traversal hardening** (`4ab946eeb`): `readJsonlFromPath()` at `canvas-tool.ts:30` uses `isInboundPathAllowed()` from `inbound-path-policy.ts:100` — **further mitigates Legitimate Gap #3**. **Discord ephemeral schema** (`122bdfa4e`): NEW `commands.ts:3` with `.strict()` and `ephemeral: true` default. **UTC offset bounds** (`844d84a7f`): `parseUtcOffsetToMinutes()` at `usage.ts:115` validates -12:00 to +14:00 range. **Status reactions schema** (`30a0d3fce`): NEW `status-reactions.ts:122` with `.strict()` sub-schemas. Cross-commit revert: `fe57bea08` introduced spawn depth constant + cron session isolation, reverted by `f555835b0`. 24 line shifts applied (qmd-manager.ts, attempt.ts, zod-schema.session.ts, tui-formatters.ts and others). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-21-sync-2.md).
+
+**Gap status: 1 closed, 3 remain open** — Gap #3 further mitigated (canvas path validation).
 
 ---
 
