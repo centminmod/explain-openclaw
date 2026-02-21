@@ -307,16 +307,13 @@ This validates the name of an executable to run, not arguments passed to it. Arg
 
 **Verdict: Partially true, but overstated. MITIGATED in PR #12.**
 
-Previously, the gateway host merged `params.env` without sanitization. As of PR #12, the gateway now validates env vars:
-- Blocklist at `src/agents/bash-tools.exec-runtime.ts:32-50`
-- Validation function at `src/agents/bash-tools.exec-runtime.ts:54` (`validateHostEnv`)
-- Enforcement at `src/agents/bash-tools.exec.ts:300` (validates before env merge at `:305`)
+Previously, the gateway host merged `params.env` without sanitization. As of PR #12 (further centralized in Feb 21 sync 7), the gateway now validates env vars:
+- Policy JSON at `src/infra/host-env-security-policy.json` (14 exact keys + `DYLD_`, `LD_`, `BASH_FUNC_` prefix blocks)
+- Validation function `validateHostEnv()` at `src/agents/bash-tools.exec-runtime.ts:34`
+- Enforcement at `src/agents/bash-tools.exec.ts:330` (validates before env merge)
+- Centralized enforcement in `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46`
 
-On the node host, there is an explicit blocklist (`src/node-host/invoke.ts:45-175` — was `src/node-host/runner.ts:166-175`):
-```
-const blockedEnvKeys = new Set(["NODE_OPTIONS", "PYTHONHOME", "PYTHONPATH", "PERL5LIB", "PERL5OPT", "RUBYOPT"]);
-const blockedEnvPrefixes = ["DYLD_", "LD_"];
-```
+On the node host, `sanitizeEnv()` at `src/node-host/invoke.ts:115` delegates to `sanitizeHostExecEnv()` (was standalone blocklist at `src/node-host/runner.ts:166-175`). Related to GHSA-82g8-464f-2mv7 (CRITICAL, 2026-02-21).
 
 The gateway-side gap is real but heavily mitigated:
 - **Human approval is required** for tool executions via the approval flow
@@ -363,7 +360,7 @@ Both audits correctly identify code patterns that *could* be concerning in isola
 
 While none of the 8 claims are exploitable as described, three defense-in-depth improvements were identified:
 
-1. ~~**Gateway-side env var blocklist (Claim 8):**~~ **CLOSED in PR #12.** Gateway now has `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` (`src/agents/bash-tools.exec-runtime.ts:32-50,54`), with enforcement at `src/agents/bash-tools.exec.ts:300`.
+1. ~~**Gateway-side env var blocklist (Claim 8):**~~ **CLOSED in PR #12; further centralized in Feb 21 sync 7.** Gateway validates via `src/infra/host-env-security-policy.json` (JSON-backed policy), `validateHostEnv()` at `src/agents/bash-tools.exec-runtime.ts:34`, enforced at `src/agents/bash-tools.exec.ts:330`. Centralized as `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46` (commits `2cdbadee1` + `f202e7307`). Related to GHSA-82g8-464f-2mv7.
 
 2. **Pipe-delimited token format (Claim 6):** The token construction uses pipe delimiters without input sanitization. RSA signing prevents exploitation, but a structured format (JSON) would be more robust against future changes.
 
@@ -465,17 +462,11 @@ Sixty-four upstream commits (merged via PR #12 from `openclaw/main`) introduced 
 
   The gateway-side env var blocklist gap is now closed. New security controls:
 
-  1. **Blocklist** (`src/agents/bash-tools.exec-runtime.ts:32-50`):
-     - `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_AUDIT`
-     - `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH`
-     - `NODE_OPTIONS`, `NODE_PATH`, `PYTHONPATH`, `PYTHONHOME`
-     - `RUBYLIB`, `PERL5LIB`, `BASH_ENV`, `ENV`, `GCONV_PATH`, `IFS`, `SSLKEYLOGFILE`
+  1. **Policy JSON** (`src/infra/host-env-security-policy.json`): 14 exact blocked keys (`LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_AUDIT`, `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH`, `NODE_OPTIONS`, `NODE_PATH`, `PYTHONPATH`, `PYTHONHOME`, `RUBYLIB`, `PERL5LIB`, `BASH_ENV`, `ENV`, `GCONV_PATH`) + prefix blocks (`DYLD_*`, `LD_*`, `BASH_FUNC_*`). Originally introduced as inline `DANGEROUS_HOST_ENV_VARS` array in `bash-tools.exec-runtime.ts` (PR #12); moved to JSON in Feb 21 sync 7 (`f202e7307`).
 
-  2. **Prefix blocking** (`line 79`): `DYLD_*`, `LD_*` prefixes
+  2. **Validation function** (`src/agents/bash-tools.exec-runtime.ts:34`): `validateHostEnv()` loads policy JSON and throws on any dangerous variable, prefix match, or PATH modification. Delegates to `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46`.
 
-  3. **Validation function** (`lines 83-107`): `validateHostEnv()` throws on any dangerous variable, prefix match, or PATH modification
-
-  4. **Enforcement** (`lines 976-977`): Validation runs before env merge for non-sandbox host execution
+  3. **Enforcement** (`src/agents/bash-tools.exec.ts:330`): Validation runs before env merge for non-sandbox host execution. Line shifted from `:976-977` → `:300` (PR #12) → `:330` (Feb 21 sync 7).
 
 #### Additional Security Hardening
 
@@ -597,7 +588,7 @@ Six security-relevant commits:
 
 - **`d6c088910`** — Credential protection via .gitignore: Adds `memory/` and `.agent/*.json` (excluding `workflows/`) to gitignore, preventing accidental commit of agent credentials and session data. Defense-in-depth for credential hygiene.
 
-- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via blocklists in `src/node-host/invoke.ts:45-175` (was `src/node-host/runner.ts:166-175`) and `src/agents/bash-tools.exec-runtime.ts:32-50` (was `src/agents/bash-tools.exec.ts:61-78`) (PR #12). Thanks @18-RAJAT.
+- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via `sanitizeEnv()` at `src/node-host/invoke.ts:115` (delegates to `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46`) and policy JSON at `src/infra/host-env-security-policy.json` (centralized from PR #12 inline blocklist in Feb 21 sync 7; original PR #12 locations: `runner.ts:166-175` + inline array in `bash-tools.exec-runtime.ts`). Thanks @18-RAJAT.
 
 - **`93b450349`** — Session state hygiene: Clears stale token metrics (totalTokens, inputTokens, outputTokens, contextTokens) when starting new sessions via /new or /reset. Prevents misleading context usage display from previous sessions.
 
@@ -994,7 +985,7 @@ No line shifts. No new CVEs.
 
 **Security relevance: HIGH** — 8 security-relevant commits. Telegram webhook secret now mandatory (`633fe8b9c` — Audit 1 Claim 7, CVE-2026-25474 runtime guard). Gateway SSRF hardening chain: backend URL override drop (`c5406e1d2`) + tool gatewayUrl loopback allowlist (`2d5647a80`) — Audit 2 Claim 4, GHSA-g8p2-7wf7-98mq defense-in-depth. Explicit token precedence in gateway client (`d8a2c80cd`). Session key normalization for send policy (`2a3da2133`). OAuth manual code flow with validation (`ee8d8be2e`). Exec stdin closure for non-PTY runs (`d73f3336d`). Podman root write prevention (`b2a4283c3` — Audit 1 Claim 5). 48 safe commits: test harness extraction, suite consolidation, perf optimizations. 2 new advisories: GHSA-3hcm-ggvf-rch5 (HIGH — exec allowlist bypass via backticks), GHSA-mr32-vwc2-5j6h (HIGH — browser relay CDP missing auth). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-15-sync-10.md).
 
-**Line shifts:** `bash-tools.exec-runtime.ts:32-50` (DANGEROUS_HOST_ENV_VARS — unchanged, new function added at line 369). `gateway.ts` gained `canonicalizeToolGatewayWsUrl()` at lines 13-41 and `validateGatewayUrlOverrideForAgentTools()` at lines 43-77.
+**Line shifts:** `bash-tools.exec-runtime.ts` DANGEROUS_HOST_ENV_VARS inline array (PR #12 location) — unchanged at this sync; moved to `host-env-security-policy.json` in Feb 21 sync 7. `gateway.ts` gained `canonicalizeToolGatewayWsUrl()` at lines 13-41 and `validateGatewayUrlOverrideForAgentTools()` at lines 43-77.
 
 **Gap status: 1 closed, 3 remain open** (pipe-delimited token format, outPath validation, bootstrap/memory .md scanning — unchanged).
 
@@ -1182,6 +1173,14 @@ Block destructive patterns in tool policies:
 **Security relevance: MEDIUM** — 6 security-relevant commits. **Gateway loopback hardening** (`47f397975`): `call.ts:121` forces `127.0.0.1` for self-connections; CWE-319 check at lines 142-155 blocks plaintext `ws://` to non-loopback. **Prompt injection defense** (`9a6b26d42`): `stripInboundMetadataBlocks()` at `chat-envelope.ts:65` strips injected metadata headers from message history in `chat-sanitize.ts`. **Canvas path traversal hardening** (`4ab946eeb`): `readJsonlFromPath()` at `canvas-tool.ts:30` uses `isInboundPathAllowed()` from `inbound-path-policy.ts:100` — **further mitigates Legitimate Gap #3**. **Discord ephemeral schema** (`122bdfa4e`): NEW `commands.ts:3` with `.strict()` and `ephemeral: true` default. **UTC offset bounds** (`844d84a7f`): `parseUtcOffsetToMinutes()` at `usage.ts:115` validates -12:00 to +14:00 range. **Status reactions schema** (`30a0d3fce`): NEW `status-reactions.ts:122` with `.strict()` sub-schemas. Cross-commit revert: `fe57bea08` introduced spawn depth constant + cron session isolation, reverted by `f555835b0`. 24 line shifts applied (qmd-manager.ts, attempt.ts, zod-schema.session.ts, tui-formatters.ts and others). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-21-sync-2.md).
 
 **Gap status: 1 closed, 3 remain open** — Gap #3 further mitigated (canvas path validation).
+
+### Post-Merge Hardening (Feb 21 sync 7) — 27 upstream commits
+
+**Security relevance: HIGH** — 11 security-relevant commits. **Env var policy centralization** (`f202e7307` + `2cdbadee1`): introduces `src/infra/host-env-security.ts` with `sanitizeHostExecEnv()` at `:46` as unified enforcement, `src/infra/host-env-security-policy.json` (JSON-backed policy replacing inline blocklist), `validateHostEnv()` shifted to `bash-tools.exec-runtime.ts:34`, enforcement at `exec.ts:330`, node host `sanitizeEnv()` at `invoke.ts:115` delegates to centralized function — **Claim 8 STRENGTHENED; GHSA-82g8-464f-2mv7 (CRITICAL) mitigated**. **Tailscale tokenless auth scoping** (`356d61aac`): new `resolveTailscaleClientIp()` at `src/gateway/auth.ts:71` scopes tokenless auth to WebSocket endpoints only — **Claim 5 STRENGTHENED**. **Command gating** (`08e020881`): `src/auto-reply/reply/command-gates.ts` with `COMMAND_GATE_GROUPS` restricts `bash_command`/`shell_exec`/`browser_exec` to allowed senders — **Claim 5 defense-in-depth**. **Blocked-key guard expansion** (`f9b6d6803`): `src/config/prototype-keys.ts` with `PROTOTYPE_POLLUTING_KEYS` constant guards — **Claim 3 defense-in-depth**. **Plugin webhook validation** (`c2028a37d`): `src/plugin-sdk/webhook-targets.ts` validates webhook target config — **Claim 5 defense-in-depth**. **`auto_reply` allowFrom validation** (`3b4ade47c`): validates sender lists before processing — **Claim 5 defense-in-depth**. **System run command sandboxing** (`06f7a3f26`): new `src/node-host/invoke-system-run.ts` + `src/infra/system-run-command.ts` with dedicated node host path — **Claim 1 defense-in-depth**. **GHSA-x2g4-7mj7-2hhj fix** (`084f62102` + `b577228d6`): compaction counter reset + regression test — **CWE-400 mitigated**. **Tailscale auth docs** (`d25a10662`): changelog noting tokenless WebSocket auth hardening.
+
+**Line shifts:** `auth.ts` :64-85→:71 (`resolveTailscaleClientIp()` NEW), :87-108→:94 (`isLocalDirectRequest()`). `bash-tools.exec-runtime.ts` :32-50→:34 (`validateHostEnv()`). `bash-tools.exec.ts` :300→:330 (enforcement). `invoke.ts` :45-175→:115 (`sanitizeEnv()` — now delegates to centralized function).
+
+**Gap status: 1 closed, 3 remain open** — Gap #1 further centralized (env policy JSON). See [detailed entry](../../explain-clawdbot/08-security-analysis/post-merge-hardening/2026-02-21-sync-7.md).
 
 ---
 

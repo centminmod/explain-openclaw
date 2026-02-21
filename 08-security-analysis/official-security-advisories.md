@@ -4,7 +4,7 @@
 
 > **Source:** [github.com/openclaw/openclaw/security](https://github.com/openclaw/openclaw/security)
 >
-> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (26 new advisories, 10 HIGH + 10 MEDIUM + 6 previously tracked) patched in v2026.2.1-2.2+; Feb 16 batch (16 new advisories, 9 HIGH + 4 MEDIUM + 3 LOW) published 2026-02-15/16; Feb 20 batch (4 new advisories, 2 MEDIUM + 2 LOW) published 2026-02-20, patched in v2026.2.18.
+> These are officially disclosed vulnerabilities with assigned CVE/GHSA identifiers. Earlier advisories were patched in v2026.1.29-1.30; Feb 14 batch (5 new advisories) patched in v2026.2.1-2.6; Feb 15 batch (26 new advisories, 10 HIGH + 10 MEDIUM + 6 previously tracked) patched in v2026.2.1-2.2+; Feb 16 batch (16 new advisories, 9 HIGH + 4 MEDIUM + 3 LOW) published 2026-02-15/16; Feb 20 batch (4 new advisories, 2 MEDIUM + 2 LOW) published 2026-02-20, patched in v2026.2.18; Feb 21 batch (1 new advisory, 1 CRITICAL) published 2026-02-21, patched in v2026.2.21.
 
 ### Advisory Summary
 
@@ -92,6 +92,7 @@
 | [GHSA-wh94-p5m6-mr7j](https://github.com/openclaw/openclaw/security/advisories/GHSA-wh94-p5m6-mr7j) | MEDIUM | Discord moderation authorization used untrusted sender identity in tool-driven flows | CWE-862, CWE-290 | v2026.2.18 | @aether-ai-agent |
 | [GHSA-cxpw-2g23-2vgw](https://github.com/openclaw/openclaw/security/advisories/GHSA-cxpw-2g23-2vgw) | LOW | OC-53: ACP prompt-size checks missing in local stdio bridge | CWE-400 | v2026.2.18 | @aether-ai-agent |
 | [GHSA-w45g-5746-x9fp](https://github.com/openclaw/openclaw/security/advisories/GHSA-w45g-5746-x9fp) | MEDIUM | Harden cron webhook delivery against SSRF | CWE-918 | v2026.2.18 | @Adam55A-code |
+| [GHSA-82g8-464f-2mv7](https://github.com/openclaw/openclaw/security/advisories/GHSA-82g8-464f-2mv7) | CRITICAL | Environment Variable Injection via Host Exec Env | CWE-78 | v2026.2.21 | @aether-ai-agent |
 
 ### CVE-2026-24763: Docker PATH Command Injection
 
@@ -793,6 +794,21 @@
 **Impact:** SSRF via cron webhook delivery to internal/metadata endpoints.
 
 **Fix commits:** `99db4d13e`, `35851cdaf` — routes cron webhook delivery through SSRF-checked fetch.
+
+### GHSA-82g8-464f-2mv7: Environment Variable Injection via Host Exec Env
+
+**Severity:** CRITICAL (CWE-78: OS Command Injection)
+**Published:** 2026-02-21
+**Credits:** @aether-ai-agent
+**Patched:** v2026.2.21
+
+**Description:** Environment variable injection was possible through the gateway's host execution paths. Insufficient centralization of the env-var policy meant that `LD_PRELOAD`, `DYLD_INSERT_LIBRARIES`, `NODE_OPTIONS`, and related variables could, in specific conditions, be injected into host process environments via gateway tool invocations before enforcement was consistently applied across all code paths.
+
+**Impact:** An attacker with gateway access and the ability to trigger bash tool or node-host executions could potentially inject library-loading environment variables to achieve code execution in the gateway host context. Requires authenticated gateway access plus an approved exec tool invocation.
+
+**Fix commits:** `2cdbadee1` (creates `src/infra/host-env-security.ts` with unified `sanitizeHostExecEnv()` at `:46`), `f202e7307` (centralizes policy to `src/infra/host-env-security-policy.json`, policy now shared with macOS Swift layer). `validateHostEnv()` at `src/agents/bash-tools.exec-runtime.ts:34` (enforced at `src/agents/bash-tools.exec.ts:330`) delegates to the centralized enforcement point.
+
+See [Post-merge hardening (Feb 21 sync 7)](./post-merge-hardening/2026-02-21-sync-7.md).
 
 ### Relationship to Third-Party Audits
 

@@ -149,7 +149,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 | 5 | Self-approving agent (no RBAC) | **False** | `authorizeGatewayMethod()` (`src/gateway/server-methods.ts:105-175`) enforces role checks. Agents connect as `role: "node"`, blocked from all non-node methods. Approval requires `operator.approvals` scope. Further hardened by owner-only tool gating (`392bbddf2`) and owner allowlist enforcement (`385a7eba3`). |
 | 6 | Token field shifting via pipe injection | **Misleading** | Pipe-delimited format (`src/gateway/device-auth.ts:13-31`) lacks input sanitization (true), but tokens are RSA-signed. Modified payload fails signature verification. |
 | 7 | Shell injection via incomplete regex | **False** | `isSafeExecutableValue()` (`src/infra/exec-safety.ts:16-44`) validates executable *names* (not commands). `BARE_NAME_PATTERN = /^[A-Za-z0-9._+-]+$/` is strict. Article conflates config validation with shell injection. |
-| 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12** | Gateway validates `params.env` via blocklist (`src/agents/bash-tools.exec-runtime.ts:32-50`) and validation function (`src/agents/bash-tools.exec-runtime.ts:54`, enforced at `src/agents/bash-tools.exec.ts:300`). Node-host has blocklist (`src/node-host/invoke.ts:45-165`). Requires human approval + localhost + no sandbox. |
+| 8 | Environment variable injection (LD_PRELOAD) | **Partially true, MITIGATED in PR #12; further hardened Feb 21 sync 7** | Gateway validates `params.env` via `src/infra/host-env-security-policy.json` (JSON-backed policy), `validateHostEnv()` at `src/agents/bash-tools.exec-runtime.ts:34` (enforced at `src/agents/bash-tools.exec.ts:330`). Centralized as `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46`. Node-host: `sanitizeEnv()` at `src/node-host/invoke.ts:115`. Requires human approval + localhost + no sandbox. Related to GHSA-82g8-464f-2mv7. |
 
 **Result: 0 of 8 claims are exploitable as described.**
 
@@ -161,7 +161,7 @@ In January 2026, a Medium article by Saad Khalid titled *"Why Clawdbot is a Bad 
 
 Three defense-in-depth items were identified (not exploitable as described, but worth hardening):
 
-1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12.** Gateway now validates env vars via `DANGEROUS_HOST_ENV_VARS` blocklist (`src/agents/bash-tools.exec-runtime.ts:32-50`) and `validateHostEnv()` (`src/agents/bash-tools.exec-runtime.ts:54`, enforced at `src/agents/bash-tools.exec.ts:300`).
+1. ~~**Gateway-side env var blocklist:**~~ **CLOSED in PR #12; further centralized in Feb 21 sync 7.** Gateway validates env vars via `src/infra/host-env-security-policy.json` (JSON-backed policy), `validateHostEnv()` at `src/agents/bash-tools.exec-runtime.ts:34` (enforced at `src/agents/bash-tools.exec.ts:330`). Centralized as `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46`. Related to GHSA-82g8-464f-2mv7.
 2. **Pipe-delimited token format:** RSA signing prevents exploitation, but a structured format (JSON) would be more robust.
 3. **outPath validation:** `screen_record` outPath accepts arbitrary paths. Writes are confined to the paired node device, but path validation would add depth.
 
@@ -230,7 +230,7 @@ This is new security hardening unrelated to existing audit claims. **All three l
 
 Seven security-relevant commits:
 
-- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation (#4896) (thanks @HassanFleyah): `DANGEROUS_HOST_ENV_VARS` blocklist (`src/agents/bash-tools.exec-runtime.ts:32-50`) and `validateHostEnv()` (`src/agents/bash-tools.exec-runtime.ts:54`, enforced at `src/agents/bash-tools.exec.ts:300`) now block `LD_PRELOAD`, `DYLD_*`, `NODE_OPTIONS`, `PATH`, etc. on gateway host execution. **Closes Legitimate Gap #1.**
+- **`0a5821a81`** + **`a87a07ec8`** — Strict environment variable validation (#4896) (thanks @HassanFleyah): Introduced `DANGEROUS_HOST_ENV_VARS` blocklist and `validateHostEnv()` blocking `LD_PRELOAD`, `DYLD_*`, `NODE_OPTIONS`, `PATH`, etc. on gateway host execution. **Closes Legitimate Gap #1.** (Lines further updated in Feb 21 sync 7: now `src/infra/host-env-security-policy.json` + `validateHostEnv()` at `src/agents/bash-tools.exec-runtime.ts:34`, enforced at `src/agents/bash-tools.exec.ts:330`, centralized as `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46`.)
 
 - **`b796f6ec0`** — Web tools and file parsing hardening (#4058) (thanks @VACInc)
 - **`a2b00495c`** — TLS 1.3 minimum requirement (thanks @loganaden)
@@ -346,7 +346,7 @@ Six security-relevant commits:
 
 - **`d6c088910`** — Credential protection via .gitignore: Adds `memory/` and `.agent/*.json` (excluding `workflows/`) to gitignore, preventing accidental commit of agent credentials and session data. Defense-in-depth for credential hygiene.
 
-- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via blocklists in `src/node-host/invoke.ts:45-165` (was `runner.ts:166-175`) and `src/agents/bash-tools.exec-runtime.ts:32-50` (was `bash-tools.exec.ts:61-78`) (PR #12). Thanks @18-RAJAT.
+- **`ea237115a`** — CLI flag handling refinement: Passes `--disable-warning=ExperimentalWarning` as Node CLI argument instead of via NODE_OPTIONS environment variable (fixes npm pack compatibility). Defense-in-depth for env var handling—NOT directly related to audit claim #8 (LD_PRELOAD/NODE_OPTIONS injection), which is already mitigated via `sanitizeEnv()` at `src/node-host/invoke.ts:115` (delegates to `sanitizeHostExecEnv()` at `src/infra/host-env-security.ts:46`) and policy JSON at `src/infra/host-env-security-policy.json` (centralized from PR #12 inline blocklist in Feb 21 sync 7). Thanks @18-RAJAT.
 
 - **`93b450349`** — Session state hygiene: Clears stale token metrics (totalTokens, inputTokens, outputTokens, contextTokens) when starting new sessions via /new or /reset. Prevents misleading context usage display from previous sessions.
 

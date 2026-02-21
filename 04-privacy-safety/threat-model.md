@@ -141,7 +141,7 @@ If you run a reverse proxy (e.g. nginx, Caddy, Traefik) in front of the Gateway,
 The Gateway solves this with a trust chain:
 - `isTrustedProxyAddress()` checks if the connecting IP is in your trusted list (`src/gateway/net.ts:235-254`)
 - `resolveGatewayClientIp()` only reads `X-Forwarded-For`/`X-Real-IP` headers when the immediate connection comes from a trusted proxy (`src/gateway/net.ts:255-277`)
-- `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:87-108`)
+- `isLocalDirectRequest()` uses both checks to determine if a request is genuinely local (`src/gateway/auth.ts:94`)
 
 **Configuration:**
 ```bash
@@ -153,7 +153,7 @@ openclaw config set gateway.trustedProxies '["127.0.0.1"]'
 - No reverse proxy? Leave `trustedProxies` empty (the default)
 - `openclaw security audit` flags this as `gateway.trusted_proxies_missing` when a proxy is detected but not configured
 
-Source: `src/gateway/auth.ts:64-85` (`resolveTailscaleClientIp()`, `resolveRequestClientIp()`), `src/security/audit.ts` (audit check)
+Source: `src/gateway/auth.ts:71` (`resolveTailscaleClientIp()`), `src/gateway/auth.ts:94` (`isLocalDirectRequest()`), `src/security/audit.ts` (audit check)
 
 ### 4) Local disk + secrets
 OpenClaw stores transcripts and credentials on disk under `~/.openclaw/`.
